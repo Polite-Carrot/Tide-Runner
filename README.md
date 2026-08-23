@@ -5,16 +5,15 @@ A buoy-racing game for the browser, wrapped as an iOS and Android app with Capac
 Four boats, a winding river and a lot of red and green marks. The current runs with you —
 keep the reds to port and stay off the sand.
 
-The whole game is a single self-contained HTML file (`web/index.html`): canvas rendering,
+The whole game is a single self-contained HTML file (`docs/index.html`): canvas rendering,
 physics, AI, procedural courses and Web Audio music, with no build step and no runtime
 dependencies beyond a webfont.
 
 ## Racing
 
 - **Seventeen courses**, each with its own channel width and character. The menu leads with
-  three — one row — and keeps the rest behind **More courses**; a course picked from the
-  full list stays on show when the list collapses again. Three keeps the whole sheet on one
-  screen, controls and all, on a phone as well as a desktop.
+  six — two full rows — and keeps the rest behind **More courses**; a course picked from the
+  full list stays on show when the list collapses again.
 
   At the gentle end, Fjord Run and Atlantic Leg are four long sweeps you can hold the
   throttle through. At the other, Corryvreckan and Hell's Mouth are 26 and 24 corners of
@@ -77,51 +76,45 @@ stop persisting beyond the session rather than breaking the game.
 Touch controls appear automatically on coarse-pointer devices. The game honours
 `prefers-reduced-motion` by dropping particle effects.
 
-Everything full-screen sizes to a `--app-h` custom property rather than `100%` or `100vh`.
-Mobile browsers report a layout viewport taller than the part you can actually see — Safari's
-toolbars sit over the bottom of it — so those units push the touch controls off the screen.
-`resize()` pins `--app-h` to `visualViewport.height` and re-runs as the toolbars slide in and
-out; `100dvh` covers the moment before the script runs.
-
 ## Running it
 
-There is no build step for the web version. Serve the `web/` directory and open it:
+There is no build step for the web version. Serve the `docs/` directory and open it:
 
 ```bash
 npx serve web
 # or: python3 -m http.server -d web
 ```
 
-Opening `web/index.html` directly from the filesystem also works. An internet connection is
+Opening `docs/index.html` directly from the filesystem also works. An internet connection is
 only needed for the Google Fonts stylesheet — without it, the game falls back to system
 fonts and plays normally.
 
 ## Building the apps
 
-Capacitor is configured in `capacitor.config.json` (`com.foghorn.tiderunner`, web assets in
-`web/`). The native projects are checked in under `android/` and `ios/`.
+Capacitor is configured in `capacitor.config.json` (`com.politecarrot.tiderunner`, web assets in
+`docs/`). The native projects are checked in under `android/` and `ios/`.
 
 ```bash
 npm install
-npx cap sync          # copy web/ into both native projects and update plugins
+npx cap sync          # copy docs/ into both native projects and update plugins
 npx cap open android  # opens Android Studio
 npx cap open ios      # opens Xcode
 ```
 
-Re-run `npx cap sync` (or `npx cap copy`) after any change to `web/index.html`.
+Re-run `npx cap sync` (or `npx cap copy`) after any change to `docs/index.html`.
 
 Targets: Android minSdk 24 / compileSdk 36, iOS 15.0+.
 
 ## Layout
 
 ```
-web/index.html        the entire game — markup, styles, and all game code
+docs/index.html        the entire game — markup, styles, and all game code
 capacitor.config.json app id, name and web asset directory
 android/              Capacitor Android project
 ios/                  Capacitor iOS project
 ```
 
-Inside `web/index.html` the code is grouped into commented sections: course definitions and
+Inside `docs/index.html` the code is grouped into commented sections: course definitions and
 track generation, boat physics and AI, audio, fauna, boosts, moored scenery, rendering, the
 chartplotter, and the HUD and menu screens.
 

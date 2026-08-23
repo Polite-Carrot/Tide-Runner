@@ -1,0 +1,157 @@
+name: iOS TestFlight
+
+# Manual trigger — bump build number and upload to TestFlight from CI.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Marketing version (e.g. 1.0.0)'
+        default: '1.0.0'
+        required: true
+      build:
+        description: 'Build number (increment every upload)'
+        default: '1'
+        required: true
+
+jobs:
+  build-upload:
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install JS deps
+        run: npm ci --no-audit --no-fund
+
+      - name: Capacitor sync (copy docs/ into ios/)
+        run: npx cap sync ios
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      # ---- Signing setup: cert + provisioning profile from repo secrets ----
+      - name: Import signing certificate
+        env:
+          IOS_CERT_P12: ${{ secrets.IOS_CERT_P12 }}
+          IOS_CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ci-tmp-password
+        run: |
+          set -euo pipefail
+          KEYCHAIN=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          echo "$IOS_CERT_P12" | base64 --decode > $RUNNER_TEMP/dist.p12
+          security import $RUNNER_TEMP/dist.p12 -k "$KEYCHAIN" \
+            -P "$IOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain
+
+      - name: Install provisioning profile
+        env:
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$IOS_PROVISIONING_PROFILE" | base64 --decode \
+            > ~/Library/MobileDevice/Provisioning\ Profiles/tiderunner.mobileprovision
+
+      - name: Install App Store Connect API key
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/private_keys
+          echo "$APPLE_API_KEY_P8" | base64 --decode > ~/private_keys/AuthKey_${APPLE_KEY_ID}.p8
+
+      # ---- Bump version + build in the Xcode project ----
+      - name: Set version and build number
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          BUILD: ${{ github.event.inputs.build }}
+        run: |
+          set -euo pipefail
+          cd ios/App
+          xcrun agvtool new-marketing-version "$VERSION"
+          xcrun agvtool new-version -all "$BUILD"
+
+      - name: Write ExportOptions.plist
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > $RUNNER_TEMP/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+            <key>uploadBitcode</key><false/>
+            <key>signingStyle</key><string>automatic</string>
+            <key>destination</key><string>export</string>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Archive
+        env:
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${APPLE_KEY_ID}.p8 \
+            -authenticationKeyID $APPLE_KEY_ID \
+            -authenticationKeyIssuerID $APPLE_ISSUER_ID \
+            archive
+
+      - name: Export IPA
+        env:
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            -exportPath $RUNNER_TEMP/export \
+            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${APPLE_KEY_ID}.p8 \
+            -authenticationKeyID $APPLE_KEY_ID \
+            -authenticationKeyIssuerID $APPLE_ISSUER_ID
+
+      - name: Upload to TestFlight
+        env:
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          IPA=$(ls $RUNNER_TEMP/export/*.ipa | head -1)
+          echo "Uploading $IPA to App Store Connect..."
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey $APPLE_KEY_ID --apiIssuer $APPLE_ISSUER_ID
+
+      - name: Upload IPA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiderunner-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: warn
+          retention-days: 14

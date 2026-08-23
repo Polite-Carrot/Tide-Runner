@@ -1,5 +1,5 @@
 {
-  "appId": "com.foghorn.tiderunner",
+  "appId": "com.politecarrot.tiderunner",
   "appName": "Tiderunner",
-  "webDir": "web"
+  "webDir": "docs"
 }

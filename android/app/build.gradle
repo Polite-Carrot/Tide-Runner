@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.foghorn.tiderunner"
+    namespace = "com.politecarrot.tiderunner"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.foghorn.tiderunner"
+        applicationId "com.politecarrot.tiderunner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
