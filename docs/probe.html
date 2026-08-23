@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Bottom Edge Probe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#04141c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --abyss:#04141c;
+    --deep:#072a3a;
+    --shelf:#0c4257;
+    --chart:#7fe9d8;
+    --amber:#ffd84a;
+    --port:#e8402a;
+    --stbd:#2fcb7b;
+    --violet:#c86bff;
+    --foam:#eaf7f4;
+    --hair:rgba(127,233,216,.26);
+    --panel:rgba(4,20,28,.82);
+    --display:'Barlow Condensed','Arial Narrow',Impact,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--abyss)}
+  body{
+    font-family:var(--mono);color:var(--foam);
+    -webkit-text-size-adjust:100%;
+  }
+
+  /* Each rail is sized by a different method. Whichever stops short of the
+     bottom of the screen is the one that is lying to us. */
+  .rail{position:fixed;top:0;width:14px;z-index:2}
+  .rail i{
+    position:absolute;left:0;right:0;bottom:0;height:4px;display:block;
+  }
+  #r-inset{left:0;bottom:0;background:rgba(127,233,216,.30)}
+  #r-inset i{background:var(--chart)}
+  #r-dvh{left:16px;height:100dvh;background:rgba(255,216,74,.30)}
+  #r-dvh i{background:var(--amber)}
+  #r-vh{left:32px;height:100vh;background:rgba(232,64,42,.30)}
+  #r-vh i{background:var(--port)}
+  #r-pct{left:48px;height:100%;background:rgba(47,203,123,.30)}
+  #r-pct i{background:var(--stbd)}
+  #r-vv{left:64px;background:rgba(200,107,255,.30)}
+  #r-vv i{background:var(--violet)}
+
+  /* the true bottom of the window, for comparison */
+  #floor{
+    position:fixed;left:0;right:0;bottom:0;height:2px;
+    background:var(--foam);z-index:3;
+  }
+
+  main{
+    position:relative;z-index:4;
+    padding:18px 14px 26px 86px;
+    max-width:620px;
+  }
+  h1{
+    font-family:var(--display);font-weight:700;
+    font-size:clamp(26px,7.5vw,38px);line-height:.94;letter-spacing:.01em;
+    text-transform:uppercase;margin:0 0 6px;text-wrap:balance;
+  }
+  h1 em{font-style:normal;color:var(--chart)}
+  .lede{font-size:12px;line-height:1.6;color:rgba(234,247,244,.66);margin:0 0 18px}
+
+  h2{
+    font-family:var(--mono);font-size:9.5px;font-weight:600;
+    letter-spacing:.22em;text-transform:uppercase;
+    color:rgba(127,233,216,.76);margin:20px 0 8px;
+  }
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+  td.k{overflow-wrap:anywhere}
+  td{padding:5px 0;border-bottom:1px solid rgba(127,233,216,.12);vertical-align:baseline}
+  td.k{color:rgba(234,247,244,.62);padding-right:12px}
+  td.v{
+    text-align:right;font-weight:600;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+
+  .legend{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+  .leg{display:flex;align-items:center;gap:9px;font-size:12.5px;flex-wrap:wrap}
+  .sw{width:13px;height:13px;flex:0 0 auto;border:1px solid rgba(255,255,255,.22)}
+  .leg b{font-weight:600;font-variant-numeric:tabular-nums;margin-left:auto}
+  .verdict{font-size:11px;padding:2px 6px;border:1px solid currentColor;margin-left:7px;white-space:nowrap}
+  .ok{color:var(--stbd)}
+  .bad{color:var(--port)}
+
+  .note{
+    margin-top:20px;padding:11px 13px;
+    background:var(--panel);border:1px solid var(--hair);
+    font-size:11.5px;line-height:1.65;color:rgba(234,247,244,.72);
+  }
+  .note strong{color:var(--foam);font-weight:600}
+</style>
+
+</head>
+<body>
+<div class="rail" id="r-inset"><i></i></div>
+<div class="rail" id="r-dvh"><i></i></div>
+<div class="rail" id="r-vh"><i></i></div>
+<div class="rail" id="r-pct"><i></i></div>
+<div class="rail" id="r-vv"><i></i></div>
+<div id="floor"></div>
+
+<main>
+  <h1>Bottom <em>Edge</em> Probe</h1>
+  <p class="lede">Five rails run down the left edge, each stretched by a different
+    CSS method. The white line is the true bottom of the window. Any rail whose
+    bright cap stops above that line is the one leaving the dark band.</p>
+
+  <h2>Which rail reaches the floor</h2>
+  <div class="legend" id="legend"></div>
+
+  <h2>What the browser reports</h2>
+  <table id="numbers"></table>
+
+  <h2>Safe area insets</h2>
+  <table id="insets"></table>
+
+  <div class="note">
+    <strong>Send a screenshot of this page</strong> — taken on the device showing
+    the problem, in the same way you normally open the game. Rotating or resizing
+    updates every figure live, so if the numbers change when you rotate, that is
+    worth capturing too.
+  </div>
+</main>
+
+<script>
+  const railIds = [
+    ['r-inset', 'inset: 0',       'var(--chart)'],
+    ['r-dvh',   'height: 100dvh', 'var(--amber)'],
+    ['r-vh',    'height: 100vh',  'var(--port)'],
+    ['r-pct',   'height: 100%',   'var(--stbd)'],
+    ['r-vv',    'visualViewport', 'var(--violet)']
+  ];
+
+  // a probe element carrying the safe-area insets as padding, so they can be read back
+  const probe = document.createElement('div');
+  probe.style.cssText =
+    'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;' +
+    'padding:env(safe-area-inset-top) env(safe-area-inset-right)' +
+    ' env(safe-area-inset-bottom) env(safe-area-inset-left);';
+  document.body.appendChild(probe);
+
+  const row = (k, v) => '<tr><td class="k">' + k + '</td><td class="v">' + v + '</td></tr>';
+
+  function read() {
+    const vv = window.visualViewport;
+    if (vv) document.getElementById('r-vv').style.height = vv.height + 'px';
+
+    // the authoritative bottom of the fixed viewport — the white line itself,
+    // rather than innerHeight, which is one of the numbers under suspicion
+    const floor = Math.round(document.getElementById('floor').getBoundingClientRect().bottom);
+    const legend = railIds.map(([id, label, colour]) => {
+      const h = Math.round(document.getElementById(id).getBoundingClientRect().height);
+      const gap = floor - h;
+      const cls = Math.abs(gap) <= 1 ? 'ok' : 'bad';
+      const verdict = Math.abs(gap) <= 1 ? 'reaches' : gap + 'px short';
+      return '<div class="leg"><span class="sw" style="background:' + colour + '"></span>' +
+             label + '<b>' + h + '<span class="verdict ' + cls + '">' + verdict + '</span></b></div>';
+    }).join('');
+    document.getElementById('legend').innerHTML = legend;
+
+    const cs = getComputedStyle(probe);
+    const dm = m => matchMedia('(display-mode: ' + m + ')').matches;
+    const mode = ['standalone', 'fullscreen', 'minimal-ui', 'browser'].find(dm) || 'unknown';
+
+    document.getElementById('numbers').innerHTML =
+      row('fixed viewport bottom', floor + 'px') +
+      row('screen', screen.width + ' x ' + screen.height) +
+      row('window.inner', innerWidth + ' x ' + innerHeight) +
+      row('documentElement.client', document.documentElement.clientWidth + ' x ' +
+          document.documentElement.clientHeight) +
+      row('visualViewport', vv ? Math.round(vv.width) + ' x ' + Math.round(vv.height) : 'none') +
+      row('visualViewport offsetTop', vv ? Math.round(vv.offsetTop) : '—') +
+      row('devicePixelRatio', devicePixelRatio) +
+      row('display-mode', mode) +
+      row('navigator.standalone', 'standalone' in navigator ? String(navigator.standalone) : 'n/a') +
+      row('orientation', innerWidth > innerHeight ? 'landscape' : 'portrait');
+
+    document.getElementById('insets').innerHTML =
+      row('top', cs.paddingTop) + row('right', cs.paddingRight) +
+      row('bottom', cs.paddingBottom) + row('left', cs.paddingLeft);
+  }
+
+  addEventListener('resize', read);
+  addEventListener('orientationchange', read);
+  if (window.visualViewport) {
+    visualViewport.addEventListener('resize', read);
+    visualViewport.addEventListener('scroll', read);
+  }
+  if (window.ResizeObserver) new ResizeObserver(read).observe(document.documentElement);
+  read();
+  requestAnimationFrame(read);
+  addEventListener('load', read);
+</script>
+
+</body>
+</html>
