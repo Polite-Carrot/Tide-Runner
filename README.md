@@ -77,6 +77,12 @@ stop persisting beyond the session rather than breaking the game.
 Touch controls appear automatically on coarse-pointer devices. The game honours
 `prefers-reduced-motion` by dropping particle effects.
 
+Everything full-screen sizes to a `--app-h` custom property rather than `100%` or `100vh`.
+Mobile browsers report a layout viewport taller than the part you can actually see — Safari's
+toolbars sit over the bottom of it — so those units push the touch controls off the screen.
+`resize()` pins `--app-h` to `visualViewport.height` and re-runs as the toolbars slide in and
+out; `100dvh` covers the moment before the script runs.
+
 ## Running it
 
 There is no build step for the web version. Serve the `web/` directory and open it:

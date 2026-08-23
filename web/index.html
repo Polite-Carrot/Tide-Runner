@@ -27,13 +27,22 @@
   }
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;margin:0;overflow:hidden;background:var(--abyss)}
+
+  /* Mobile browsers report a layout viewport taller than the part you can
+     actually see — the toolbars sit over the bottom of it — so 100% and 100vh
+     both push the controls off the screen. Everything full-screen sizes to
+     --app-h instead, which resize() keeps pinned to the visual viewport.
+     The dvh value is the pre-script fallback. */
+  :root{--app-h:100vh}
+  @supports (height:100dvh){ :root{--app-h:100dvh} }
+
+  html,body{height:var(--app-h);margin:0;overflow:hidden;background:var(--abyss)}
   body{
     font-family:var(--mono);color:var(--foam);
     touch-action:none;user-select:none;
   }
 
-  #game{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #game{position:fixed;top:0;left:0;width:100%;height:var(--app-h);display:block}
 
   /* ---------- shared panel look ---------- */
   .panel{
@@ -49,7 +58,7 @@
   .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
   /* ---------- HUD ---------- */
-  #hud{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .35s}
+  #hud{position:fixed;top:0;left:0;right:0;height:var(--app-h);pointer-events:none;opacity:0;transition:opacity .35s}
   #hud.on{opacity:1}
 
   /* one instrument row along the top: lap, place, speed, elapsed */
@@ -120,7 +129,7 @@
 
   /* ---------- screens ---------- */
   .screen{
-    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    position:fixed;top:0;left:0;right:0;height:var(--app-h);display:flex;align-items:center;justify-content:center;
     padding:20px;background:radial-gradient(120% 90% at 50% 0%,rgba(12,66,87,.55),rgba(4,20,28,.94));
     z-index:5;
   }
@@ -201,7 +210,7 @@
   .ghost:hover{background:rgba(127,233,216,.1)}
 
   /* ---------- touch controls ---------- */
-  #touch{position:fixed;inset:0;z-index:4;display:none;pointer-events:none}
+  #touch{position:fixed;top:0;left:0;right:0;height:var(--app-h);z-index:4;display:none;pointer-events:none}
   #touch.on{display:block}
   .pad{
     position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));width:74px;height:74px;
@@ -554,12 +563,26 @@ const cv = document.getElementById('game');
 const ctx = cv.getContext('2d');
 let W=0,H=0,DPR=1;
 function resize(){
-  DPR = Math.min(window.devicePixelRatio||1, 2);
-  W = window.innerWidth; H = window.innerHeight;
+  // visualViewport is the part actually on screen; innerHeight includes what is
+  // hidden behind the browser's own chrome
+  const vv = window.visualViewport;
+  const w = Math.round(vv ? vv.width : window.innerWidth);
+  const h = Math.round(vv ? vv.height : window.innerHeight);
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  if(w===W && h===H && dpr===DPR) return;   // viewport scroll fires this a lot
+  W = w; H = h; DPR = dpr;
+  document.documentElement.style.setProperty('--app-h', H + 'px');
   cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
   ctx.setTransform(DPR,0,0,DPR,0,0);
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize);
+addEventListener('orientationchange', resize);
+if(window.visualViewport){
+  // the toolbars sliding in and out changes the visible height without a resize
+  visualViewport.addEventListener('resize', resize);
+  visualViewport.addEventListener('scroll', resize);
+}
+resize();
 
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
