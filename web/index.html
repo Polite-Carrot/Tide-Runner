@@ -2150,9 +2150,9 @@ TRACKS.forEach((t,i)=>{
   coursesEl.appendChild(el);
 });
 
-/* The menu leads with two full rows of courses and keeps the rest behind a
-   toggle, so the sheet doesn't open as a wall of thumbnails. */
-const SHOWN = 6;
+/* The menu leads with one row of courses and keeps the rest behind a toggle,
+   so the sheet doesn't open as a wall of thumbnails. */
+const SHOWN = 3;
 const moreEl = document.getElementById('more');
 let expanded = false;
 

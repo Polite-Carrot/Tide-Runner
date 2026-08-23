@@ -12,8 +12,9 @@ dependencies beyond a webfont.
 ## Racing
 
 - **Seventeen courses**, each with its own channel width and character. The menu leads with
-  six — two full rows — and keeps the rest behind **More courses**; a course picked from the
-  full list stays on show when the list collapses again.
+  three — one row — and keeps the rest behind **More courses**; a course picked from the
+  full list stays on show when the list collapses again. Three keeps the whole sheet on one
+  screen, controls and all, on a phone as well as a desktop.
 
   At the gentle end, Fjord Run and Atlantic Leg are four long sweeps you can hold the
   throttle through. At the other, Corryvreckan and Hell's Mouth are 26 and 24 corners of
