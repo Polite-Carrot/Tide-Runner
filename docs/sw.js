@@ -1,5 +1,5 @@
 /* Bump on every deploy to invalidate the previous cache. */
-const CACHE = 'tiderunner-v7';
+const CACHE = 'tiderunner-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,26 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const req = event.request;
   if(req.method !== 'GET') return;
+
+  /* The page itself goes to the network first, falling back to the cache when
+     offline. Cache-first served a stale index.html on every launch: the old
+     worker answered before the new one had even been noticed, so a deploy only
+     appeared on the launch after next, if at all — iOS is slow to check for a
+     new worker in a home-screen app. Everything else stays cache-first, since
+     the icons and logos only change when CACHE does. */
+  if(req.mode === 'navigate' || (req.destination === 'document')){
+    event.respondWith(
+      fetch(req).then(res => {
+        if(res && res.ok && new URL(req.url).origin === location.origin){
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy));
+        }
+        return res;
+      }).catch(() => caches.match(req).then(hit => hit || caches.match('./index.html')))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then(hit => hit || fetch(req).then(res => {
       if(res && res.ok && new URL(req.url).origin === location.origin){
