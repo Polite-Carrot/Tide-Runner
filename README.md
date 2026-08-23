@@ -12,7 +12,7 @@ dependencies beyond a webfont.
 ## Racing
 
 - **Seventeen courses**, each with its own channel width and character. The menu leads with
-  six — two full rows — and keeps the rest behind **More courses**; a course picked from the
+  three — one row — and keeps the rest behind **More courses**; a course picked from the
   full list stays on show when the list collapses again.
 
   At the gentle end, Fjord Run and Atlantic Leg are four long sweeps you can hold the
@@ -73,7 +73,14 @@ stop persisting beyond the session rather than breaking the game.
 | Helm | `A` `D` / `←` `→` | Left thumb joystick |
 | Restart | `R` | — |
 
-Touch controls appear automatically on coarse-pointer devices. The game honours
+Touch controls appear automatically on coarse-pointer devices.
+
+Everything full-screen sizes to an `--app-h` custom property rather than `100%` or `100vh`.
+Mobile browsers report a layout viewport taller than the part you can actually see — Safari's
+toolbars sit over the bottom of it — so those units push the canvas and the joystick off the
+screen. `resize()` pins `--app-h` to `visualViewport.height` and re-runs as the toolbars slide
+in and out; `100dvh` covers the moment before the script runs. The joystick clamps its
+placement to that measured height for the same reason. The game honours
 `prefers-reduced-motion` by dropping particle effects.
 
 ## Running it

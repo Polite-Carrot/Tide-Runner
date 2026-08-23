@@ -45,9 +45,22 @@
         box-sizing: border-box;
         -webkit-tap-highlight-color: transparent;
       }
+      /* Mobile browsers report a layout viewport taller than the part you can
+         actually see — the toolbars sit over the bottom of it — so 100% and
+         100vh both push the controls off the screen. Everything full-screen
+         sizes to --app-h instead, which resize() keeps pinned to the visual
+         viewport. The dvh value covers the moment before the script runs. */
+      :root {
+        --app-h: 100vh;
+      }
+      @supports (height: 100dvh) {
+        :root {
+          --app-h: 100dvh;
+        }
+      }
       html,
       body {
-        height: 100%;
+        height: var(--app-h);
         margin: 0;
         overflow: hidden;
         background: var(--abyss);
@@ -61,9 +74,11 @@
 
       #game {
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-h);
         width: 100%;
-        height: 100%;
         display: block;
       }
 
@@ -89,7 +104,10 @@
       /* ---------- HUD ---------- */
       #hud {
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-h);
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.35s;
@@ -331,7 +349,10 @@
       /* ---------- screens ---------- */
       .screen {
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-h);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -644,7 +665,10 @@
       /* ---------- startup identity ---------- */
       #boot {
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-h);
         z-index: 100;
         background: #000;
         display: grid;
@@ -694,7 +718,10 @@
       /* ---------- touch controls ---------- */
       #touch {
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--app-h);
         z-index: 4;
         display: none;
         pointer-events: none;
@@ -1766,14 +1793,28 @@
           H = 0,
           DPR = 1;
         function resize() {
-          DPR = Math.min(window.devicePixelRatio || 1, 2);
-          W = window.innerWidth;
-          H = window.innerHeight;
+          // visualViewport is the part actually on screen; innerHeight also
+          // counts what is hidden behind the browser's own chrome
+          const vv = window.visualViewport;
+          const w = Math.round(vv ? vv.width : window.innerWidth);
+          const h = Math.round(vv ? vv.height : window.innerHeight);
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          if (w === W && h === H && dpr === DPR) return; // viewport scroll fires a lot
+          W = w;
+          H = h;
+          DPR = dpr;
+          document.documentElement.style.setProperty("--app-h", H + "px");
           cv.width = Math.round(W * DPR);
           cv.height = Math.round(H * DPR);
           ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         }
         addEventListener("resize", resize);
+        addEventListener("orientationchange", resize);
+        if (window.visualViewport) {
+          // toolbars sliding in and out change the visible height on their own
+          visualViewport.addEventListener("resize", resize);
+          visualViewport.addEventListener("scroll", resize);
+        }
         resize();
 
         const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2109,8 +2150,10 @@
             originY = e.clientY;
             const size = joy.offsetWidth;
             const margin = size / 2 + 12;
-            const x = Math.max(margin, Math.min(innerWidth - margin, originX));
-            const y = Math.max(margin, Math.min(innerHeight - margin, originY));
+            // keep the stick inside the visible area, not the layout viewport,
+            // or on iOS it can land under the browser's toolbar
+            const x = Math.max(margin, Math.min(W - margin, originX));
+            const y = Math.max(margin, Math.min(H - margin, originY));
             joy.style.left = `${x}px`;
             joy.style.top = `${y}px`;
             touch.setPointerCapture(e.pointerId);
@@ -4436,9 +4479,9 @@
           coursesEl.appendChild(el);
         });
 
-        /* The menu leads with two full rows of courses and keeps the rest behind a
+        /* The menu leads with one row of courses and keeps the rest behind a
    toggle, so the sheet doesn't open as a wall of thumbnails. */
-        const SHOWN = 6;
+        const SHOWN = 3;
         const moreEl = document.getElementById("more");
         let expanded = false;
 
