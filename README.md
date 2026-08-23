@@ -75,12 +75,18 @@ stop persisting beyond the session rather than breaking the game.
 
 Touch controls appear automatically on coarse-pointer devices.
 
-Everything full-screen sizes to an `--app-h` custom property rather than `100%` or `100vh`.
-Mobile browsers report a layout viewport taller than the part you can actually see — Safari's
-toolbars sit over the bottom of it — so those units push the canvas and the joystick off the
-screen. `resize()` pins `--app-h` to `visualViewport.height` and re-runs as the toolbars slide
-in and out; `100dvh` covers the moment before the script runs. The joystick clamps its
-placement to that measured height for the same reason. The game honours
+Everything full-screen sizes to `100dvh` (via an `--app-h` custom property, with `100%` as the
+fallback for anything too old for `dvh`). Plain `100%` and `100vh` measure the layout viewport,
+which in mobile Safari is taller than the part you can see — the toolbars sit over the bottom
+of it — so they push the canvas and the joystick off the screen. `dvh` shrinks while the
+toolbars show and grows back when they hide, and in an installed or native app, where there is
+no chrome, it is the whole screen including the home-indicator strip.
+
+Do not compute this height from `visualViewport.height` or `innerHeight` instead. In a
+standalone app `visualViewport.height` reports the *safe-area* height, so sizing to it leaves a
+dark band along the bottom of the screen. The layers also keep `inset: 0` so they are pinned to
+every edge regardless, and `resize()` measures the canvas from its own `getBoundingClientRect()`
+rather than working back from the viewport. The game honours
 `prefers-reduced-motion` by dropping particle effects.
 
 ## Running it
