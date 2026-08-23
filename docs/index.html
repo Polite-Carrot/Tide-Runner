@@ -1809,7 +1809,16 @@
           visualViewport.addEventListener("resize", resize);
           visualViewport.addEventListener("scroll", resize);
         }
+        // On iOS the laid-out height settles a frame or two after load, as the
+        // safe area and the dynamic viewport are applied, and none of the events
+        // above fire for it — so the first measurement sticks and the frame is
+        // drawn short until something forces a resize. Watching the canvas box
+        // itself catches that, and every later rotation or split-view change.
+        if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(cv);
         resize();
+        // belt and braces for engines that do not report that first settle
+        requestAnimationFrame(resize);
+        addEventListener("load", resize);
 
         const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 

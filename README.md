@@ -86,7 +86,13 @@ Do not compute this height from `visualViewport.height` or `innerHeight` instead
 standalone app `visualViewport.height` reports the *safe-area* height, so sizing to it leaves a
 dark band along the bottom of the screen. The layers also keep `inset: 0` so they are pinned to
 every edge regardless, and `resize()` measures the canvas from its own `getBoundingClientRect()`
-rather than working back from the viewport. The game honours
+rather than working back from the viewport.
+
+A `ResizeObserver` watches the canvas box, and it is load-bearing: on iOS the laid-out height
+settles a frame or two after load, as the safe area and the dynamic viewport are applied, and
+no `resize`, `orientationchange` or `visualViewport` event fires for it. Without the observer
+the first measurement sticks, the frame is painted short of the bottom of the screen, and it
+only comes right once something else forces a resize — rotating the device, say. The game honours
 `prefers-reduced-motion` by dropping particle effects.
 
 ## Running it
