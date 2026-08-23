@@ -2319,6 +2319,14 @@
 
         function stepAudio() {
           if (!AUD || !me) return;
+          // With both switches off, hand the audio hardware back rather than
+          // running a silent graph. iOS keeps the audio route open for as long
+          // as the context is live, and some devices hum faintly through it —
+          // silence at the gain nodes is not silence at the speaker.
+          if (!SETTINGS.sfx && !SETTINGS.music) {
+            if (AC.state === "running") AC.suspend();
+            return;
+          }
           if (AC.state === "suspended") AC.resume();
           const e = AUD.engine,
             t = AC.currentTime,
