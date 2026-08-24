@@ -1113,6 +1113,10 @@
         </div>
         <div class="btnstack">
           <button class="go-btn" id="settingsDone">Done</button>
+          <!-- temporary, paired with docs/probe.html: reaches the probe from
+               inside the installed app, which is the only place the bottom
+               band shows. Remove both once the sizing is settled. -->
+          <button class="ghost" id="diagBtn">Screen diagnostics</button>
         </div>
       </div>
     </div>
@@ -4653,6 +4657,9 @@
         document.getElementById("homeSettings").onclick = () =>
           openSettings("menu");
         document.getElementById("settingsDone").onclick = closeSettings;
+        document.getElementById("diagBtn").onclick = () => {
+          location.href = "probe.html";
+        };
 
         musicTog.onclick = () => {
           SETTINGS.music = !SETTINGS.music;
