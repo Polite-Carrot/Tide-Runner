@@ -707,6 +707,41 @@
       }
 
       /* ---------- touch controls ---------- */
+      /* temporary diagnostic readout */
+      #safeProbe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        visibility: hidden;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      #diag {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9;
+        display: none;
+        padding: 14px 16px;
+        background: rgba(4, 20, 28, 0.94);
+        border: 1px solid var(--hair);
+        color: var(--foam);
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.85;
+        white-space: nowrap;
+      }
+      #diag.on {
+        display: block;
+      }
+      #diag b {
+        color: rgba(127, 233, 216, 0.8);
+        font-weight: 500;
+      }
+
       #touch {
         position: fixed;
         inset: 0;
@@ -1010,6 +1045,9 @@
     </div>
 
     <button class="pause-btn" id="pauseBtn" aria-label="Pause"></button>
+
+    <div id="safeProbe"></div>
+    <div id="diag"></div>
 
     <div id="touch">
       <div class="joy" id="pJ" aria-label="Steering and throttle joystick">
@@ -4665,8 +4703,40 @@
           openSettings("menu");
         document.getElementById("settingsDone").onclick = closeSettings;
         document.getElementById("diagBtn").onclick = () => {
-          location.href = "probe.html";
+          closeSettings();
+          diagEl.classList.toggle("on");
+          readDiag();
         };
+
+        /* Temporary. Reports the boxes from inside the game, which is the only
+           page that shows the band — the probe is a different document with
+           different root styles, so its numbers do not transfer. */
+        const diagEl = document.getElementById("diag");
+        function readDiag() {
+          if (!diagEl.classList.contains("on")) return;
+          const de = document.documentElement;
+          const box = cv.getBoundingClientRect();
+          const hud = document.getElementById("hud").getBoundingClientRect();
+          const pad = getComputedStyle(
+            document.getElementById("safeProbe"),
+          );
+          const line = (k, v) => "<b>" + k + "</b> " + v;
+          diagEl.innerHTML = [
+            line("window.inner", innerWidth + " x " + innerHeight),
+            line("docEl.client", de.clientWidth + " x " + de.clientHeight),
+            line("--app-h", getComputedStyle(de).getPropertyValue("--app-h").trim()),
+            line("canvas box", Math.round(box.width) + " x " + Math.round(box.height)),
+            line("canvas top/bottom", Math.round(box.top) + " / " + Math.round(box.bottom)),
+            line("canvas backing", cv.width + " x " + cv.height),
+            line("hud bottom", Math.round(hud.bottom)),
+            line("W x H (drawn)", W + " x " + H),
+            line("safe area t/r/b/l",
+              [pad.paddingTop, pad.paddingRight, pad.paddingBottom, pad.paddingLeft].join(" ")),
+            line("display-mode",
+              matchMedia("(display-mode: standalone)").matches ? "standalone" : "browser"),
+          ].join("<br>");
+        }
+        setInterval(readDiag, 500);
 
         musicTog.onclick = () => {
           SETTINGS.music = !SETTINGS.music;
