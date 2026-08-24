@@ -75,18 +75,28 @@ stop persisting beyond the session rather than breaking the game.
 
 Touch controls appear automatically on coarse-pointer devices.
 
-Everything full-screen sizes to `100dvh` (via an `--app-h` custom property, with `100%` as the
-fallback for anything too old for `dvh`). Plain `100%` and `100vh` measure the layout viewport,
-which in mobile Safari is taller than the part you can see — the toolbars sit over the bottom
-of it — so they push the canvas and the joystick off the screen. `dvh` shrinks while the
-toolbars show and grows back when they hide, and in an installed or native app, where there is
-no chrome, it is the whole screen including the home-indicator strip.
+### Filling the screen
 
-Do not compute this height from `visualViewport.height` or `innerHeight` instead. In a
-standalone app `visualViewport.height` reports the *safe-area* height, so sizing to it leaves a
-dark band along the bottom of the screen. The layers also keep `inset: 0` so they are pinned to
-every edge regardless, and `resize()` measures the canvas from its own `getBoundingClientRect()`
-rather than working back from the viewport.
+The full-screen layers — canvas, HUD, menus, boot screen, touch layer — are pinned with
+`inset: 0` and given **no height at all**. Don't add one back.
+
+Any length there is a guess at how tall the screen is, and it over-constrains the box: with
+`top`, `bottom` and `height` all set, the spec drops `bottom` and the length wins — so the
+`bottom: 0` that looks like a safety net does nothing. When the length under-reports, the layer
+stops short and the page behind shows as a flat dark band along the bottom of the screen. Every
+candidate under-reports somewhere: `100dvh` leaves out the home-indicator strip in an installed
+iOS app, and `visualViewport.height` reports the safe-area height in the same place. With no
+height, the box is defined by the viewport's own edges and cannot disagree with them.
+
+The canvas is the one exception and needs `height: 100%`: a canvas is a *replaced* element, so
+at `height: auto` it takes its intrinsic size rather than stretching to `bottom: 0` — left
+without one it collapses to a few hundred pixels. `100%` resolves against the fixed containing
+block, the viewport, not against a viewport unit.
+
+`resize()` measures the canvas from its own `getBoundingClientRect()` rather than from the
+viewport, and a `ResizeObserver` watches that box: on iOS the laid-out height settles a frame or
+two after load and no `resize` event fires for it, so without the observer the first measurement
+sticks and the frame is painted short.
 
 A `ResizeObserver` watches the canvas box, and it is load-bearing: on iOS the laid-out height
 settles a frame or two after load, as the safe area and the dynamic viewport are applied, and
