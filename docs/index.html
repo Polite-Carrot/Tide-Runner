@@ -707,6 +707,15 @@
       }
 
       /* ---------- touch controls ---------- */
+      .buildstamp {
+        margin: 14px 0 0;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(234, 247, 244, 0.38);
+        text-align: center;
+      }
+
       /* temporary diagnostic readout */
       #safeProbe {
         position: fixed;
@@ -1152,6 +1161,7 @@
             <span></span>
           </button>
         </div>
+        <p class="buildstamp" id="buildStamp"></p>
         <div class="btnstack">
           <button class="go-btn" id="settingsDone">Done</button>
           <!-- temporary, paired with docs/probe.html: reaches the probe from
@@ -4711,6 +4721,12 @@
         /* Temporary. Reports the boxes from inside the game, which is the only
            page that shows the band — the probe is a different document with
            different root styles, so its numbers do not transfer. */
+        /* document.lastModified is the served file's own timestamp, so this says
+           which build is actually running — the thing that has been guessed at
+           more than anything else here. */
+        document.getElementById("buildStamp").textContent =
+          "Build " + document.lastModified;
+
         const diagEl = document.getElementById("diag");
         function readDiag() {
           if (!diagEl.classList.contains("on")) return;
