@@ -2,9 +2,14 @@
 <html lang="en-GB">
   <head>
     <meta charset="utf-8" />
+    <!-- No user-scalable=no. With it, this page reports innerHeight 788 on an
+         installed iPad app while an otherwise identical page without it reports
+         820 — the 32px top safe area — and the game is laid out 32px short,
+         leaving a band along the bottom. Pinch-zoom is already prevented by
+         touch-action: none on the body. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Tiderunner — buoy racing</title>
     <link rel="manifest" href="manifest.webmanifest" />
