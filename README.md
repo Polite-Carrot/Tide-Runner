@@ -77,21 +77,27 @@ Touch controls appear automatically on coarse-pointer devices.
 
 ### Filling the screen
 
-The full-screen layers — canvas, HUD, menus, boot screen, touch layer — are pinned with
-`inset: 0` and given **no height at all**. Don't add one back.
+The full-screen layers — canvas, HUD, menus, boot screen, touch layer — take their height from
+`--app-h`, which `resize()` sets to `window.innerHeight`. **Don't replace it with a CSS length.**
 
-Any length there is a guess at how tall the screen is, and it over-constrains the box: with
-`top`, `bottom` and `height` all set, the spec drops `bottom` and the length wins — so the
-`bottom: 0` that looks like a safety net does nothing. When the length under-reports, the layer
-stops short and the page behind shows as a flat dark band along the bottom of the screen. Every
-candidate under-reports somewhere: `100dvh` leaves out the home-indicator strip in an installed
-iOS app, and `visualViewport.height` reports the safe-area height in the same place. With no
-height, the box is defined by the viewport's own edges and cannot disagree with them.
+Measured on the installed iPad app, in landscape:
 
-The canvas is the one exception and needs `height: 100%`: a canvas is a *replaced* element, so
-at `height: auto` it takes its intrinsic size rather than stretching to `bottom: 0` — left
-without one it collapses to a few hundred pixels. `100%` resolves against the fixed containing
-block, the viewport, not against a viewport unit.
+| | |
+| --- | --- |
+| `window.innerHeight` | **820** — the real window |
+| `documentElement.clientHeight` | **788** — the layout viewport |
+| `env(safe-area-inset-top)` | 32px |
+
+The layout viewport is short by exactly the top safe-area inset, and CSS percentages and
+viewport units resolve against *that*. So `height: 100%`, `100vh` and `100dvh` all lay out a
+788px-tall page inside an 820px-tall window, leaving a 32px band along the bottom where the page
+behind shows through. All three fail identically, which is what makes it look like an iOS quirk
+rather than a units problem. `innerHeight` is the one figure that agrees with where fixed
+elements are actually placed.
+
+`inset: 0` alone doesn't work either, because the canvas is a *replaced* element: at
+`height: auto` it takes its intrinsic size instead of stretching to `bottom: 0`, and collapses
+to a few hundred pixels.
 
 `resize()` measures the canvas from its own `getBoundingClientRect()` rather than from the
 viewport, and a `ResizeObserver` watches that box: on iOS the laid-out height settles a frame or

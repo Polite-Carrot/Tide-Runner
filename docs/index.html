@@ -45,14 +45,18 @@
         box-sizing: border-box;
         -webkit-tap-highlight-color: transparent;
       }
-      /* Full-screen layers are pinned with inset: 0 and given no height at all.
-         Do not add one back. Any length here — 100%, 100vh, 100dvh — is a guess
-         at how tall the screen is, and over-constrains the box: with top, bottom
-         and height all set, the spec drops bottom and the length wins. When that
-         length under-reports, as 100dvh does in an installed iOS app where it
-         leaves out the home indicator strip, the layer stops short and the page
-         behind shows as a dark band along the bottom. With no height, the box is
-         defined by the viewport's own edges and cannot disagree with them. */
+      /* Full-screen height comes from window.innerHeight, set on --app-h by
+         resize(). Measured on an installed iPad app: innerHeight is 820 — the
+         real window — while documentElement.clientHeight is 788, short by
+         exactly the 32px top safe-area inset. CSS percentages and viewport units
+         resolve against that shorter layout viewport, so height: 100%, 100vh and
+         100dvh all produce an 820px-tall screen with a 788px-tall page on it and
+         a 32px band along the bottom. innerHeight is the one figure that agrees
+         with where fixed elements are actually laid out. The 100% below is only
+         the pre-script fallback. */
+      :root {
+        --app-h: 100%;
+      }
       html,
       body {
         height: 100%;
@@ -70,13 +74,8 @@
       #game {
         position: fixed;
         inset: 0;
+        height: var(--app-h);
         width: 100%;
-        /* A canvas is a replaced element: left to height: auto it takes its
-           intrinsic size rather than stretching to bottom: 0, so unlike the
-           layers below it does need a height. 100% resolves against the fixed
-           containing block — the viewport itself — not against a viewport unit
-           that can under-report. */
-        height: 100%;
         display: block;
       }
 
@@ -103,6 +102,7 @@
       #hud {
         position: fixed;
         inset: 0;
+        height: var(--app-h);
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.35s;
@@ -345,6 +345,7 @@
       .screen {
         position: fixed;
         inset: 0;
+        height: var(--app-h);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -658,6 +659,7 @@
       #boot {
         position: fixed;
         inset: 0;
+        height: var(--app-h);
         z-index: 100;
         background: #000;
         display: grid;
@@ -708,6 +710,7 @@
       #touch {
         position: fixed;
         inset: 0;
+        height: var(--app-h);
         z-index: 4;
         display: none;
         pointer-events: none;
@@ -1784,10 +1787,14 @@
           H = 0,
           DPR = 1;
         function resize() {
-          // Measure the canvas as the browser actually laid it out. Working back
-          // from innerHeight guesses at chrome that may or may not be there, and
-          // guesses wrong in an installed app, which is how you end up drawing
-          // short of the bottom of the screen.
+          // innerHeight is the window; percentages and viewport units resolve
+          // against the layout viewport, which an installed iOS app reports 32px
+          // shorter. Publish the window height for the layers to size to, then
+          // measure the canvas as it was actually laid out.
+          document.documentElement.style.setProperty(
+            "--app-h",
+            window.innerHeight + "px",
+          );
           const r = cv.getBoundingClientRect();
           const w = Math.round(r.width);
           const h = Math.round(r.height);
