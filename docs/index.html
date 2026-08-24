@@ -384,13 +384,22 @@
       .screen.hidden {
         display: none;
       }
+      /* A sheet that fits does not scroll at all. overflow: auto still takes
+         the drag and rubber-bands on iOS even with nothing to scroll to, which
+         reads as a broken page when everything is already in view — so
+         scrolling is switched on by fitSheets() only when the content really
+         doesn't fit. */
       .sheet {
         --sheet-pad: 22px;
         width: min(720px, 100%);
         max-height: 100%;
-        overflow: auto;
+        overflow: hidden;
         padding: var(--sheet-pad) var(--sheet-pad) 20px;
         position: relative;
+      }
+      .sheet.scrolls {
+        overflow-y: auto;
+        overscroll-behavior: contain;
       }
 
       .brand {
@@ -2398,7 +2407,42 @@
           cv.width = Math.round(W * DPR);
           cv.height = Math.round(H * DPR);
           ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+          fitSheets();
         }
+        /* Switch a sheet's scrolling on only when its content overflows.
+   scrollHeight still reports the full content height while overflow is
+   hidden, so this cannot trap anything out of reach. */
+        function fitSheets() {
+          document.querySelectorAll(".screen .sheet").forEach((el) => {
+            // scrollHeight is the content height whether or not it is clipped,
+            // and toggle with a boolean is a no-op when the answer hasn't
+            // changed — so the observers below cannot drive each other
+            el.classList.toggle(
+              "scrolls",
+              el.scrollHeight > el.clientHeight + 1,
+            );
+          });
+        }
+
+        // A hidden screen measures zero, so the answer has to be recomputed when
+        // one is shown, and again whenever a sheet's content changes size.
+        {
+          const sheets = document.querySelectorAll(".screen .sheet");
+          if (window.MutationObserver) {
+            const mo = new MutationObserver(() => fitSheets());
+            document.querySelectorAll(".screen").forEach((el) =>
+              mo.observe(el, {
+                attributes: true,
+                attributeFilter: ["class"],
+              }),
+            );
+          }
+          if (window.ResizeObserver) {
+            const ro = new ResizeObserver(() => fitSheets());
+            sheets.forEach((el) => ro.observe(el));
+          }
+        }
+
         addEventListener("resize", resize);
         addEventListener("orientationchange", resize);
         if (window.visualViewport) {
