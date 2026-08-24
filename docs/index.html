@@ -21,10 +21,17 @@
     <meta name="theme-color" content="#04141c" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <!-- Not black-translucent. That slides the web view up under the status
+         bar but leaves its height at screen minus status bar, so on an
+         installed iPad app the window is 788 tall on an 820 screen, pinned to
+         the top, with 32px of dead space along the bottom that no amount of CSS
+         can reach: innerHeight, documentElement.clientHeight and a stretched
+         position: fixed; inset: 0 box all correctly report 788. black gives the
+         status bar its own opaque strip and hands the page the rest of the
+         screen, bottom edge included. iOS reads this at install time, so the
+         home-screen icon has to be removed and re-added for a change here to
+         take effect. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Tiderunner" />
     <style>
       :root {
