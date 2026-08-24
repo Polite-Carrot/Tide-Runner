@@ -71,7 +71,7 @@ stop persisting beyond the session rather than breaking the game.
 | Throttle | `W` / `↑` | **GO** pad |
 | Astern | `S` / `↓` | **Reverse** pad |
 | Helm | `A` `D` / `←` `→` | Left thumb joystick |
-| Restart | `R` | — |
+| Restart | `R` | **Restart race** in the pause menu |
 
 Touch controls appear automatically on coarse-pointer devices.
 

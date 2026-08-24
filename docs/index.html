@@ -1083,6 +1083,7 @@
         </div>
         <div class="btnstack">
           <button class="go-btn" id="resumeBtn">Resume</button>
+          <button class="ghost" id="restartBtn">Restart race</button>
           <button class="ghost" id="pauseSettingsBtn">Settings</button>
           <button class="ghost" id="exitBtn">Exit to menu</button>
         </div>
@@ -2097,7 +2098,7 @@
           )
             e.preventDefault();
           keys[e.key.toLowerCase()] = true;
-          if (e.key.toLowerCase() === "r" && state !== S.menu) startRace();
+          if (e.key.toLowerCase() === "r" && state !== S.menu) restartRace();
           if (e.key === "Escape" || e.key.toLowerCase() === "p") {
             if (state === S.race || state === S.count) pauseGame();
             else if (state === S.pause) resumeGame();
@@ -4612,6 +4613,17 @@
           document.body.classList.add("racing");
           touch.classList.toggle("on", isTouch);
         }
+        /* Restarting has to clear the pause overlay itself — startRace() hides the
+           main menu and the results sheet, but knows nothing about the pause
+           screen, so without this the race runs on underneath it. */
+        function restartRace() {
+          pausedFrom = null;
+          pauseEl.classList.add("hidden");
+          settingsEl.classList.add("hidden");
+          settingsReturn = null;
+          initAudio();
+          startRace();
+        }
         function exitToMenu() {
           state = S.menu;
           pausedFrom = null;
@@ -4640,6 +4652,7 @@
         pauseBtn.onclick = pauseGame;
         document.getElementById("resumeBtn").onclick = resumeGame;
         document.getElementById("exitBtn").onclick = exitToMenu;
+        document.getElementById("restartBtn").onclick = restartRace;
         document.getElementById("pauseSettingsBtn").onclick = () => {
           pauseEl.classList.add("hidden");
           openSettings("pause");
