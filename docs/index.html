@@ -12,7 +12,11 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Tiderunner — buoy racing</title>
-    <link rel="manifest" href="manifest.webmanifest" />
+    <!-- TEMPORARILY REMOVED for diagnosis. This page reports innerHeight 788 on
+         an installed iPad app; docs/probe.html, whose head is otherwise the
+         same, reports 820. The manifest link is the only remaining difference.
+         Restore this once the 32px is accounted for. -->
+    <!-- <link rel="manifest" href="manifest.webmanifest" /> -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
     <meta name="theme-color" content="#04141c" />
@@ -4742,7 +4746,12 @@
             document.getElementById("safeProbe"),
           );
           const line = (k, v) => "<b>" + k + "</b> " + v;
+          const vp = document.querySelector('meta[name="viewport"]');
           diagEl.innerHTML = [
+            line("build", document.lastModified),
+            line("viewport meta", vp ? vp.content : "(none)"),
+            line("manifest linked",
+              document.querySelector('link[rel="manifest"]') ? "yes" : "no"),
             line("window.inner", innerWidth + " x " + innerHeight),
             line("docEl.client", de.clientWidth + " x " + de.clientHeight),
             line("--app-h", getComputedStyle(de).getPropertyValue("--app-h").trim()),
