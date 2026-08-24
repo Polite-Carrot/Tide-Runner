@@ -45,25 +45,17 @@
         box-sizing: border-box;
         -webkit-tap-highlight-color: transparent;
       }
-      /* Full-screen height, on every kind of screen. Plain 100%/100vh measure
-         the layout viewport, which in mobile Safari is taller than the part
-         you can see — the toolbars sit over the bottom of it. dvh is the
-         dynamic viewport height: it shrinks while the toolbars are showing and
-         grows back when they hide, and in an installed or native app, where
-         there is no chrome at all, it is simply the whole screen, home
-         indicator strip included. 100% is the fallback for anything too old
-         for dvh. */
-      :root {
-        --app-h: 100%;
-      }
-      @supports (height: 100dvh) {
-        :root {
-          --app-h: 100dvh;
-        }
-      }
+      /* Full-screen layers are pinned with inset: 0 and given no height at all.
+         Do not add one back. Any length here — 100%, 100vh, 100dvh — is a guess
+         at how tall the screen is, and over-constrains the box: with top, bottom
+         and height all set, the spec drops bottom and the length wins. When that
+         length under-reports, as 100dvh does in an installed iOS app where it
+         leaves out the home indicator strip, the layer stops short and the page
+         behind shows as a dark band along the bottom. With no height, the box is
+         defined by the viewport's own edges and cannot disagree with them. */
       html,
       body {
-        height: var(--app-h);
+        height: 100%;
         margin: 0;
         overflow: hidden;
         background: var(--abyss);
@@ -78,8 +70,13 @@
       #game {
         position: fixed;
         inset: 0;
-        height: var(--app-h);
         width: 100%;
+        /* A canvas is a replaced element: left to height: auto it takes its
+           intrinsic size rather than stretching to bottom: 0, so unlike the
+           layers below it does need a height. 100% resolves against the fixed
+           containing block — the viewport itself — not against a viewport unit
+           that can under-report. */
+        height: 100%;
         display: block;
       }
 
@@ -106,7 +103,6 @@
       #hud {
         position: fixed;
         inset: 0;
-        height: var(--app-h);
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.35s;
@@ -349,7 +345,6 @@
       .screen {
         position: fixed;
         inset: 0;
-        height: var(--app-h);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -663,7 +658,6 @@
       #boot {
         position: fixed;
         inset: 0;
-        height: var(--app-h);
         z-index: 100;
         background: #000;
         display: grid;
@@ -714,7 +708,6 @@
       #touch {
         position: fixed;
         inset: 0;
-        height: var(--app-h);
         z-index: 4;
         display: none;
         pointer-events: none;
