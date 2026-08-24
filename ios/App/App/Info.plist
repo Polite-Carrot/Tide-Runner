@@ -64,7 +64,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- The game draws its own instruments and wants the whole screen. Hiding
+	     the status bar outright is the one thing the native shell can do that a
+	     home-screen web app cannot: iOS hands a web app a window inset by the
+	     top safe area and nothing in the page can paint past it. -->
 	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>UIStatusBarHidden</key>
 	<true/>
 </dict>
 </plist>
