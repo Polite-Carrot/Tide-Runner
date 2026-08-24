@@ -18,16 +18,25 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
     <meta name="theme-color" content="#04141c" />
     <!-- No *-web-app-capable and no apple-mobile-web-app-status-bar-style.
-         Those are the legacy iOS route, and it forces a choice between two
-         broken layouts: black-translucent slides the web view up under the
-         status bar but leaves its height at screen minus status bar, so on an
-         installed iPad app the window is 788 tall on an 820 screen and 32px
-         along the bottom belongs to no one; black hands back the bottom but
-         gives the status bar an opaque strip, so the page no longer reaches the
-         top. Since iOS 17 a site added to the home screen opens as a web app
-         anyway and takes its presentation from the manifest, which gives a
-         full-height window with the safe-area insets to keep the HUD clear —
-         both edges, no strip. iOS reads this at install time, so the
+         Since iOS 17 a site added to the home screen opens as a web app anyway
+         and takes its presentation from the manifest, so the legacy metas buy
+         nothing here — measured on an installed iPhone, the manifest route lays
+         out exactly as apple-mobile-web-app-status-bar-style: black did.
+
+         iOS offers two placements and both cost an edge. black-translucent
+         slides the web view up under the status bar but leaves its height at
+         screen minus the top inset, so the window is short by that much and the
+         strip lands along the BOTTOM, where the chartplotter and the touch
+         controls are; a stretched position: fixed; inset: 0 box measures the
+         shortfall too, so no CSS can reach it. The default gives the status bar
+         its own opaque strip at the TOP and hands the page the whole of the
+         rest, bottom edge included — 59px of black on an iPhone 15 Pro Max,
+         which is the top inset exactly.
+
+         The bottom is the one worth keeping, so the default it is.
+         display_override asks for fullscreen first, which would drop the strip
+         altogether; where that is not honoured it falls back to standalone and
+         this is what you get. iOS reads all of this at install time, so the
          home-screen icon has to be removed and re-added for a change here to
          take effect. -->
     <meta name="apple-mobile-web-app-title" content="Tiderunner" />

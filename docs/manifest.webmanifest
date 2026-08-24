@@ -4,6 +4,7 @@
   "description": "Buoy racing on winding rivers.",
   "start_url": "./index.html",
   "scope": "./",
+  "display_override": ["fullscreen", "standalone"],
   "display": "standalone",
   "orientation": "any",
   "background_color": "#04141c",
