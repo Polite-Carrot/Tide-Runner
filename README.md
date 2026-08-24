@@ -11,9 +11,12 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Seventeen courses**, each with its own channel width and character. The menu leads with
-  three — one row — and keeps the rest behind **More courses**; a course picked from the
-  full list stays on show when the list collapses again.
+- **Seventeen courses**, each with its own channel width and character. The menu shows them
+  on a rail that scrolls sideways, one card per snap, with dots tracking where you are;
+  **All 17 courses** opens the full list as a popup grid. Picking one there selects it,
+  closes the popup and scrolls the rail to it, so the rail always shows what you chose.
+  Costing one row rather than three is what keeps **Start race** on screen without scrolling
+  — verified on an iPhone SE, an iPhone 14, a phone in landscape and an iPad.
 
   At the gentle end, Fjord Run and Atlantic Leg are four long sweeps you can hold the
   throttle through. At the other, Corryvreckan and Hell's Mouth are 26 and 24 corners of
