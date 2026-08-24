@@ -11,7 +11,7 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Twenty-three courses**, each with its own channel width and character. The menu shows them
+- **Twenty-five courses**, each with its own channel width and character. The menu shows them
   on a rail that scrolls sideways, one card per snap, with dots tracking where you are;
   **All 17 courses** opens the full list as a popup grid. Picking one there selects it,
   closes the popup and scrolls the rail to it, so the rail always shows what you chose.
@@ -65,6 +65,22 @@ dependencies beyond a webfont.
 - **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
   9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
   circuit. Wildlife is scaled by track length so the big water isn't empty.
+- **Two are drawn by hand to be shapes the generator can't make.** The meander generator is a
+  sinusoid, so every course it draws has the same character the whole way round.
+
+  **The Long Bight** is a dogbone, and has the only real straight in the game: 966px where
+  the boat turns less than 12°, against 909px on a course twice its length and under 600px
+  for everything else — 24% of its lap, where the next best manages 10%. Long enough to sit
+  in a wake and be towed the whole way, so it is the one course where the tow is worth more
+  than the corner. Its geometry is set by the physics: you must lift below R=180
+  (`TOP 225 / OMEGA 1.25`), so the ends are turns of about that radius and the reaches sit
+  340px apart to make them.
+
+  **Skerryvore Sound** has two sectors. Six control points carry an open sweep across the
+  north at full throttle; twelve carry a rock shelf across the south, close enough together
+  that the corners never let you back up to speed. Fastest third 224px/s against slowest
+  third 190 — a 15% spread, where the widest on any other course is Staithes Twist at 14%
+  and most sit under 5%.
 - **Momentum-based handling.** The hull carries its speed through a turn, so ease off before
   the mark and let the stern come round. Astern is available but slow.
 - **Slipstream.** Sitting close behind another boat and roughly in line with it pulls you

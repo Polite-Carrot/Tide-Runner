@@ -2051,6 +2051,81 @@
               count: 34,
             },
           },
+
+          /* ---------------------------------------------------------------
+     Two shapes the meander generator cannot make. It is a sinusoid, so
+     every course it draws has the same character the whole way round;
+     these two are hand-drawn control points precisely so they don't.
+     --------------------------------------------------------------- */
+
+          /* A dogbone, and the only course in the game with a proper straight.
+     The geometry is set by the physics: you must slow for anything under
+     R=180 (TOP 225 over OMEGA 1.25), so the ends are turns of about that
+     radius and the reaches sit 340px apart to make them. What decides the
+     race is the 1,500px of open water between them — long enough to sit in
+     a wake and be towed the whole way, which no other course offers. */
+          {
+            name: "The Long Bight",
+            desc: "Long reaches · slipstream",
+            width: 150,
+            fleet: [6, 10],
+            hazards: { log: 8 },
+            cps: [
+              [850, 930],
+              [1225, 930],
+              [1600, 930],
+              [1975, 930],
+              [2350, 930],
+              [2470, 980],
+              [2520, 1100],
+              [2470, 1220],
+              [2350, 1270],
+              [1975, 1270],
+              [1600, 1270],
+              [1225, 1270],
+              [850, 1270],
+              [730, 1220],
+              [680, 1100],
+              [730, 980],
+            ],
+          },
+
+          /* Two sectors, and they are nothing like each other. The north is one
+     enormous open sweep held at full throttle on six control points; the
+     south is a rock shelf where the points sit close enough together that
+     the corners never let you back up to speed, and the tide sets up
+     whirlpools in them. The generated courses cannot do this — the
+     generator is a sinusoid, so its character is the same the whole way
+     round — which is the reason this one is drawn by hand. */
+          {
+            name: "Skerryvore Sound",
+            desc: "Fast north · foul south",
+            width: 168,
+            fleet: [4, 10],
+            hazards: { eddy: 8, weed: 6 },
+            cps: [
+              // --- north: the whole sweep in six points ---
+              [1141, 1324],
+              [1180, 780],
+              [1560, 480],
+              [2120, 460],
+              [2560, 700],
+              [2700, 1080],
+              // --- south: twelve, so the helm never rests ---
+              [2539, 1324],
+              [2519, 1491],
+              [2366, 1581],
+              [2283, 1717],
+              [2165, 1837],
+              [1989, 1814],
+              [1840, 1870],
+              [1673, 1891],
+              [1549, 1765],
+              [1397, 1717],
+              [1252, 1632],
+              [1232, 1455],
+            ],
+          },
         ];
 
         const SAMPLES = 15; // centreline points per control segment
