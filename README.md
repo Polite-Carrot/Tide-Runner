@@ -77,36 +77,32 @@ Touch controls appear automatically on coarse-pointer devices.
 
 ### Filling the screen
 
-**The viewport meta must not carry `user-scalable=no`.** On an installed iPad app this page
-carrying that token reported `window.innerHeight` of **788**, while an otherwise identical page
-without it reported **820** — the full window. The gap is the 32px top safe-area inset, and it
-lays the whole page out 32px short, leaving a dark band along the bottom of the screen.
+**Measure the viewport, do not ask for it.** On an installed iPad app every number the page can
+read — `window.innerHeight`, `documentElement.clientHeight`, `100%`, `100vh`, `100dvh` — reports
+**788**, while fixed elements are laid out against **820**. The gap is the 32px top safe-area
+inset. Size the page from any of those numbers and it comes out 32px short, leaving a dark band
+along the bottom of the screen.
 
-No page CSS can cause that: CSS cannot change `window.innerHeight`, and the viewport meta is the
-only thing in a document that can. Pinch-zoom is blocked by `touch-action: none` on the body
-instead.
+The fix is `#vpProbe`: an empty `position: fixed; inset: 0` div with no height. The engine
+stretches it to the real fixed viewport, and `resize()` reads its box back and publishes it as
+`--app-h`, which every full-screen layer sizes to.
 
-That is worth knowing because it hides as something else. Five attempts at CSS heights —
-`100%`, `100vh`, `100dvh`, `inset: 0` with no height, and `innerHeight` in a custom property —
-all failed identically, because each was correctly filling a viewport that was already 32px
-shorter than the screen.
+The canvas cannot do that for itself, because it is a *replaced* element: at `height: auto` it
+takes its intrinsic size instead of stretching to `bottom: 0`, and collapses to a few hundred
+pixels. Hence the separate probe.
 
-The full-screen layers take their height from `--app-h`, which `resize()` sets to
-`window.innerHeight`. The canvas needs an explicit height because it is a *replaced* element: at
-`height: auto` it takes its intrinsic size instead of stretching to `bottom: 0`, and collapses
-to a few hundred pixels.
+That is worth knowing because it hides as something else. Four attempts at CSS heights —
+`100%`, `100vh`, `100dvh` and `innerHeight` in a custom property — all failed identically,
+because each was correctly filling a viewport that was already 32px shorter than the screen.
 
 `resize()` measures the canvas from its own `getBoundingClientRect()` rather than from the
-viewport, and a `ResizeObserver` watches that box: on iOS the laid-out height settles a frame or
-two after load and no `resize` event fires for it, so without the observer the first measurement
-sticks and the frame is painted short.
+viewport, and a `ResizeObserver` watches both that box and the probe. It is load-bearing: on iOS
+the laid-out height settles a frame or two after load, as the safe area and the dynamic viewport
+are applied, and no `resize`, `orientationchange` or `visualViewport` event fires for it. Without
+the observer the first measurement sticks, the frame is painted short of the bottom of the
+screen, and it only comes right once something else forces a resize — rotating the device, say.
 
-A `ResizeObserver` watches the canvas box, and it is load-bearing: on iOS the laid-out height
-settles a frame or two after load, as the safe area and the dynamic viewport are applied, and
-no `resize`, `orientationchange` or `visualViewport` event fires for it. Without the observer
-the first measurement sticks, the frame is painted short of the bottom of the screen, and it
-only comes right once something else forces a resize — rotating the device, say. The game honours
-`prefers-reduced-motion` by dropping particle effects.
+The game honours `prefers-reduced-motion` by dropping particle effects.
 
 ## Running it
 

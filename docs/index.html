@@ -2,11 +2,10 @@
 <html lang="en-GB">
   <head>
     <meta charset="utf-8" />
-    <!-- No user-scalable=no. With it, this page reports innerHeight 788 on an
-         installed iPad app while an otherwise identical page without it reports
-         820 — the 32px top safe area — and the game is laid out 32px short,
-         leaving a band along the bottom. Pinch-zoom is already prevented by
-         touch-action: none on the body. -->
+    <!-- viewport-fit=cover lets the page paint behind the status bar and the
+         home indicator; the safe-area insets keep the HUD clear of them. No
+         user-scalable=no: pinch-zoom is already prevented by touch-action: none
+         on the body. -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
@@ -54,15 +53,14 @@
         box-sizing: border-box;
         -webkit-tap-highlight-color: transparent;
       }
-      /* Full-screen height comes from window.innerHeight, set on --app-h by
-         resize(). Measured on an installed iPad app: innerHeight is 820 — the
-         real window — while documentElement.clientHeight is 788, short by
-         exactly the 32px top safe-area inset. CSS percentages and viewport units
-         resolve against that shorter layout viewport, so height: 100%, 100vh and
-         100dvh all produce an 820px-tall screen with a 788px-tall page on it and
-         a 32px band along the bottom. innerHeight is the one figure that agrees
-         with where fixed elements are actually laid out. The 100% below is only
-         the pre-script fallback. */
+      /* Full-screen height comes from --app-h, which resize() sets from a
+         box the engine has actually stretched to the fixed viewport (#vpProbe,
+         below). Every number the page can ask for — innerHeight,
+         documentElement.clientHeight, 100%, 100vh, 100dvh — resolves against the
+         layout viewport, which an installed iPad app reports as 788 where fixed
+         elements are laid out against 820. That 32px difference is the top
+         safe-area inset, and it is the band along the bottom of the screen. The
+         100% below is only the pre-script fallback. */
       :root {
         --app-h: 100%;
       }
@@ -725,6 +723,23 @@
         text-align: center;
       }
 
+      /* A stretched box, not a measurement API: position: fixed with inset: 0
+         and no height is laid out against the true fixed viewport, which on an
+         installed iOS app is the full window including the area behind the
+         status bar. innerHeight, percentages and viewport units all resolve
+         against the shorter layout viewport instead, which is where the 32px
+         band along the bottom came from. resize() reads this box back and
+         publishes it as --app-h. A canvas cannot do this itself: it is a
+         replaced element, so inset: 0 with auto height gives it its intrinsic
+         size rather than stretching it. */
+      #vpProbe {
+        position: fixed;
+        inset: 0;
+        visibility: hidden;
+        pointer-events: none;
+        z-index: -1;
+      }
+
       /* temporary diagnostic readout */
       #safeProbe {
         position: fixed;
@@ -1064,6 +1079,7 @@
 
     <button class="pause-btn" id="pauseBtn" aria-label="Pause"></button>
 
+    <div id="vpProbe"></div>
     <div id="safeProbe"></div>
     <div id="diag"></div>
 
@@ -1843,14 +1859,25 @@
         let W = 0,
           H = 0,
           DPR = 1;
+        const vpProbe = document.getElementById("vpProbe");
+        function viewportHeight() {
+          // Ask the layout engine where the bottom of the fixed viewport really
+          // is, rather than trusting a number. #vpProbe is stretched by inset: 0,
+          // so its box is the answer. Fall back to the reported figures only if
+          // it has not been laid out yet.
+          const h = vpProbe ? vpProbe.getBoundingClientRect().height : 0;
+          if (h > 1) return h;
+          return Math.max(
+            window.innerHeight || 0,
+            document.documentElement.clientHeight || 0,
+          );
+        }
         function resize() {
-          // innerHeight is the window; percentages and viewport units resolve
-          // against the layout viewport, which an installed iOS app reports 32px
-          // shorter. Publish the window height for the layers to size to, then
-          // measure the canvas as it was actually laid out.
+          // Publish the measured window height for the full-screen layers to
+          // size to, then measure the canvas as it was actually laid out.
           document.documentElement.style.setProperty(
             "--app-h",
-            window.innerHeight + "px",
+            viewportHeight() + "px",
           );
           const r = cv.getBoundingClientRect();
           const w = Math.round(r.width);
@@ -1876,7 +1903,11 @@
         // above fire for it — so the first measurement sticks and the frame is
         // drawn short until something forces a resize. Watching the canvas box
         // itself catches that, and every later rotation or split-view change.
-        if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(cv);
+        if (window.ResizeObserver) {
+          const ro = new ResizeObserver(() => resize());
+          ro.observe(cv);
+          if (vpProbe) ro.observe(vpProbe);
+        }
         resize();
         // belt and braces for engines that do not report that first settle
         requestAnimationFrame(resize);
@@ -4754,6 +4785,8 @@
               document.querySelector('link[rel="manifest"]') ? "yes" : "no"),
             line("window.inner", innerWidth + " x " + innerHeight),
             line("docEl.client", de.clientWidth + " x " + de.clientHeight),
+            line("vpProbe (fixed inset:0)",
+              Math.round(vpProbe.getBoundingClientRect().height)),
             line("--app-h", getComputedStyle(de).getPropertyValue("--app-h").trim()),
             line("canvas box", Math.round(box.width) + " x " + Math.round(box.height)),
             line("canvas top/bottom", Math.round(box.top) + " / " + Math.round(box.bottom)),
