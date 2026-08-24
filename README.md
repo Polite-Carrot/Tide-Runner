@@ -77,25 +77,22 @@ Touch controls appear automatically on coarse-pointer devices.
 
 ### Filling the screen
 
-The full-screen layers — canvas, HUD, menus, boot screen, touch layer — take their height from
-`--app-h`, which `resize()` sets to `window.innerHeight`. **Don't replace it with a CSS length.**
+**The viewport meta must not carry `user-scalable=no`.** On an installed iPad app this page
+carrying that token reported `window.innerHeight` of **788**, while an otherwise identical page
+without it reported **820** — the full window. The gap is the 32px top safe-area inset, and it
+lays the whole page out 32px short, leaving a dark band along the bottom of the screen.
 
-Measured on the installed iPad app, in landscape:
+No page CSS can cause that: CSS cannot change `window.innerHeight`, and the viewport meta is the
+only thing in a document that can. Pinch-zoom is blocked by `touch-action: none` on the body
+instead.
 
-| | |
-| --- | --- |
-| `window.innerHeight` | **820** — the real window |
-| `documentElement.clientHeight` | **788** — the layout viewport |
-| `env(safe-area-inset-top)` | 32px |
+That is worth knowing because it hides as something else. Five attempts at CSS heights —
+`100%`, `100vh`, `100dvh`, `inset: 0` with no height, and `innerHeight` in a custom property —
+all failed identically, because each was correctly filling a viewport that was already 32px
+shorter than the screen.
 
-The layout viewport is short by exactly the top safe-area inset, and CSS percentages and
-viewport units resolve against *that*. So `height: 100%`, `100vh` and `100dvh` all lay out a
-788px-tall page inside an 820px-tall window, leaving a 32px band along the bottom where the page
-behind shows through. All three fail identically, which is what makes it look like an iOS quirk
-rather than a units problem. `innerHeight` is the one figure that agrees with where fixed
-elements are actually placed.
-
-`inset: 0` alone doesn't work either, because the canvas is a *replaced* element: at
+The full-screen layers take their height from `--app-h`, which `resize()` sets to
+`window.innerHeight`. The canvas needs an explicit height because it is a *replaced* element: at
 `height: auto` it takes its intrinsic size instead of stretching to `bottom: 0`, and collapses
 to a few hundred pixels.
 
