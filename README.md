@@ -11,7 +11,7 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Seventeen courses**, each with its own channel width and character. The menu shows them
+- **Twenty-three courses**, each with its own channel width and character. The menu shows them
   on a rail that scrolls sideways, one card per snap, with dots tracking where you are;
   **All 17 courses** opens the full list as a popup grid. Picking one there selects it,
   closes the popup and scrolls the rail to it, so the rail always shows what you chose.
@@ -45,8 +45,26 @@ dependencies beyond a webfont.
   further — on Corryvreckan, Insane is only a second a lap up on Hard, because raw engine
   buys little where you are always turning.
 - **The Broadwater is a full-fleet race** — twelve boats rather than four, starting three
-  abreast down a channel twice the usual width. A course sets its own fleet size, so any
-  other course could field one too.
+  abreast down a channel twice the usual width.
+- **Some courses roll their fleet size.** A course can name a range instead of a number, and
+  it is rolled fresh at the start of every race — Kraken Deep fields anywhere from six boats
+  to twelve, so the same course is a procession one race and a scrap the next.
+- **Six courses have things in the water.** Hazards are declared per course and spawned per
+  race, so the seventeen above them are untouched and still race exactly as their records
+  were set.
+
+  | | what it does |
+  | --- | --- |
+  | **Whirlpool** | pulls you toward the eye and turns the helm — the only hazard that takes the boat somewhere you didn't point it. Its inward pull peaks at 165 against 340 of thrust, so you can always drive out; you just won't come out pointing where you went in. |
+  | **Log** | solid, and it drifts with the current, so the line that worked last lap is not the line this lap. |
+  | **Weed bed** | not solid; it just holds on to the hull, and costs you the exit of whatever corner it's sitting in. |
+
+  A hazard is never drawn wider than 80% of the channel half-width. A whirlpool broader than
+  the river is not a hazard, it's a roadblock — the first cut had a 92px eddy on a 73px
+  half-width and the whole field simply ground to a halt.
+- **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
+  9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
+  circuit. Wildlife is scaled by track length so the big water isn't empty.
 - **Momentum-based handling.** The hull carries its speed through a turn, so ease off before
   the mark and let the stern come round. Astern is available but slow.
 - **Slipstream.** Sitting close behind another boat and roughly in line with it pulls you

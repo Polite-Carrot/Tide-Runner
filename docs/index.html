@@ -1914,6 +1914,143 @@
               count: 26,
             },
           },
+
+          /* ---------------------------------------------------------------
+     Courses with things in the water. Hazards are declared per course and
+     spawned per race, so the seventeen above are untouched and still race
+     exactly as their records were set. Counts are per lap-ish: spawnHazards
+     scales them by track length so a big course isn't sparser than a small
+     one.
+
+       eddy  a whirlpool. Pulls you in and turns the helm — the only hazard
+             that takes the boat somewhere you didn't point it.
+       log   drifting timber. Solid, and it moves, so the line you picked
+             last lap is not the line this lap.
+       weed  a kelp bed. Not solid; it just holds on to the hull, so it
+             costs you the exit of whatever corner it's sitting in.
+
+     fleet as a pair is a range, rolled fresh at the start of every race.
+     --------------------------------------------------------------- */
+          {
+            name: "Timber Drive",
+            desc: "Log drive · dodging",
+            width: 152,
+            hazards: { log: 22 },
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 615,
+              ax: 1.34,
+              ay: 0.96,
+              k: 4,
+              amp: 0.17,
+              k2: 7,
+              amp2: 0.042,
+              phase: 0.4,
+              count: 22,
+            },
+          },
+          {
+            name: "Sargasso Reach",
+            desc: "Weed beds · sticky",
+            width: 176,
+            fleet: [4, 8],
+            hazards: { weed: 14 },
+            gen: {
+              cx: 1350,
+              cy: 980,
+              R: 690,
+              ax: 1.38,
+              ay: 0.93,
+              k: 3,
+              amp: 0.19,
+              k2: 5,
+              amp2: 0.038,
+              phase: 1.6,
+              count: 22,
+            },
+          },
+          {
+            name: "The Maelstrom",
+            desc: "Whirlpools · vicious",
+            width: 146,
+            hazards: { eddy: 9, log: 10 },
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 640,
+              ax: 1.22,
+              ay: 1.04,
+              k: 6,
+              amp: 0.135,
+              k2: 9,
+              amp2: 0.036,
+              phase: 2.2,
+              count: 28,
+            },
+          },
+
+          /* ---- the big ones. R roughly double the usual, so a lap is a
+     voyage rather than a circuit. ---- */
+          {
+            name: "Kraken Deep",
+            desc: "Vast · whirlpools",
+            width: 214,
+            fleet: [6, 12],
+            hazards: { eddy: 12, weed: 8 },
+            gen: {
+              cx: 2000,
+              cy: 1500,
+              R: 1180,
+              ax: 1.3,
+              ay: 0.98,
+              k: 4,
+              amp: 0.145,
+              k2: 7,
+              amp2: 0.04,
+              phase: 0.9,
+              count: 30,
+            },
+          },
+          {
+            name: "The Great Sound",
+            desc: "Immense · full fleet",
+            width: 268,
+            fleet: [8, 12],
+            gen: {
+              cx: 2100,
+              cy: 1550,
+              R: 1320,
+              ax: 1.36,
+              ay: 0.94,
+              k: 3,
+              amp: 0.155,
+              k2: 6,
+              amp2: 0.034,
+              phase: 2.7,
+              count: 28,
+            },
+          },
+          {
+            name: "Leviathan Run",
+            desc: "Enormous · everything",
+            width: 232,
+            fleet: [5, 12],
+            hazards: { log: 20, weed: 10, eddy: 7 },
+            gen: {
+              cx: 2050,
+              cy: 1500,
+              R: 1240,
+              ax: 1.28,
+              ay: 1.0,
+              k: 5,
+              amp: 0.15,
+              k2: 8,
+              amp2: 0.045,
+              phase: 1.3,
+              count: 34,
+            },
+          },
         ];
 
         const SAMPLES = 15; // centreline points per control segment
@@ -2054,6 +2191,7 @@
             desc: def.desc,
             harbour: !!def.harbour,
             fleet: def.fleet || 0,
+            hazards: def.hazards || null,
             pts,
             tan,
             nrm,
@@ -2411,11 +2549,14 @@
           track = TRACKS[courseIdx];
           const n = track.n;
           boats = [];
-          // a course can call for a bigger fleet; a wide one starts three abreast
-          const fleet = Math.max(
-            2,
-            Math.min(track.fleet || 4, RIVALS.length + 1),
-          );
+          // A course can call for a bigger fleet, or for a range — rolled fresh
+          // each race, so you never quite know what you are lining up against.
+          // A wide one starts three abreast.
+          const want = Array.isArray(track.fleet)
+            ? track.fleet[0] +
+              Math.floor(Math.random() * (track.fleet[1] - track.fleet[0] + 1))
+            : track.fleet || 4;
+          const fleet = Math.max(2, Math.min(want, RIVALS.length + 1));
           const perRow = fleet > 4 ? 3 : 2;
           const spread = perRow === 3 ? 0.42 : 0.3;
           // rivals occupy the front of the grid; you start at the back
@@ -2456,6 +2597,7 @@
           trail.length = 0;
           spawnFauna();
           spawnBoosts();
+          spawnHazards();
           spawnMoored();
           raceT = 0;
           countT = 3.999;
@@ -2930,21 +3072,28 @@
         const HUNT_AT = 2.2; // seconds aground before a shark takes interest
         const EAT_AT = 5.5; // hard backstop if the shark can't reach you
 
-        function nearestIdx(b) {
+        /* Nearest centreline point, searched in a window around the one we were
+   at last frame. Anything that moves slowly enough to stay inside that
+   window can use it — boats, and drifting timber. */
+        function nearIdxAt(x, y, from) {
           const n = track.n,
             pts = track.pts;
-          let best = b.idx,
+          let best = from,
             bd = Infinity;
           for (let k = -10; k <= 10; k++) {
-            const i = (((b.idx + k) % n) + n) % n,
+            const i = (((from + k) % n) + n) % n,
               p = pts[i];
-            const d = (p.x - b.x) ** 2 + (p.y - b.y) ** 2;
+            const d = (p.x - x) ** 2 + (p.y - y) ** 2;
             if (d < bd) {
               bd = d;
               best = i;
             }
           }
           return { i: best, d: Math.sqrt(bd) };
+        }
+
+        function nearestIdx(b) {
+          return nearIdxAt(b.x, b.y, b.idx);
         }
 
         function stepBoat(b, dt, ctl) {
@@ -2974,12 +3123,16 @@
             b.vy += t.y * CUR * dt;
           }
 
+          // whirlpools pull and turn; weed just holds on. Both act on how the
+          // boat is moving, so they go in before the drag is taken out.
+          if (hazards.length) hazardForces(b, dt);
+
           // split into forward / lateral, drag each differently → drift
           const cx = Math.cos(b.h),
             cy = Math.sin(b.h);
           let f = b.vx * cx + b.vy * cy;
           let l = -b.vx * cy + b.vy * cx;
-          const extra = b.shallow ? 1.7 : 0;
+          const extra = b.shallow ? 1.7 : b.weed ? 1.25 : 0;
           f -= (f * (1.1 + extra) + 0.0016 * f * Math.abs(f)) * dt;
           l -= l * (4.6 + extra) * dt;
           b.vx = f * cx - l * cy;
@@ -2999,6 +3152,8 @@
           // how long have we been off the river? the sharks are counting
           if (state === S.race && b.shallow && !b.done) b.offTime += dt;
           else b.offTime = 0;
+
+          if (hazards.length) hazardCollide(b);
 
           // boost pickups
           for (const bo of boosts) {
@@ -3115,6 +3270,31 @@
             }
             lane = (w ? acc / w : 0) * T.apex + b.noise;
             const clear = vT > TOP * b.power * 0.8;
+            // Steer round whatever is sitting in the water ahead. Only the
+            // nearest one matters — reacting to all of them at once just pins
+            // the helm to one bank. boostIQ doubles as how well a tier reads
+            // the river, so Easy blunders into the weed and Insane threads it.
+            let near = null,
+              nearGap = 1e9;
+            for (const h of hazards) {
+              let g = h.i - b.idx;
+              if (g < 0) g += n;
+              const gap = g * sp;
+              if (gap <= 30 || gap >= 320) continue;
+              if (gap < nearGap) {
+                nearGap = gap;
+                near = h;
+              }
+            }
+            if (near && Math.random() < T.boostIQ) {
+              // capped: a clearance wider than the channel is not a lane, it is
+              // just the bank
+              const need = Math.min(0.5, (near.r + 18) / track.half);
+              if (Math.abs(near.lane - lane) < need) {
+                const away = near.lane > 0 ? -1 : 1;
+                lane = Math.max(-0.8, Math.min(0.8, near.lane + away * need));
+              }
+            }
             for (const bo of boosts) {
               if (bo.cool > 0) continue;
               let g = bo.i - b.idx;
@@ -3353,10 +3533,12 @@
               made++;
             }
           };
-          add("whale", 4);
-          add("shark", 7);
-          add("ray", 6);
-          add("shoal", 13);
+          // scaled by how much water there is, so the big courses aren't empty
+          const sc = Math.max(1, Math.min(2.6, track.len / 4200));
+          add("whale", Math.round(4 * sc));
+          add("shark", Math.round(7 * sc));
+          add("ray", Math.round(6 * sc));
+          add("shoal", Math.round(13 * sc));
         }
 
         function stepFauna(dt) {
@@ -3842,6 +4024,167 @@
    ============================================================ */
         let boosts = [];
 
+        /* ============================================================
+   HAZARDS — things in the water
+   ============================================================ */
+        let hazards = [];
+
+        const HAZ = {
+          // r is the radius the boat reacts to, in world px
+          eddy: { r: 92, drift: 0 },
+          log: { r: 17, drift: 26 },
+          weed: { r: 58, drift: 0 },
+        };
+
+        function spawnHazards() {
+          hazards = [];
+          const spec = track.hazards;
+          if (!spec) return;
+          // counts are quoted against a course of ordinary length, so a big
+          // course gets proportionally more rather than the same few
+          const scale = track.len / 4200;
+          const startClear = 520; // leave the grid and the first corner alone
+          for (const type in spec) {
+            const cfg = HAZ[type];
+            const want = Math.max(1, Math.round(spec[type] * scale));
+            let made = 0,
+              tries = 0;
+            while (made < want && tries < want * 40) {
+              tries++;
+              const i = Math.floor(Math.random() * track.n);
+              // distance along the track from the start line
+              const along = i * track.spacing;
+              if (along < startClear || along > track.len - 260) continue;
+              // sit off the centreline, but leave a boat's width of clean water
+              const room = type === "weed" ? 0.62 : 0.72;
+              const lane = (Math.random() * 2 - 1) * room;
+              const p = track.pts[i],
+                nv = track.nrm[i];
+              const x = p.x + nv.x * lane * track.half,
+                y = p.y + nv.y * lane * track.half;
+              // don't stack them, and don't bury a boost
+              let clash = false;
+              for (const h of hazards) {
+                const rr = HAZ[h.type].r + cfg.r;
+                if ((h.x - x) ** 2 + (h.y - y) ** 2 < rr * rr) {
+                  clash = true;
+                  break;
+                }
+              }
+              if (!clash)
+                for (const bo of boosts) {
+                  const rr = cfg.r + 34;
+                  if ((bo.x - x) ** 2 + (bo.y - y) ** 2 < rr * rr) {
+                    clash = true;
+                    break;
+                  }
+                }
+              if (clash) continue;
+              hazards.push({
+                type,
+                x,
+                y,
+                i,
+                lane,
+                // never wider than the river it sits in, or there is no way
+                // past and both you and the AI simply grind to a halt
+                r: Math.min(cfg.r, track.half * 0.8),
+                spin: Math.random() * 7,
+                // logs lie across the stream at a lazy angle and drift with it
+                a: Math.random() * Math.PI,
+                wob: Math.random() * 7,
+                dir: Math.random() < 0.5 ? -1 : 1,
+              });
+              made++;
+            }
+          }
+        }
+
+        function stepHazards(dt) {
+          for (const h of hazards) {
+            h.spin += dt * (h.type === "eddy" ? 1.5 * h.dir : 0.5);
+            if (h.type !== "log") continue;
+            // timber rides the current, turning slowly as it goes
+            const t = track.tan[h.i];
+            h.x += t.x * HAZ.log.drift * dt;
+            h.y += t.y * HAZ.log.drift * dt;
+            h.a += dt * 0.35 * h.dir;
+            h.wob += dt;
+            // keep it on the river: re-home to the nearest centreline point and
+            // pull it back if the drift has carried it into the bank
+            const nr = nearIdxAt(h.x, h.y, h.i);
+            h.i = nr.i;
+            if (nr.d > track.half - 26) {
+              const p = track.pts[h.i];
+              const ux = (p.x - h.x) / (nr.d || 1),
+                uy = (p.y - h.y) / (nr.d || 1);
+              h.x += ux * (nr.d - (track.half - 26));
+              h.y += uy * (nr.d - (track.half - 26));
+            }
+          }
+        }
+
+        /* Forces that act on a hull sitting in a hazard: the pull and swirl of a
+   whirlpool, and the flag that tells the drag model it's in weed. Called
+   before the drag step, since both change how the boat is moving rather
+   than where it is. */
+        function hazardForces(b, dt) {
+          b.weed = false;
+          b.inEddy = 0;
+          for (const h of hazards) {
+            const dx = h.x - b.x,
+              dy = h.y - b.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 > h.r * h.r) continue;
+            const d = Math.sqrt(d2) || 1;
+            if (h.type === "weed") {
+              b.weed = true;
+            } else if (h.type === "eddy") {
+              // strongest at the eye, nothing at the rim
+              const f = 1 - d / h.r;
+              b.inEddy = Math.max(b.inEddy, f);
+              const ux = dx / d,
+                uy = dy / d;
+              // inward pull plus a tangential swirl, so you arrive turning
+              b.vx += (ux * 165 + -uy * h.dir * 205) * f * dt;
+              b.vy += (uy * 165 + ux * h.dir * 205) * f * dt;
+              b.h += h.dir * 2.1 * f * f * dt;
+            }
+          }
+        }
+
+        /* Solid contact, resolved after the boat has moved — same treatment as a
+   buoy, but a log is lighter, so it shoves rather than stops. */
+        function hazardCollide(b) {
+          for (const h of hazards) {
+            if (h.type !== "log") continue;
+            const dx = b.x - h.x,
+              dy = b.y - h.y,
+              d = Math.hypot(dx, dy);
+            if (d >= h.r + 9) continue;
+            const ux = dx / (d || 1),
+              uy = dy / (d || 1);
+            b.x = h.x + ux * (h.r + 9);
+            b.y = h.y + uy * (h.r + 9);
+            const dot = b.vx * ux + b.vy * uy;
+            const impact = Math.max(0, -dot);
+            b.vx -= 1.35 * dot * ux;
+            b.vy -= 1.35 * dot * uy;
+            // the log gets knocked aside too
+            h.x -= ux * 5;
+            h.y -= uy * 5;
+            if (impact > 40) {
+              b.vx *= 0.86;
+              b.vy *= 0.86;
+              if (b === me) {
+                sfxBump(Math.min(1, impact / 150));
+                if (!REDUCED)
+                  for (let i = 0; i < 5; i++) spray(b.x, b.y, "#c9a06a", 1.2);
+              }
+            }
+          }
+        }
+
         function spawnBoosts() {
           boosts = [];
           const step = Math.max(6, Math.round(560 / track.spacing));
@@ -3870,6 +4213,101 @@
             }
             boosts.push({ x, y, i, lane, cool: 0, spin: Math.random() * 7 });
             k++;
+          }
+        }
+
+        function drawHazards() {
+          for (const h of hazards) {
+            ctx.save();
+            ctx.translate(h.x, h.y);
+            if (h.type === "weed") {
+              // a kelp bed: a soft dark patch with fronds combing the current
+              ctx.fillStyle = "rgba(18,58,42,.62)";
+              ctx.beginPath();
+              for (let k = 0; k <= 22; k++) {
+                const a = (k / 22) * Math.PI * 2;
+                const rr = h.r * (0.74 + 0.26 * Math.sin(a * 3 + h.spin));
+                const x = Math.cos(a) * rr,
+                  y = Math.sin(a) * rr;
+                k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+              }
+              ctx.closePath();
+              ctx.fill();
+              ctx.strokeStyle = "rgba(74,152,104,.5)";
+              ctx.lineWidth = 2;
+              ctx.lineCap = "round";
+              for (let k = 0; k < 11; k++) {
+                const a = (k / 11) * Math.PI * 2 + h.spin * 0.2;
+                const rr = h.r * 0.55;
+                const sway = Math.sin(waveT * 1.6 + k) * 7;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+                ctx.quadraticCurveTo(
+                  Math.cos(a) * rr + sway,
+                  Math.sin(a) * rr - 12,
+                  Math.cos(a) * rr + sway * 1.6,
+                  Math.sin(a) * rr - 23,
+                );
+                ctx.stroke();
+              }
+            } else if (h.type === "eddy") {
+              // a whirlpool: arms winding into a dark eye
+              ctx.rotate(h.spin);
+              const g = ctx.createRadialGradient(0, 0, 3, 0, 0, h.r);
+              g.addColorStop(0, "rgba(2,10,16,.85)");
+              g.addColorStop(0.55, "rgba(6,34,48,.42)");
+              g.addColorStop(1, "rgba(6,34,48,0)");
+              ctx.fillStyle = g;
+              ctx.beginPath();
+              ctx.arc(0, 0, h.r, 0, 7);
+              ctx.fill();
+              ctx.strokeStyle = "rgba(127,233,216,.34)";
+              ctx.lineWidth = 2;
+              for (let arm = 0; arm < 3; arm++) {
+                ctx.beginPath();
+                for (let k = 0; k <= 30; k++) {
+                  const t = k / 30;
+                  const a = arm * 2.09 + t * 4.4 * h.dir;
+                  const rr = h.r * (0.1 + t * 0.86);
+                  const x = Math.cos(a) * rr,
+                    y = Math.sin(a) * rr;
+                  k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+                }
+                ctx.stroke();
+              }
+              ctx.fillStyle = "rgba(2,10,16,.9)";
+              ctx.beginPath();
+              ctx.arc(0, 0, 7, 0, 7);
+              ctx.fill();
+            } else {
+              // a log: timber lying across the stream, riding the swell
+              ctx.rotate(h.a);
+              ctx.translate(0, Math.sin(h.wob * 1.7) * 1.6);
+              const L = h.r * 2.1,
+                W = 11;
+              ctx.fillStyle = "rgba(0,0,0,.24)";
+              ctx.beginPath();
+              ctx.ellipse(0, 5, L / 2, W / 2 + 1, 0, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = "#6b4a2c";
+              ctx.beginPath();
+              ctx.roundRect(-L / 2, -W / 2, L, W, W / 2);
+              ctx.fill();
+              ctx.strokeStyle = "rgba(201,160,106,.55)";
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.moveTo(-L / 2 + 4, -1.5);
+              ctx.lineTo(L / 2 - 4, -1.5);
+              ctx.stroke();
+              // sawn ends
+              ctx.fillStyle = "#c9a06a";
+              for (const e of [-1, 1]) {
+                ctx.beginPath();
+                ctx.ellipse((e * L) / 2, 0, 2.6, W / 2, 0, 0, 7);
+                ctx.fill();
+              }
+            }
+            ctx.restore();
           }
         }
 
@@ -4266,6 +4704,7 @@
           }
           if (state !== S.race) {
             stepFauna(dt);
+            stepHazards(dt);
             stepMoored(dt);
             stepWake(dt);
             return;
@@ -4273,6 +4712,7 @@
 
           raceT += dt;
           stepFauna(dt);
+          stepHazards(dt);
           stepMoored(dt);
           slipstream();
           for (const b of boats) {
@@ -4437,6 +4877,7 @@
           ctx.stroke();
           ctx.restore();
 
+          drawHazards();
           drawBoosts();
 
           // wake under the hulls
@@ -4896,6 +5337,7 @@
           track._path = null;
           spawnFauna();
           spawnBoosts();
+          spawnHazards();
           spawnMoored();
           syncCourses();
           // the rail always shows what you picked, however deep in the list it was
@@ -5225,6 +5667,7 @@
         cam.s = 1;
         spawnFauna();
         spawnBoosts();
+        spawnHazards();
 
         let last = performance.now();
         let frameRanked = [];
