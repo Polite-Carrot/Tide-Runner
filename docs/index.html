@@ -8,7 +8,7 @@
          on the body. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <title>Tiderunner — buoy racing</title>
     <!-- The manifest drives the installed presentation on both platforms:
@@ -1341,6 +1341,32 @@
         }
       }
 
+      /* Standalone tagline reads better under the title than jammed next to it. */
+      .menu-tag {
+        max-width: 520px;
+        margin: -4px 0 14px;
+        padding-right: 0;
+      }
+
+      /* Portrait phones are taller than 720 but still tight once the safe
+         area is taken off, so Start race gets clipped without extra compaction. */
+      @media (max-width: 560px) {
+        .menu-tag {
+          display: none;
+        }
+        #menu .brand {
+          padding-bottom: 8px;
+          margin-bottom: 10px;
+        }
+        #menu .course {
+          flex-basis: 120px;
+        }
+        #menu .row {
+          gap: 10px;
+          margin-top: 10px;
+        }
+      }
+
       /* A phone on its side has no height at all but plenty of width: put the
          rail down the left and everything you set before a race down the
          right, so Start race stays in view without anything being dropped. */
@@ -1535,15 +1561,15 @@
       <div class="sheet panel">
         <div class="brand">
           <h1>Tide<em>runner</em></h1>
-          <p class="tag">
-            Race the fleet at a difficulty of your choosing — and watch out for
-            the sharks.
-          </p>
           <div class="brand-actions">
             <button class="gear skin-tool" id="homeSkins" aria-label="Skins">Skins</button>
             <button class="gear" id="homeSettings" aria-label="Settings" title="Settings">⚙</button>
           </div>
         </div>
+        <p class="tag menu-tag">
+          Race the fleet at a difficulty of your choosing — and watch out for
+          the sharks.
+        </p>
 
         <p class="label">Course</p>
         <div
@@ -6358,6 +6384,24 @@
             SETTINGS.name = nameInput.value.slice(0, 18);
             saveSettings();
           });
+          // iOS scrolls the layout viewport to bring the focused input into
+          // view. With a fixed-position app that shifts the whole page right
+          // and never comes back — so undo it as soon as it happens.
+          const resetScroll = () => {
+            window.scrollTo(0, 0);
+            document.documentElement.scrollLeft = 0;
+            document.body.scrollLeft = 0;
+          };
+          nameInput.addEventListener("blur", () =>
+            requestAnimationFrame(resetScroll),
+          );
+          addEventListener(
+            "scroll",
+            () => {
+              if (window.scrollX || window.scrollY) resetScroll();
+            },
+            { passive: true },
+          );
         }
 
         document.getElementById("start").onclick = () => {
