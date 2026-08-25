@@ -1150,6 +1150,29 @@
         text-align: center;
       }
 
+      /* Tablets have enough room for a more substantial course selector while
+         still leaving the live track clearly visible around the sheet. */
+      @media (min-width: 700px) and (min-height: 500px) {
+        #menu .sheet {
+          --sheet-pad: 28px;
+          width: min(860px, 84vw);
+          padding-bottom: 26px;
+        }
+        #menu .course {
+          flex-basis: 150px;
+          padding: 12px 12px 10px;
+        }
+        #menu .course h3 {
+          font-size: 21px;
+        }
+        #menu .course p {
+          font-size: 10px;
+        }
+        #menu .row {
+          margin-top: 20px;
+        }
+      }
+
       /* A short screen — an SE, or a phone held in landscape — has to give
          something up for Start race to stay in view. The tagline is the one
          thing on the menu nobody reads twice. */
@@ -4181,9 +4204,20 @@
                 nv = track.nrm[i];
               const x = p.x + nv.x * lane * track.half,
                 y = p.y + nv.y * lane * track.half;
-              // don't stack them, and don't bury a boost
+              // Keep every hazard's full influence clear of the starting grid.
+              // Larger fleets extend farther behind the line than startClear's
+              // fixed end-of-lap buffer can account for.
               let clash = false;
+              for (const b of boats) {
+                const rr = cfg.r + 35;
+                if ((b.x - x) ** 2 + (b.y - y) ** 2 < rr * rr) {
+                  clash = true;
+                  break;
+                }
+              }
+              // don't stack them, and don't bury a boost
               for (const h of hazards) {
+                if (clash) break;
                 const rr = HAZ[h.type].r + cfg.r;
                 if ((h.x - x) ** 2 + (h.y - y) ** 2 < rr * rr) {
                   clash = true;
@@ -4264,9 +4298,10 @@
               b.inEddy = Math.max(b.inEddy, f);
               const ux = dx / d,
                 uy = dy / d;
-              // inward pull plus a tangential swirl, so you arrive turning
-              b.vx += (ux * 165 + -uy * h.dir * 205) * f * dt;
-              b.vy += (uy * 165 + ux * h.dir * 205) * f * dt;
+              // ux/uy point inward, so their clockwise perpendicular is
+              // (uy, -ux). Keep current, artwork and hull rotation on h.dir.
+              b.vx += (ux * 165 + uy * h.dir * 205) * f * dt;
+              b.vy += (uy * 165 - ux * h.dir * 205) * f * dt;
               b.h += h.dir * 2.1 * f * f * dt;
             }
           }
@@ -4386,7 +4421,7 @@
                 ctx.beginPath();
                 for (let k = 0; k <= 30; k++) {
                   const t = k / 30;
-                  const a = arm * 2.09 + t * 4.4 * h.dir;
+                  const a = arm * 2.09 - t * 4.4 * h.dir;
                   const rr = h.r * (0.1 + t * 0.86);
                   const x = Math.cos(a) * rr,
                     y = Math.sin(a) * rr;
@@ -5482,11 +5517,12 @@
         }
 
         function syncDots() {
-          const first = coursesEl.children[0];
-          if (!first) return;
-          const step = first.offsetWidth + 8;
-          const i = step > 0 ? Math.round(coursesEl.scrollLeft / step) : 0;
-          dotsEl.querySelectorAll("i").forEach((d, n) => {
+          const dots = dotsEl.querySelectorAll("i");
+          if (!dots.length) return;
+          const maxScroll = coursesEl.scrollWidth - coursesEl.clientWidth;
+          const progress = maxScroll > 0 ? coursesEl.scrollLeft / maxScroll : 0;
+          const i = Math.round(progress * (dots.length - 1));
+          dots.forEach((d, n) => {
             d.classList.toggle("on", n === i);
           });
         }
