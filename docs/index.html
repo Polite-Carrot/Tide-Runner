@@ -6126,7 +6126,7 @@
               el.setAttribute("aria-selected", on);
               el.setAttribute("aria-disabled", locked);
               const msg = locked && i > 0
-                ? "Play 3 laps of " + TRACKS[i - 1].name + " to unlock"
+                ? "Complete a race of " + TRACKS[i - 1].name + " to unlock"
                 : "";
               el.title = msg;
               const em = el.querySelector(".lockbadge em");
@@ -6258,8 +6258,8 @@
           skinPopName.textContent = s.name;
           skinPopSub.textContent =
             s.id === "diamond"
-              ? "Every challenge complete — behold the shine."
-              : "You beat the challenge on " + s.track + ".";
+              ? "Diamond Camo unlocked"
+              : "New skin unlocked";
           skinPopEl.classList.remove("hidden");
           requestAnimationFrame(fitSheets);
         }
