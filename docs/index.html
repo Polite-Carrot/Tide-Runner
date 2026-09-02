@@ -8,7 +8,7 @@
          on the body. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Tiderunner — buoy racing</title>
     <!-- The manifest drives the installed presentation on both platforms:
@@ -391,6 +391,9 @@
       #menu .sheet.scrolls {
         overflow: hidden !important;
       }
+      #menu .sheet {
+        transition: transform 0.22s ease;
+      }
       /* A sheet that fits does not scroll at all. overflow: auto still takes
          the drag and rubber-bands on iOS even with nothing to scroll to, which
          reads as a broken page when everything is already in view — so
@@ -723,7 +726,8 @@
         width: 100%;
         max-width: 280px;
         font: inherit;
-        font-size: 15px;
+        /* iOS auto-zooms inputs under 16px, which shifts the fixed layout. */
+        font-size: 16px;
         background: rgba(127, 233, 216, 0.06);
         border: 1px solid var(--hair);
         color: var(--foam);
@@ -1411,7 +1415,7 @@
         #menu .name-input {
           max-width: none;
           padding: 6px 10px;
-          font-size: 13px;
+          font-size: 16px;
         }
         /* the cards keep their plotter and their name; the strapline and the
            record line are what go, since both repeat elsewhere */
@@ -6392,9 +6396,44 @@
             document.documentElement.scrollLeft = 0;
             document.body.scrollLeft = 0;
           };
-          nameInput.addEventListener("blur", () =>
-            requestAnimationFrame(resetScroll),
-          );
+          const menuSheet = nameInput.closest(".sheet");
+          let vpHandler = null;
+          const adjustForKeyboard = () => {
+            if (!menuSheet) return;
+            const inputRect = nameInput.getBoundingClientRect();
+            const vp = window.visualViewport;
+            const visibleBottom = vp
+              ? vp.offsetTop + vp.height
+              : window.innerHeight;
+            const needed = inputRect.bottom - (visibleBottom - 24);
+            // Only ever shift further up; don't undo an existing shift here.
+            if (needed > 0) {
+              const current = parseFloat(menuSheet.dataset.shift || "0");
+              const total = current + needed;
+              menuSheet.style.transform = `translateY(${-total}px)`;
+              menuSheet.dataset.shift = String(total);
+            }
+          };
+          nameInput.addEventListener("focus", () => {
+            // Keyboard opens over ~250ms on iOS; adjust part-way and again once open.
+            setTimeout(adjustForKeyboard, 120);
+            setTimeout(adjustForKeyboard, 320);
+            if (window.visualViewport) {
+              vpHandler = adjustForKeyboard;
+              window.visualViewport.addEventListener("resize", vpHandler);
+            }
+          });
+          nameInput.addEventListener("blur", () => {
+            if (menuSheet) {
+              menuSheet.style.transform = "";
+              menuSheet.dataset.shift = "0";
+            }
+            if (vpHandler && window.visualViewport) {
+              window.visualViewport.removeEventListener("resize", vpHandler);
+              vpHandler = null;
+            }
+            requestAnimationFrame(resetScroll);
+          });
           addEventListener(
             "scroll",
             () => {
