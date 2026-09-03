@@ -17,16 +17,17 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
     <meta name="theme-color" content="#04141c" />
-    <!-- Web only, and off if the player has said so. The native iOS/Android
-         shells set window.Capacitor before any page script runs (Capacitor's
-         own bridge, injected by the runtime, not by this page), so its absence
-         is what "web" means here. tr-settings.analytics === false is read
-         straight out of localStorage rather than waiting for the SETTINGS
-         object further down the page, so a player who turned Send usage data
-         off last time never has gtag requested on this load either — the same
-         standard the native check already sets. gaEnable is exposed on window
-         so the Settings toggle can call it directly if usage data is switched
-         back on mid-session, without a reload. -->
+    <!-- Web only, and opt-in: nothing loads until a player has actually said
+         yes, either on the first-visit banner or the Settings toggle. The
+         native iOS/Android shells set window.Capacitor before any page script
+         runs (Capacitor's own bridge, injected by the runtime, not by this
+         page), so its absence is what "web" means here. tr-settings.analytics
+         is read straight out of localStorage rather than waiting for the
+         SETTINGS object further down the page: === true (an explicit prior
+         accept) is the only thing that loads gtag on this page load — absent,
+         or === false, both mean don't. gaEnable is exposed on window so the
+         banner and the Settings toggle can both call it directly on accept,
+         without a reload. -->
     <script>
       var GA_ID = "G-2JK7DZ59VV";
       function gaEnable() {
@@ -43,18 +44,18 @@
         gaScript.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
         document.head.appendChild(gaScript);
       }
-      var gaOptedOut = false;
+      var gaAccepted = false;
       try {
-        gaOptedOut =
+        gaAccepted =
           JSON.parse(localStorage.getItem("tr-settings") || "{}").analytics ===
-          false;
+          true;
       } catch (e) {}
       var gaNative = !!(
         window.Capacitor &&
         window.Capacitor.isNativePlatform &&
         window.Capacitor.isNativePlatform()
       );
-      if (!gaNative && !gaOptedOut) gaEnable();
+      if (!gaNative && gaAccepted) gaEnable();
     </script>
     <!-- No *-web-app-capable and no apple-mobile-web-app-status-bar-style.
          Since iOS 17 a site added to the home screen opens as a web app anyway
@@ -893,6 +894,75 @@
         background: rgba(127, 233, 216, 0.1);
       }
 
+      /* ---------- usage-data consent banner ---------- */
+      /* Shown once, on a player's first visit, before gtag is ever requested —
+         not an after-the-fact opt-out. Anchored to the bottom rather than a
+         full-screen dialog: it doesn't block the menu underneath, and nothing
+         it gates (trackEvent, gaEnable) depends on it being answered before
+         the player can do anything else — declining costs nothing. */
+      #consentBanner {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 8;
+        display: none;
+        background: rgba(4, 20, 28, 0.94);
+        border-top: 1px solid var(--hair);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        padding: 14px calc(16px + env(safe-area-inset-right))
+          calc(14px + env(safe-area-inset-bottom))
+          calc(16px + env(safe-area-inset-left));
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      #consentBanner.on {
+        display: flex;
+      }
+      #consentBanner p {
+        flex: 1 1 320px;
+        margin: 0;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: rgba(234, 247, 244, 0.82);
+      }
+      #consentBanner p a {
+        color: var(--chart);
+      }
+      #consentBanner .consent-actions {
+        display: flex;
+        gap: 8px;
+        flex: 0 0 auto;
+      }
+      /* Deliberately not .go-btn / .ghost: those read as "primary" and
+         "secondary", and a real choice needs equal weight on both sides —
+         same size, same font, one filled and one outlined rather than one
+         loud and one easy to miss. */
+      .consent-btn {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 9px 20px;
+        cursor: pointer;
+        border: 1px solid var(--chart);
+        white-space: nowrap;
+      }
+      #consentAccept {
+        background: var(--chart);
+        color: #04141c;
+      }
+      #consentDecline {
+        background: transparent;
+        color: var(--chart);
+      }
+      #consentDecline:hover {
+        background: rgba(127, 233, 216, 0.1);
+      }
+
       /* ---------- startup identity ---------- */
       #boot {
         position: fixed;
@@ -1588,6 +1658,27 @@
     </div>
 
     <button class="pause-btn" id="pauseBtn" aria-label="Pause"></button>
+
+    <!-- usage-data consent banner: shown once, before analytics is ever
+         requested. Send usage data in Settings is the same choice, editable
+         any time afterward. -->
+    <div
+      id="consentBanner"
+      role="dialog"
+      aria-live="polite"
+      aria-label="Usage data"
+    >
+      <p>
+        This game can send anonymous usage data (which courses and difficulties
+        get played) to help decide where to spend effort next. Nothing that
+        identifies you. Change your mind any time in Settings.
+        <a href="privacy.html">Privacy</a>.
+      </p>
+      <div class="consent-actions">
+        <button class="consent-btn" id="consentDecline">Decline</button>
+        <button class="consent-btn" id="consentAccept">Accept</button>
+      </div>
+    </div>
 
     <div id="vpProbe"></div>
     <div id="safeProbe"></div>
@@ -2894,6 +2985,10 @@
           H = 0,
           DPR = 1;
         const vpProbe = document.getElementById("vpProbe");
+        // referenced by resize(), far below where the banner's own click
+        // handlers live — declared here, by name, once, rather than fetched
+        // twice under two different names
+        const consentBannerEl = document.getElementById("consentBanner");
         function viewportHeight() {
           // Ask the layout engine where the bottom of the fixed viewport really
           // is, rather than trusting a number. #vpProbe is stretched by inset: 0,
@@ -2909,9 +3004,19 @@
         function resize() {
           // Publish the measured window height for the full-screen layers to
           // size to, then measure the canvas as it was actually laid out.
+          // The consent banner sits outside this system entirely (a fixed
+          // element of its own, not a .screen), so when it's showing its
+          // height comes straight off the banner and out of --app-h — the
+          // same trick used for the safe-area insets, and for the same
+          // reason: Start race must stay reachable without a scroll, first
+          // visit included, rather than the banner just landing on top of it.
+          const bannerH =
+            consentBannerEl && consentBannerEl.classList.contains("on")
+              ? consentBannerEl.getBoundingClientRect().height
+              : 0;
           document.documentElement.style.setProperty(
             "--app-h",
-            viewportHeight() + "px",
+            viewportHeight() - bannerH + "px",
           );
           const r = cv.getBoundingClientRect();
           const w = Math.round(r.width);
@@ -3271,6 +3376,7 @@
           cam.x = me.x;
           cam.y = me.y;
           state = S.count;
+          syncConsentBanner(); // never sits over the HUD/pause button mid-race
           hud.classList.add("on");
           document.body.classList.add("racing");
           touch.classList.toggle("on", isTouch);
@@ -3398,8 +3504,10 @@
         let musicBar = 0,
           musicNext = 0;
 
-        // Persisted audio + player preferences.
-        const SETTINGS = { music: true, sfx: true, analytics: true, name: "" };
+        // Persisted audio + player preferences. analytics has no default —
+        // undefined means "never asked", distinct from true/false, which is
+        // what tells the consent banner whether it still needs to show.
+        const SETTINGS = { music: true, sfx: true, name: "" };
         try {
           const saved = JSON.parse(localStorage.getItem("tr-settings") || "{}");
           if (typeof saved.music === "boolean") SETTINGS.music = saved.music;
@@ -6659,6 +6767,7 @@
         };
         document.getElementById("back").onclick = () => {
           state = S.menu;
+          syncConsentBanner();
           resultsEl.classList.add("hidden");
           menuEl.classList.remove("hidden");
           refreshRecords();
@@ -6728,6 +6837,7 @@
             });
           }
           state = S.menu;
+          syncConsentBanner();
           pausedFrom = null;
           pauseEl.classList.add("hidden");
           settingsEl.classList.add("hidden");
@@ -6861,22 +6971,52 @@
           syncToggles();
           saveSettings();
         };
-        analyticsTog.onclick = () => {
-          SETTINGS.analytics = !SETTINGS.analytics;
-          // ga-disable is Google's own runtime switch: once set, an already-
-          // loaded gtag.js treats every call — including its own automatic
-          // page_view and engagement pings, not just trackEvent()'s — as a
-          // no-op. trackEvent() below is the mechanism this app actually
-          // controls and can time precisely; this is best-effort coverage for
-          // what gtag.js does on its own that trackEvent() never reaches.
-          window["ga-disable-" + GA_ID] = !SETTINGS.analytics;
-          // turning it back on: if the player opted out last session, gtag was
-          // never requested on this load at all, so switch it on for real
-          // rather than just clearing a flag nothing is listening to yet.
-          if (SETTINGS.analytics) gaEnable();
+        /* One resolver for every path that can decide the analytics choice —
+   the consent banner's two buttons and the Settings toggle — so "what
+   happens when the answer changes" is written once. ga-disable is
+   Google's own runtime switch: once set, an already-loaded gtag.js
+   treats every call, including its own automatic page_view and
+   engagement pings and not just trackEvent()'s, as a no-op. trackEvent()
+   is the mechanism this app actually controls and times precisely; the
+   flag is best-effort coverage for what gtag.js does on its own that
+   trackEvent() never reaches. Accepting after a load that started
+   undecided or declined loads gtag there and then — it was never
+   requested at page load in either of those cases. */
+        // Undecided — never asked before, from either the banner or the
+        // Settings toggle — is the only time the banner is a candidate to
+        // show at all; state === S.menu is the other half. A full-width bar
+        // pinned to the bottom of the screen sits exactly where the pause
+        // button lives, so it only ever shows on the menu — synced on every
+        // transition onto or off it, not just once at boot — rather than
+        // parking itself over the HUD and touch controls for the whole of a
+        // race a player started without answering it.
+        function bannerPending() {
+          return typeof SETTINGS.analytics !== "boolean";
+        }
+        function syncConsentBanner() {
+          const show = bannerPending() && state === S.menu;
+          if (show === consentBannerEl.classList.contains("on")) return;
+          consentBannerEl.classList.toggle("on", show);
+          resize(); // --app-h has to leave it room, or stop leaving room
+        }
+
+        function resolveAnalyticsConsent(accepted) {
+          SETTINGS.analytics = accepted;
+          window["ga-disable-" + GA_ID] = !accepted;
+          if (accepted) gaEnable();
+          syncConsentBanner();
           syncToggles();
           saveSettings();
-        };
+        }
+
+        document.getElementById("consentAccept").onclick = () =>
+          resolveAnalyticsConsent(true);
+        document.getElementById("consentDecline").onclick = () =>
+          resolveAnalyticsConsent(false);
+        syncConsentBanner();
+
+        analyticsTog.onclick = () =>
+          resolveAnalyticsConsent(!SETTINGS.analytics);
 
         /* ============================================================
    LOOP

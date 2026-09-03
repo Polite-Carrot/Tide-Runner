@@ -119,37 +119,50 @@ Touch controls appear automatically on coarse-pointer devices.
 
 ## Analytics
 
-The web build sends gameplay events to Google Analytics (GA4, `G-2JK7DZ59VV`): `level_start`
-when a race begins, `level_end` when it resolves — `success: true` on finishing, `success: false`
-on exiting to the menu mid-race, both carrying the course, difficulty and lap count, and the
-finish carries place, total time and whether it was a new record. Quitting during the pre-race
-countdown doesn't count as abandoning a level, since nothing has been raced yet.
+The web build can send gameplay events to Google Analytics (GA4, `G-2JK7DZ59VV`) — but nothing
+is requested until a player says yes. `level_start` when a race begins, `level_end` when it
+resolves — `success: true` on finishing, `success: false` on exiting to the menu mid-race, both
+carrying the course, difficulty and lap count, and the finish carries place, total time and
+whether it was a new record. Quitting during the pre-race countdown doesn't count as abandoning
+a level, since nothing has been raced yet.
 
-**Web only, deliberately.** The gtag library is appended to the document — not just called —
-only when `window.Capacitor.isNativePlatform()` is absent or false, so inside the iOS and
-Android apps it is never requested at all, not merely suppressed. Neither native shell has its
-own analytics yet; that gate is where it will branch when they do. `docs/privacy.html` discloses
-this and is the source of truth if the two drift.
+**Opt-in, not opt-out.** A first-visit banner asks before anything loads; declining, or leaving
+it unanswered, costs the player nothing — the game plays identically either way, and no gtag
+script is ever requested. **Send usage data** in Settings is the same choice, answerable there
+directly without ever seeing the banner, and editable afterward in either direction. Both write
+to the same `SETTINGS.analytics` in `localStorage` under `tr-settings`, through one shared
+resolver (`resolveAnalyticsConsent()`) — `undefined` means never asked (the only state that
+shows the banner), `true`/`false` means it's been answered, however it was answered.
 
-**Send usage data**, in Settings alongside Music and Game sounds, is the player's own off switch
-— on by default, persisted the same way as the audio settings, under `tr-settings` in
-`localStorage`. Turning it off is checked in three places, because each covers something the
+**Web only, deliberately, on top of the opt-in.** The gtag library is appended to the document —
+not just called — only when `window.Capacitor.isNativePlatform()` is absent or false *and* the
+player has explicitly accepted, so inside the iOS and Android apps it is never requested at all,
+regardless of what a player would have chosen. Neither native shell has its own analytics yet;
+that gate is where it will branch when they do. `docs/privacy.html` discloses this and is the
+source of truth if the two drift.
+
+Once accepted, turning it back off is checked in three places, because each covers something the
 others can't: `trackEvent()` gates on `SETTINGS.analytics` first, which is the one this file
-times precisely and stops every custom event (`level_start`/`level_end`) the instant it's off;
-the toggle also sets `window['ga-disable-G-2JK7DZ59VV']`, Google's own runtime switch, so an
-already-loaded gtag.js stops its own automatic page views and engagement pings too — things
-`trackEvent()` never calls and so can't reach; and the opt-out is read directly out of
-`localStorage` at the very top of `<head>`, before `SETTINGS` itself is even built further down
-the page, so a player who turned it off last session never has gtag requested again on a fresh
-load either. Turning it back on mid-session calls `gaEnable()` (exposed on `window` from the
-head), which loads gtag there and then if it was never requested in the first place — no reload
-needed either direction.
+times precisely and stops every custom event the instant it's declined; the toggle also sets
+`window['ga-disable-G-2JK7DZ59VV']`, Google's own runtime switch, so an already-loaded gtag.js
+stops its own automatic page views and engagement pings too — things `trackEvent()` never calls
+and so can't reach; and the choice is read directly out of `localStorage` at the very top of
+`<head>`, before `SETTINGS` itself is even built further down the page, so only an explicit
+prior accept (`=== true`) loads gtag on a fresh visit — absent or declined both mean don't.
+Accepting later, from either the banner or the toggle, calls `gaEnable()` (exposed on `window`
+from the head) live, no reload needed in either direction.
 
-There's no boat/skin customisation feature yet, so there's nothing to fire a "skin selected"
-event from. The natural shape for it, whenever it lands, is a `select_content` event with
-`content_type: "boat_skin"` and `item_id` set to the skin's name — GA4's own recommended
-schema for a cosmetic pick, which is what would let it show up in the standard reports rather
-than needing a custom one.
+The banner itself only ever shows on the menu — `syncConsentBanner()` is called on every
+transition on or off it (starting a race, returning from one), not just once at boot. It's a
+full-width bar pinned to the bottom of the screen, exactly where the pause button lives, so a
+player who starts racing without answering it would otherwise have it sitting over the HUD and
+touch controls, unreachable, for the whole race. While it's showing, its own height comes out of
+`--app-h` the same way the safe-area insets do, so it never lands on top of Start race either —
+first visit included.
+
+Skins exist now (course completion unlocks the next course and challenge skins), so the
+`select_content` event with `content_type: "boat_skin"` sketched out here previously — for
+"whenever it lands" — is ready to wire up whenever that's wanted; it hasn't been yet.
 
 ### Filling the screen
 
