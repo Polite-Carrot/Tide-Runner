@@ -167,6 +167,74 @@
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
       }
+      /* A drawn coin, not an icon font or an image: a radial-gradient sphere
+         with an inset rim and a highlight ring, the same technique already
+         used for the toggle switches and the skin swatches elsewhere in this
+         file. Reused at two sizes — the results-screen reward and, smaller,
+         the balance badge on the Skins screen. */
+      .coin-icon {
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 35% 30%,
+          #fff6d0 0%,
+          #ffd84a 45%,
+          #c8912a 100%
+        );
+        box-shadow:
+          inset 0 0 0 2px rgba(155, 107, 0, 0.5),
+          inset 0 0 0 4px rgba(255, 246, 208, 0.3),
+          0 1px 3px rgba(0, 0, 0, 0.35);
+      }
+      .coin-icon.small {
+        width: 15px;
+        height: 15px;
+        box-shadow:
+          inset 0 0 0 1.5px rgba(155, 107, 0, 0.5),
+          inset 0 0 0 3px rgba(255, 246, 208, 0.3),
+          0 1px 2px rgba(0, 0, 0, 0.35);
+      }
+      .coin-balance {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .coin-reward {
+        display: none;
+        align-items: center;
+        gap: 9px;
+        padding: 6px 16px 6px 8px;
+        border: 1px solid rgba(255, 216, 74, 0.4);
+        background: rgba(255, 216, 74, 0.08);
+      }
+      .coin-reward.on {
+        display: flex;
+      }
+      .coin-reward.pop {
+        opacity: 0;
+        transform: scale(0.6);
+        animation: coin-pop 0.5s cubic-bezier(0.3, 1.6, 0.4, 1) 0.15s forwards;
+      }
+      .coin-reward b {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 21px;
+        letter-spacing: 0.02em;
+        color: var(--amber);
+        font-variant-numeric: tabular-nums;
+      }
+      @keyframes coin-pop {
+        60% {
+          opacity: 1;
+          transform: scale(1.14);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
       .num {
         font-family: var(--mono);
         font-variant-numeric: tabular-nums;
@@ -1700,7 +1768,10 @@
             Beat a course's target to claim its challenge skin, or buy one with
             coins earned from racing.
           </p>
-          <span class="coin-balance" id="coinBalance">0 coins</span>
+          <span class="coin-balance"
+            ><span class="coin-icon small" aria-hidden="true"></span
+            ><b id="coinBalance">0</b> coins</span
+          >
         </div>
         <div class="skin-grid" id="skinGrid"></div>
         <div class="btnstack">
@@ -1807,6 +1878,10 @@
         <div class="brand">
           <h1 id="rTitle">Finish</h1>
           <p class="tag" id="rSub"></p>
+          <div class="coin-reward" id="coinReward" role="status">
+            <span class="coin-icon" aria-hidden="true"></span>
+            <b id="coinRewardAmt"></b>
+          </div>
         </div>
         <table>
           <thead>
@@ -6247,6 +6322,8 @@
           rBody = document.getElementById("rBody");
         const rTitle = document.getElementById("rTitle"),
           rSub = document.getElementById("rSub");
+        const coinRewardEl = document.getElementById("coinReward"),
+          coinRewardAmtEl = document.getElementById("coinRewardAmt");
 
         function ordinal(k) {
           const suf = ["th", "st", "nd", "rd"],
@@ -6288,7 +6365,6 @@
             bits.push("unlocked " + nextCourse.name);
           if (unlockedSkin) bits.push("unlocked " + challenge.name + " skin");
           if (unlockedDiamond) bits.push("unlocked Diamond Camo");
-          bits.push("+" + coinsEarned + " coins");
           rSub.textContent =
             track.name +
             " · " +
@@ -6297,6 +6373,20 @@
             bits.join(" · ") +
             ". " +
             tail;
+          // The coin count has its own graphic badge rather than sitting in
+          // that sentence too — .pop re-triggers the entrance animation on
+          // every finish (removed and re-added, since a class already
+          // present when re-applied doesn't restart a CSS animation), and is
+          // skipped entirely under prefers-reduced-motion.
+          coinRewardAmtEl.textContent = "+" + coinsEarned + " coins";
+          coinRewardEl.classList.remove("pop");
+          coinRewardEl.classList.add("on");
+          coinRewardEl.setAttribute(
+            "aria-label",
+            coinsEarned + " coins earned",
+          );
+          if (!REDUCED) void coinRewardEl.offsetWidth; // restart the animation
+          coinRewardEl.classList.toggle("pop", !REDUCED);
           trackEvent("level_end", {
             level_name: track.name,
             success: true,
@@ -6540,7 +6630,7 @@
         );
         const coinBalanceEl = document.getElementById("coinBalance");
         function refreshSkins() {
-          coinBalanceEl.textContent = progress.coins + " coins";
+          coinBalanceEl.textContent = progress.coins;
           skinGridEl.innerHTML = "";
           ALL_SKINS.forEach((s) => {
             const unlocked = skinUnlocked(s);

@@ -128,7 +128,14 @@ attempting a harder difficulty is never a worse bet than playing it safe on Easy
 
 `COINS_PER_LAP` (8) and the multiplier table are the only numbers involved — both are
 top-level constants in `docs/index.html`, next to `finish()`, and trivial to retune; nothing
-downstream depends on the exact figures.
+downstream depends on the exact figures. Placement is never a factor — a race is a race.
+
+**The coin itself is a drawn `.coin-icon`**, not an image or an icon font: a small
+`radial-gradient` circle with an inset rim, the same technique the toggle switches already use
+elsewhere in this file, reused at two sizes. On the results screen it sits in its own badge
+next to the amount earned (`#coinReward`, a `.pop` entrance animation that re-triggers on every
+finish and is skipped under `prefers-reduced-motion`), separate from the plain-English summary
+sentence rather than folded into it. On the Skins screen it sits beside the running balance.
 
 **Shop skins** are bought with coins rather than earned, for cosmetics that don't fit a
 time-and-course challenge — **Union Jack** (200 coins) is the first, an SVG flag pattern
