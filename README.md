@@ -106,6 +106,43 @@ from Skerryvore Sound back to Ouse Bends) and starts it — for a "just keep pla
 rather than a deliberate pick each time. **Race again** and **Change course** are still there
 alongside it.
 
+## Skins and coins
+
+**Courses unlock in order** — finishing one (any place, any difficulty) unlocks the next.
+`courseUnlocked(i)` checks every course before `i`; picking a locked one, from the rail, the
+popup or a stale Next race target, is a no-op — a course you're actually racing was already
+unlocked when you started it.
+
+**Each course has a challenge skin**, earned by lapping it 3 laps under a per-course time
+target (`CHALLENGE_SKINS`, one per track). Beat all 25 and Diamond Camo unlocks on top.
+
+**Coins are earned on every finish**, not just a win — laps × a per-tier multiplier, so
+attempting a harder difficulty is never a worse bet than playing it safe on Easy:
+
+| Difficulty | Multiplier | Example |
+| --- | --- | --- |
+| Easy | 1× | 2 laps → 16 coins |
+| Normal | 1.5× | 3 laps → 36 coins |
+| Hard | 2× | 5 laps → 80 coins |
+| Insane | 3× | 5 laps → 120 coins |
+
+`COINS_PER_LAP` (8) and the multiplier table are the only numbers involved — both are
+top-level constants in `docs/index.html`, next to `finish()`, and trivial to retune; nothing
+downstream depends on the exact figures.
+
+**Shop skins** are bought with coins rather than earned, for cosmetics that don't fit a
+time-and-course challenge — **Union Jack** (200 coins) is the first, an SVG flag pattern
+built the same way the existing Monaco/Germany/Amsterdam challenge-skin flags are. A locked,
+affordable shop skin buys and equips itself on tap, no confirmation step, matching how every
+other single-tap choice in this menu already works; short of the price, tapping does nothing
+and the card's note says by how much.
+
+All three unlock paths — challenge, Diamond, shop — write into the same
+`progress.skins[id] = true` map under `tiderunner.progress.v1` in `localStorage`, which is
+what lets `skinUnlocked()`, `selectedSkin()` and the Skins grid treat every skin uniformly
+regardless of how it was earned. Adding another shop skin is one entry in `SHOP_SKINS`; adding
+another earn path is one more branch in `skinUnlocked()`.
+
 ## Controls
 
 | Action | Keyboard | Touch |

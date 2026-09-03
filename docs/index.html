@@ -155,6 +155,18 @@
         text-transform: uppercase;
         color: rgba(127, 233, 216, 0.72);
       }
+      .coin-balance {
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        color: var(--amber);
+        border: 1px solid rgba(255, 216, 74, 0.4);
+        background: rgba(255, 216, 74, 0.08);
+        padding: 5px 12px;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
       .num {
         font-family: var(--mono);
         font-variant-numeric: tabular-nums;
@@ -1684,7 +1696,11 @@
       <div class="sheet panel" style="max-width: 760px">
         <div class="brand">
           <h1 style="font-size: clamp(30px, 7vw, 48px)">Skins</h1>
-          <p class="tag">Beat each 3-lap target to claim its challenge skin.</p>
+          <p class="tag">
+            Beat a course's target to claim its challenge skin, or buy one with
+            coins earned from racing.
+          </p>
+          <span class="coin-balance" id="coinBalance">0 coins</span>
         </div>
         <div class="skin-grid" id="skinGrid"></div>
         <div class="btnstack">
@@ -2654,7 +2670,7 @@
         }
 
         const PROG_KEY = "tiderunner.progress.v1";
-        let progress = { completed: {}, skins: {}, skin: "harbour" };
+        let progress = { completed: {}, skins: {}, skin: "harbour", coins: 0 };
         try {
           const raw = localStorage.getItem(PROG_KEY);
           const parsed = raw ? JSON.parse(raw) : null;
@@ -2665,6 +2681,8 @@
           progress.completed = {};
         if (!progress.skins || typeof progress.skins !== "object")
           progress.skins = {};
+        if (typeof progress.coins !== "number" || !(progress.coins >= 0))
+          progress.coins = 0;
         // A saved total proves that an earlier version completed the full race.
         for (const t of TRACKS) {
           const r = records[t.name];
@@ -2858,15 +2876,56 @@
             "repeating-linear-gradient(45deg, #ffffff 0 3px, #a0f0ff 3px 6px, #d7b8ff 6px 9px, #7fe9ff 9px 12px)," +
             "repeating-linear-gradient(-45deg, transparent 0 4px, rgba(255,255,255,0.7) 4px 5px)",
         };
+
+        /* Coins are earned on every finish, not just a win: laps x a per-tier
+   multiplier, the same shape as the difficulty ladder itself (Easy through
+   Insane bunch up rather than scale linearly, see TIERS above). Flat
+   starting numbers — trivial to retune, nothing downstream depends on the
+   exact figures. Normal, 3 laps: 36. Insane, 5 laps: 120. */
+        const COINS_PER_LAP = 8;
+        const DIFF_COIN_MULT = [1, 1.5, 2, 3]; // Easy, Normal, Hard, Insane
+        function coinsForFinish(laps, tierIdx) {
+          return Math.round(laps * COINS_PER_LAP * DIFF_COIN_MULT[tierIdx]);
+        }
+
+        /* Shop skins: bought with coins rather than earned by a time or a
+   course, so they carry a price instead of a track/target. Unlock storage
+   is the same progress.skins map challenge skins already use, which is
+   what lets skinUnlocked/selectedSkin/refreshSkins treat every skin
+   uniformly regardless of how it was earned. */
+        const SHOP_SKINS = [
+          {
+            id: "union-jack",
+            name: "Union Jack",
+            price: 200,
+            base: "#00247d",
+            trim: "#cf142b",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%2300247d'/%3E%3Cg stroke='%23ffffff' stroke-width='7'%3E%3Cline x1='0' y1='0' x2='60' y2='30'/%3E%3Cline x1='60' y1='0' x2='0' y2='30'/%3E%3C/g%3E%3Cg stroke='%23cf142b' stroke-width='3'%3E%3Cline x1='0' y1='0' x2='60' y2='30'/%3E%3Cline x1='60' y1='0' x2='0' y2='30'/%3E%3C/g%3E%3Crect x='0' y='11' width='60' height='8' fill='%23ffffff'/%3E%3Crect x='26' y='0' width='8' height='30' fill='%23ffffff'/%3E%3Crect x='0' y='13' width='60' height='4' fill='%23cf142b'/%3E%3Crect x='28' y='0' width='4' height='30' fill='%23cf142b'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+        ];
+
         function allChallengeSkinsUnlocked() {
           return CHALLENGE_SKINS.every((s) => progress.skins[s.id]);
         }
         function skinUnlocked(s) {
           if (s.id === "diamond") return allChallengeSkinsUnlocked();
+          if (s.price) return !!progress.skins[s.id];
           return !s.track || !!progress.skins[s.id];
         }
+        function buySkin(s) {
+          if (skinUnlocked(s) || progress.coins < s.price) return false;
+          progress.coins -= s.price;
+          progress.skins[s.id] = true;
+          saveProgress();
+          return true;
+        }
         function selectedSkin() {
-          const all = DEFAULT_SKINS.concat(CHALLENGE_SKINS, DIAMOND_SKIN);
+          const all = DEFAULT_SKINS.concat(
+            CHALLENGE_SKINS,
+            SHOP_SKINS,
+            DIAMOND_SKIN,
+          );
           return (
             all.find((s) => s.id === progress.skin && skinUnlocked(s)) ||
             DEFAULT_SKINS[0]
@@ -6213,6 +6272,9 @@
           progress.completed[track.name] = true;
           if (unlockedSkin) progress.skins[challenge.id] = true;
           const unlockedDiamond = !hadDiamond && allChallengeSkinsUnlocked();
+          // every finish pays out, not just a win — see coinsForFinish
+          const coinsEarned = coinsForFinish(totalLaps, skill);
+          progress.coins += coinsEarned;
           saveProgress();
           rTitle.textContent = place === 1 ? "Won it" : ordinal(place);
           const tail =
@@ -6226,6 +6288,7 @@
             bits.push("unlocked " + nextCourse.name);
           if (unlockedSkin) bits.push("unlocked " + challenge.name + " skin");
           if (unlockedDiamond) bits.push("unlocked Diamond Camo");
+          bits.push("+" + coinsEarned + " coins");
           rSub.textContent =
             track.name +
             " · " +
@@ -6470,11 +6533,18 @@
 
         const skinsEl = document.getElementById("skinsMenu"),
           skinGridEl = document.getElementById("skinGrid");
-        const ALL_SKINS = DEFAULT_SKINS.concat(CHALLENGE_SKINS, DIAMOND_SKIN);
+        const ALL_SKINS = DEFAULT_SKINS.concat(
+          CHALLENGE_SKINS,
+          SHOP_SKINS,
+          DIAMOND_SKIN,
+        );
+        const coinBalanceEl = document.getElementById("coinBalance");
         function refreshSkins() {
+          coinBalanceEl.textContent = progress.coins + " coins";
           skinGridEl.innerHTML = "";
           ALL_SKINS.forEach((s) => {
             const unlocked = skinUnlocked(s);
+            const affordable = s.price && progress.coins >= s.price;
             const card = document.createElement("button");
             card.type = "button";
             card.className =
@@ -6493,6 +6563,14 @@
               note = unlocked
                 ? "All challenges complete"
                 : "Unlock all 25 challenge skins";
+            else if (s.price)
+              note = unlocked
+                ? "Purchased"
+                : s.price +
+                  " coins" +
+                  (affordable
+                    ? ""
+                    : " · " + (s.price - progress.coins) + " short");
             card.innerHTML =
               '<span class="skin-swatch"><span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span></span></span><b>' +
               s.name +
@@ -6500,6 +6578,11 @@
               note +
               "</small>";
             card.onclick = () => {
+              if (!unlocked && s.price && affordable) {
+                buySkin(s);
+                refreshSkins();
+                return;
+              }
               if (!unlocked) return;
               progress.skin = s.id;
               saveProgress();
