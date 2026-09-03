@@ -17,34 +17,44 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
     <meta name="theme-color" content="#04141c" />
-    <!-- Web only. The native iOS/Android shells set window.Capacitor before any
-         page script runs (Capacitor's own bridge, injected by the runtime, not
-         by this page), so its absence is what "web" means here. The gtag
-         library is only ever appended to the document when that check fails,
-         so nothing analytics-related loads, runs, or reaches the network
-         inside the app — not "loaded but suppressed", genuinely never
-         requested. Native tracking, when it exists, will branch on the same
-         check rather than this snippet. -->
+    <!-- Web only, and off if the player has said so. The native iOS/Android
+         shells set window.Capacitor before any page script runs (Capacitor's
+         own bridge, injected by the runtime, not by this page), so its absence
+         is what "web" means here. tr-settings.analytics === false is read
+         straight out of localStorage rather than waiting for the SETTINGS
+         object further down the page, so a player who turned Send usage data
+         off last time never has gtag requested on this load either — the same
+         standard the native check already sets. gaEnable is exposed on window
+         so the Settings toggle can call it directly if usage data is switched
+         back on mid-session, without a reload. -->
     <script>
-      if (
-        !(
-          window.Capacitor &&
-          window.Capacitor.isNativePlatform &&
-          window.Capacitor.isNativePlatform()
-        )
-      ) {
+      var GA_ID = "G-2JK7DZ59VV";
+      function gaEnable() {
+        if (typeof window.gtag === "function") return; // already loaded
+        window["ga-disable-" + GA_ID] = false;
         window.dataLayer = window.dataLayer || [];
         window.gtag = function () {
           dataLayer.push(arguments);
         };
         gtag("js", new Date());
-        gtag("config", "G-2JK7DZ59VV");
+        gtag("config", GA_ID);
         var gaScript = document.createElement("script");
         gaScript.async = true;
-        gaScript.src =
-          "https://www.googletagmanager.com/gtag/js?id=G-2JK7DZ59VV";
+        gaScript.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
         document.head.appendChild(gaScript);
       }
+      var gaOptedOut = false;
+      try {
+        gaOptedOut =
+          JSON.parse(localStorage.getItem("tr-settings") || "{}").analytics ===
+          false;
+      } catch (e) {}
+      var gaNative = !!(
+        window.Capacitor &&
+        window.Capacitor.isNativePlatform &&
+        window.Capacitor.isNativePlatform()
+      );
+      if (!gaNative && !gaOptedOut) gaEnable();
     </script>
     <!-- No *-web-app-capable and no apple-mobile-web-app-status-bar-style.
          Since iOS 17 a site added to the home screen opens as a web app anyway
@@ -1519,6 +1529,17 @@
             <span></span>
           </button>
         </div>
+        <div class="setrow">
+          <label for="analyticsToggle">Send usage data</label>
+          <button
+            class="toggle"
+            id="analyticsToggle"
+            data-on="1"
+            aria-label="Send usage data"
+          >
+            <span></span>
+          </button>
+        </div>
         <p class="buildstamp" id="buildStamp"></p>
         <div class="btnstack">
           <button class="go-btn" id="settingsDone">Done</button>
@@ -2698,13 +2719,18 @@
    ANALYTICS
    ============================================================ */
         /* Thin wrapper so the rest of the game never has to check whether
-   analytics actually loaded — an ad blocker, being offline when the async
-   script was requested, or running in the native shell (where window.gtag
-   is never defined at all, see the head) all just make this a no-op.
-   Named trackEvent rather than track: track is already the current
-   course object, reassigned constantly below. */
+   analytics actually loaded or is wanted — an ad blocker, being offline
+   when the async script was requested, running in the native shell (where
+   window.gtag is never defined at all, see the head), or the player having
+   Send usage data off in Settings all just make this a no-op. The
+   SETTINGS.analytics check is the one this file times precisely and is the
+   primary mechanism; the ga-disable flag the toggle also sets is a second,
+   best-effort line for what gtag.js does on its own that never comes
+   through here (its automatic page_view, its engagement pings). Named
+   trackEvent rather than track: track is already the current course
+   object, reassigned constantly below. */
         function trackEvent(name, params) {
-          if (typeof window.gtag === "function")
+          if (SETTINGS.analytics && typeof window.gtag === "function")
             window.gtag("event", name, params || {});
         }
 
@@ -2903,11 +2929,16 @@
           musicNext = 0;
 
         // Persisted audio + player preferences.
-        const SETTINGS = { music: true, sfx: true, name: "" };
+        const SETTINGS = { music: true, sfx: true, analytics: true, name: "" };
         try {
           const saved = JSON.parse(localStorage.getItem("tr-settings") || "{}");
           if (typeof saved.music === "boolean") SETTINGS.music = saved.music;
           if (typeof saved.sfx === "boolean") SETTINGS.sfx = saved.sfx;
+          // the head already made the load-time call on this from the same
+          // key, before this object existed; reading it again here just keeps
+          // SETTINGS.analytics honest for syncToggles() and the click handler
+          if (typeof saved.analytics === "boolean")
+            SETTINGS.analytics = saved.analytics;
           if (typeof saved.name === "string")
             SETTINGS.name = saved.name.slice(0, 18);
         } catch (e) {}
@@ -5663,10 +5694,12 @@
         const pauseBtn = document.getElementById("pauseBtn");
         const musicTog = document.getElementById("musicToggle");
         const sfxTog = document.getElementById("sfxToggle");
+        const analyticsTog = document.getElementById("analyticsToggle");
 
         function syncToggles() {
           musicTog.dataset.on = SETTINGS.music ? "1" : "0";
           sfxTog.dataset.on = SETTINGS.sfx ? "1" : "0";
+          analyticsTog.dataset.on = SETTINGS.analytics ? "1" : "0";
         }
         syncToggles();
 
@@ -5844,6 +5877,22 @@
         };
         sfxTog.onclick = () => {
           SETTINGS.sfx = !SETTINGS.sfx;
+          syncToggles();
+          saveSettings();
+        };
+        analyticsTog.onclick = () => {
+          SETTINGS.analytics = !SETTINGS.analytics;
+          // ga-disable is Google's own runtime switch: once set, an already-
+          // loaded gtag.js treats every call — including its own automatic
+          // page_view and engagement pings, not just trackEvent()'s — as a
+          // no-op. trackEvent() below is the mechanism this app actually
+          // controls and can time precisely; this is best-effort coverage for
+          // what gtag.js does on its own that trackEvent() never reaches.
+          window["ga-disable-" + GA_ID] = !SETTINGS.analytics;
+          // turning it back on: if the player opted out last session, gtag was
+          // never requested on this load at all, so switch it on for real
+          // rather than just clearing a flag nothing is listening to yet.
+          if (SETTINGS.analytics) gaEnable();
           syncToggles();
           saveSettings();
         };

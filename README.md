@@ -131,6 +131,20 @@ Android apps it is never requested at all, not merely suppressed. Neither native
 own analytics yet; that gate is where it will branch when they do. `docs/privacy.html` discloses
 this and is the source of truth if the two drift.
 
+**Send usage data**, in Settings alongside Music and Game sounds, is the player's own off switch
+— on by default, persisted the same way as the audio settings, under `tr-settings` in
+`localStorage`. Turning it off is checked in three places, because each covers something the
+others can't: `trackEvent()` gates on `SETTINGS.analytics` first, which is the one this file
+times precisely and stops every custom event (`level_start`/`level_end`) the instant it's off;
+the toggle also sets `window['ga-disable-G-2JK7DZ59VV']`, Google's own runtime switch, so an
+already-loaded gtag.js stops its own automatic page views and engagement pings too — things
+`trackEvent()` never calls and so can't reach; and the opt-out is read directly out of
+`localStorage` at the very top of `<head>`, before `SETTINGS` itself is even built further down
+the page, so a player who turned it off last session never has gtag requested again on a fresh
+load either. Turning it back on mid-session calls `gaEnable()` (exposed on `window` from the
+head), which loads gtag there and then if it was never requested in the first place — no reload
+needed either direction.
+
 There's no boat/skin customisation feature yet, so there's nothing to fire a "skin selected"
 event from. The natural shape for it, whenever it lands, is a `select_content` event with
 `content_type: "boat_skin"` and `item_id` set to the skin's name — GA4's own recommended
