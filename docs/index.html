@@ -122,6 +122,7 @@
         height: 100%;
         margin: 0;
         overflow: hidden;
+        overscroll-behavior: none;
         background: var(--abyss);
       }
       body {
@@ -409,6 +410,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
         padding: calc(20px + env(safe-area-inset-top))
           calc(20px + env(safe-area-inset-right))
           calc(20px + env(safe-area-inset-bottom))
@@ -422,6 +424,14 @@
       }
       .screen.hidden {
         display: none;
+      }
+      /* Menu sheet never scrolls — all content is designed to fit on any device. */
+      #menu .sheet,
+      #menu .sheet.scrolls {
+        overflow: hidden !important;
+      }
+      #menu .sheet {
+        transition: transform 0.22s ease;
       }
       /* A sheet that fits does not scroll at all. overflow: auto still takes
          the drag and rubber-bands on iOS even with nothing to scroll to, which
@@ -470,7 +480,7 @@
         line-height: 1.6;
         color: rgba(234, 247, 244, 0.6);
         max-width: 270px;
-        padding-right: 48px;
+        padding-right: 90px;
       }
 
       .label {
@@ -489,6 +499,7 @@
         display: flex;
         gap: 8px;
         overflow-x: auto;
+        overscroll-behavior-x: contain;
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
@@ -539,6 +550,49 @@
       .course.sel {
         border-color: var(--amber);
         background: rgba(255, 216, 74, 0.09);
+      }
+      .course {
+        position: relative;
+      }
+      .course.locked {
+        cursor: not-allowed;
+      }
+      .course.locked > *:not(.lockbadge) {
+        opacity: 0.32;
+      }
+      .course.locked canvas {
+        filter: grayscale(1);
+      }
+      .course .lockbadge,
+      .skin-card .lockbadge {
+        display: none;
+      }
+      .course.locked .lockbadge {
+        display: grid;
+        position: absolute;
+        inset: 0;
+        place-items: center;
+        gap: 6px;
+        padding: 10px;
+        text-align: center;
+        background: rgba(4, 20, 28, 0.6);
+        color: var(--foam);
+        pointer-events: none;
+        z-index: 2;
+      }
+      .lockbadge .ico {
+        font-size: 26px;
+        line-height: 1;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.75));
+      }
+      .course .lockbadge em {
+        font-style: normal;
+        font-size: 8.5px;
+        letter-spacing: 0.1em;
+        line-height: 1.3;
+        text-transform: uppercase;
+        color: rgba(234, 247, 244, 0.85);
+        max-width: 94%;
       }
       .course canvas {
         display: block;
@@ -711,7 +765,8 @@
         width: 100%;
         max-width: 280px;
         font: inherit;
-        font-size: 15px;
+        /* iOS auto-zooms inputs under 16px, which shifts the fixed layout. */
+        font-size: 16px;
         background: rgba(127, 233, 216, 0.06);
         border: 1px solid var(--hair);
         color: var(--foam);
@@ -1114,10 +1169,14 @@
       .pause-btn::before {
         margin-right: 5px;
       }
-      .gear {
+      .brand-actions {
         position: absolute;
         top: 0;
         right: 0;
+        display: flex;
+        gap: 7px;
+      }
+      .gear {
         width: 36px;
         height: 36px;
         padding: 0;
@@ -1132,6 +1191,87 @@
       }
       .gear:hover {
         background: rgba(127, 233, 216, 0.1);
+      }
+      .skin-tool {
+        width: 54px;
+        font-family: var(--display);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .skin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+        gap: 8px;
+      }
+      .skin-card {
+        min-width: 0;
+        padding: 9px;
+        color: var(--foam);
+        background: rgba(127, 233, 216, 0.04);
+        border: 1px solid var(--hair);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .skin-card.sel {
+        border-color: var(--amber);
+        background: rgba(255, 216, 74, 0.09);
+      }
+      .skin-card.locked {
+        cursor: not-allowed;
+      }
+      .skin-card.locked > b,
+      .skin-card.locked > small {
+        opacity: 0.55;
+      }
+      .skin-swatch {
+        display: block;
+        position: relative;
+        width: 100%;
+        height: 34px;
+        margin-bottom: 7px;
+        border: 1px solid rgba(234, 247, 244, 0.18);
+        background: var(--skin-preview);
+      }
+      .skin-card.locked .skin-swatch {
+        filter: grayscale(0.7);
+      }
+      .skin-card.locked .skin-swatch .lockbadge {
+        display: grid;
+        position: absolute;
+        inset: 0;
+        place-items: center;
+        background: rgba(4, 20, 28, 0.55);
+        color: var(--foam);
+        pointer-events: none;
+        z-index: 2;
+      }
+      #skinPop {
+        z-index: 8;
+      }
+      .skin-pop-preview {
+        display: block;
+        height: 96px;
+        margin: 12px 0 6px;
+        border: 1px solid var(--hair);
+        background: var(--skin-preview, #ffd84a);
+      }
+      .skin-card b {
+        display: block;
+        font-family: var(--display);
+        font-size: 17px;
+        letter-spacing: 0.02em;
+      }
+      .skin-card small {
+        display: block;
+        min-height: 2.5em;
+        margin-top: 3px;
+        color: rgba(234, 247, 244, 0.55);
+        font-size: 8.5px;
+        line-height: 1.25;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
       .setrow {
         display: flex;
@@ -1189,6 +1329,29 @@
         text-align: center;
       }
 
+      /* Tablets have enough room for a more substantial course selector while
+         still leaving the live track clearly visible around the sheet. */
+      @media (min-width: 700px) and (min-height: 500px) {
+        #menu .sheet {
+          --sheet-pad: 28px;
+          width: min(860px, 84vw);
+          padding-bottom: 26px;
+        }
+        #menu .course {
+          flex-basis: 150px;
+          padding: 12px 12px 10px;
+        }
+        #menu .course h3 {
+          font-size: 21px;
+        }
+        #menu .course p {
+          font-size: 10px;
+        }
+        #menu .row {
+          margin-top: 20px;
+        }
+      }
+
       /* A short screen — an SE, or a phone held in landscape — has to give
          something up for Start race to stay in view. The tagline is the one
          thing on the menu nobody reads twice. */
@@ -1218,6 +1381,32 @@
         }
         .more {
           margin-top: 6px;
+        }
+      }
+
+      /* Standalone tagline reads better under the title than jammed next to it. */
+      .menu-tag {
+        max-width: 520px;
+        margin: -4px 0 14px;
+        padding-right: 0;
+      }
+
+      /* Portrait phones are taller than 720 but still tight once the safe
+         area is taken off, so Start race gets clipped without extra compaction. */
+      @media (max-width: 560px) {
+        .menu-tag {
+          display: none;
+        }
+        #menu .brand {
+          padding-bottom: 8px;
+          margin-bottom: 10px;
+        }
+        #menu .course {
+          flex-basis: 120px;
+        }
+        #menu .row {
+          gap: 10px;
+          margin-top: 10px;
         }
       }
 
@@ -1265,7 +1454,7 @@
         #menu .name-input {
           max-width: none;
           padding: 6px 10px;
-          font-size: 13px;
+          font-size: 16px;
         }
         /* the cards keep their plotter and their name; the strapline and the
            record line are what go, since both repeat elsewhere */
@@ -1415,14 +1604,24 @@
       <div class="sheet panel">
         <div class="brand">
           <h1>Tide<em>runner</em></h1>
-          <p class="tag">
-            Race the fleet at a difficulty of your choosing — and watch out for
-            the sharks.
-          </p>
-          <button class="gear" id="homeSettings" aria-label="Settings">
-            ⚙
-          </button>
+          <div class="brand-actions">
+            <button class="gear skin-tool" id="homeSkins" aria-label="Skins">
+              Skins
+            </button>
+            <button
+              class="gear"
+              id="homeSettings"
+              aria-label="Settings"
+              title="Settings"
+            >
+              ⚙
+            </button>
+          </div>
         </div>
+        <p class="tag menu-tag">
+          Race the fleet at a difficulty of your choosing — and watch out for
+          the sharks.
+        </p>
 
         <p class="label">Course</p>
         <div
@@ -1483,6 +1682,52 @@
           <button class="pop-close" id="popClose" aria-label="Close">✕</button>
         </div>
         <div id="popGrid"></div>
+      </div>
+    </div>
+
+    <!-- skins -->
+    <div class="screen hidden" id="skinsMenu">
+      <div class="sheet panel" style="max-width: 760px">
+        <div class="brand">
+          <h1 style="font-size: clamp(30px, 7vw, 48px)">Skins</h1>
+          <p class="tag">Beat each 3-lap target to claim its challenge skin.</p>
+        </div>
+        <div class="skin-grid" id="skinGrid"></div>
+        <div class="btnstack">
+          <button class="go-btn" id="skinsDone">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- skin unlock celebration -->
+    <div
+      class="screen hidden"
+      id="skinPop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="skinPopTitle"
+    >
+      <div class="sheet panel" style="max-width: 380px; text-align: center">
+        <div class="brand" style="padding-right: 0; justify-content: center">
+          <h1 id="skinPopTitle" style="font-size: clamp(28px, 6.4vw, 44px)">
+            Congrats!
+          </h1>
+        </div>
+        <p class="label" id="skinPopSub">New skin unlocked</p>
+        <span
+          class="skin-pop-preview"
+          id="skinPopSwatch"
+          aria-hidden="true"
+        ></span>
+        <p
+          class="label"
+          id="skinPopName"
+          style="color: var(--foam); letter-spacing: 0.14em"
+        ></p>
+        <div class="btnstack">
+          <button class="go-btn" id="skinPopEquip">Equip it</button>
+          <button class="ghost" id="skinPopClose">Later</button>
+        </div>
       </div>
     </div>
 
@@ -2419,6 +2664,227 @@
           return true;
         }
 
+        const PROG_KEY = "tiderunner.progress.v1";
+        let progress = { completed: {}, skins: {}, skin: "harbour" };
+        try {
+          const raw = localStorage.getItem(PROG_KEY);
+          const parsed = raw ? JSON.parse(raw) : null;
+          if (parsed && typeof parsed === "object")
+            progress = Object.assign(progress, parsed);
+        } catch (e) {}
+        if (!progress.completed || typeof progress.completed !== "object")
+          progress.completed = {};
+        if (!progress.skins || typeof progress.skins !== "object")
+          progress.skins = {};
+        // A saved total proves that an earlier version completed the full race.
+        for (const t of TRACKS) {
+          const r = records[t.name];
+          if (r && r.totals && Object.values(r.totals).some((v) => v > 0))
+            progress.completed[t.name] = true;
+        }
+        function saveProgress() {
+          try {
+            localStorage.setItem(PROG_KEY, JSON.stringify(progress));
+          } catch (e) {}
+        }
+        function courseUnlocked(i) {
+          if (i <= 0) return true;
+          for (let n = 0; n < i; n++)
+            if (!progress.completed[TRACKS[n].name]) return false;
+          return true;
+        }
+
+        const DEFAULT_SKINS = [
+          {
+            id: "harbour",
+            name: "Harbour Gold",
+            base: "#ffd84a",
+            trim: "#9b6b00",
+            preview: "#ffd84a",
+          },
+          {
+            id: "jet",
+            name: "Jet Black",
+            base: "#15191d",
+            trim: "#d4dde2",
+            preview: "#15191d",
+          },
+          {
+            id: "volt",
+            name: "Volt Green",
+            base: "#00f58a",
+            trim: "#063c2a",
+            preview: "#00f58a",
+          },
+          {
+            id: "flare",
+            name: "Flare Red",
+            base: "#ff3030",
+            trim: "#5e0808",
+            preview: "#ff3030",
+          },
+          {
+            id: "ion",
+            name: "Ion Cyan",
+            base: "#00e5ff",
+            trim: "#064d67",
+            preview: "#00e5ff",
+          },
+        ];
+        const CHALLENGE_META = [
+          ["Woodland Camo", "woodland", 215, "#526b3d"],
+          ["Fish", "fish", 210, "#55bfc5"],
+          ["Desert Camo", "desert", 225, "#c9a568"],
+          ["Monaco Flag", "monaco", 220, "#e8e8e8"],
+          ["Amsterdam XXX", "amsterdam", 215, "#1d1d1d"],
+          ["Waterfall", "waterfall", 230, "#249bc2"],
+          ["Red Tiger", "red-tiger", 215, "#e52d27"],
+          ["Blue Tiger", "blue-tiger", 205, "#2586d8"],
+          ["Zebra", "zebra", 230, "#f2f0e8"],
+          ["Pink Polka", "polka", 210, "#ff8fcb"],
+          ["Phone Box", "phonebox", 218, "#d92727"],
+          ["Fire", "fire", 205, "#f04a20"],
+          ["Winter Camo", "winter", 200, "#dcebf1"],
+          ["Arrows", "arrows", 225, "#f2cf24"],
+          ["Smiley", "smiley", 205, "#ffe137"],
+          ["Anime", "anime", 210, "#ff83c9"],
+          ["Carrot", "carrot", 225, "#ff6b1a"],
+          ["Log", "log", 215, "#8a5a32"],
+          ["Love Hearts", "hearts", 215, "#ed5c91"],
+          ["Germany", "germany", 205, "#d82929"],
+          ["Kraken", "kraken", 215, "#713b9c"],
+          ["Pulse", "pulse", 230, "#121c25"],
+          ["Leviathan", "leviathan", 210, "#174e4a"],
+          ["Hot Pink", "hot-pink", 230, "#ff1493"],
+          ["Fall Camo", "fall", 210, "#9a5b2e"],
+        ];
+        function challengePreview(id, base) {
+          if (["woodland", "desert", "winter", "fall"].includes(id)) {
+            const p =
+              id === "woodland"
+                ? { base: "#617b3a", c: ["#26351d", "#3b2a1a", "#8a6941"] }
+                : id === "desert"
+                  ? { base: "#c4a370", c: ["#8d7045", "#5f4a2e", "#e0c895"] }
+                  : id === "winter"
+                    ? { base: "#dcebf1", c: ["#8097a2", "#3d4a52", "#c9d6dc"] }
+                    : { base: "#8b5a2b", c: ["#3d2c1a", "#c07a2c", "#63552a"] };
+            const enc = (hex) => hex.replace("#", "%23");
+            const blobs = [
+              [6, 6, 5, 3.2, 0, 20],
+              [17, 4, 5.5, 3.2, 1, -15],
+              [28, 6, 4.5, 2.8, 2, 30],
+              [40, 4, 5.5, 3.2, 0, -20],
+              [52, 6, 5, 2.8, 1, 15],
+              [5, 15, 5, 3, 2, -25],
+              [15, 14, 5, 3.2, 0, 10],
+              [26, 15, 5.5, 2.8, 1, -10],
+              [37, 14, 5, 3.2, 2, 35],
+              [48, 15, 5, 3, 0, -30],
+              [58, 13, 4, 3, 1, 20],
+              [8, 24, 5, 3.2, 1, -15],
+              [19, 25, 5, 2.8, 2, 25],
+              [31, 24, 5, 3.2, 0, -20],
+              [43, 25, 5.5, 2.8, 1, 15],
+              [54, 24, 4.5, 3, 2, -25],
+            ];
+            const shapes = blobs
+              .map(
+                ([cx, cy, rx, ry, ci, rot]) =>
+                  `%3Cellipse cx='${cx}' cy='${cy}' rx='${rx}' ry='${ry}' fill='${enc(p.c[ci])}' transform='rotate(${rot} ${cx} ${cy})'/%3E`,
+              )
+              .join("");
+            return (
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E" +
+              `%3Crect width='60' height='30' fill='${enc(p.base)}'/%3E` +
+              shapes +
+              '%3C/svg%3E") 0 0 / 100% 100% no-repeat'
+            );
+          }
+          if (["red-tiger", "blue-tiger", "zebra"].includes(id))
+            return `repeating-linear-gradient(65deg,${base} 0 10px,#151515 10px 14px,${base} 14px 21px)`;
+          if (id === "fish")
+            return "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%2355bfc5'/%3E%3Cg fill='%230f4d63'%3E%3Cellipse cx='13' cy='8' rx='5' ry='2.6'/%3E%3Cpolygon points='8,8 3,4 5,8 3,12'/%3E%3Cpolygon points='11,5.5 14,3.2 15,5.5'/%3E%3Ccircle cx='15.5' cy='7.6' r='0.7' fill='%23ffffff'/%3E%3Ccircle cx='15.5' cy='7.6' r='0.35'/%3E%3Cellipse cx='38' cy='18' rx='6' ry='3'/%3E%3Cpolygon points='32,18 26,13 28,18 26,23'/%3E%3Cpolygon points='36,14.5 40,12 41,14.5'/%3E%3Ccircle cx='41' cy='17.4' r='0.8' fill='%23ffffff'/%3E%3Ccircle cx='41' cy='17.4' r='0.4'/%3E%3Cellipse cx='53' cy='8' rx='4.5' ry='2.4'/%3E%3Cpolygon points='48.5,8 44.5,5 46,8 44.5,11'/%3E%3Cpolygon points='51,5.9 54,3.9 55,5.9'/%3E%3Ccircle cx='55' cy='7.6' r='0.65' fill='%23ffffff'/%3E%3Ccircle cx='55' cy='7.6' r='0.3'/%3E%3C/g%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat";
+          if (id === "leviathan")
+            return `radial-gradient(circle at 20% 100%,transparent 0 7px,#e8fbf4 8px 9px,transparent 10px),${base}`;
+          if (id === "monaco")
+            return "linear-gradient(to bottom, #fff 0 50%, #e32636 50% 100%)";
+          if (id === "amsterdam")
+            return "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='7' fill='%23e32636'/%3E%3Crect y='7' width='60' height='16' fill='%23151515'/%3E%3Crect y='23' width='60' height='7' fill='%23e32636'/%3E%3Cg stroke='%23fff' stroke-width='2.6' stroke-linecap='round'%3E%3Cline x1='7' y1='11' x2='13' y2='19'/%3E%3Cline x1='13' y1='11' x2='7' y2='19'/%3E%3Cline x1='27' y1='11' x2='33' y2='19'/%3E%3Cline x1='33' y1='11' x2='27' y2='19'/%3E%3Cline x1='47' y1='11' x2='53' y2='19'/%3E%3Cline x1='53' y1='11' x2='47' y2='19'/%3E%3C/g%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat";
+          if (id === "waterfall")
+            return `repeating-linear-gradient(100deg,#249bc2 0 10px,#dffaff 10px 13px,#126b9a 13px 20px)`;
+          if (id === "polka")
+            return "radial-gradient(circle,#fff 0 3px,transparent 4px) 0 0/18px 18px,#ff8fcb";
+          if (id === "phonebox")
+            return "repeating-linear-gradient(90deg,#d92727 0 15px,#f7d8bd 15px 17px)";
+          if (id === "fire")
+            return "linear-gradient(120deg,#f04a20,#ffd84a 45%,#d51d12 70%,#ffd84a)";
+          if (id === "arrows")
+            return (
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 18'%3E%3Cpath d='M2 3 L10 9 L2 15 M12 3 L20 9 L12 15 M22 3 L28 9 L22 15' stroke='%23111' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\") 0 0 / 34px 34px repeat, " +
+              base
+            );
+          if (id === "smiley")
+            return (
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='14' cy='15' r='2.4' fill='%23111'/%3E%3Ccircle cx='26' cy='15' r='2.4' fill='%23111'/%3E%3Cpath d='M12 24 Q20 32 28 24' stroke='%23111' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\") 0 0 / 30px 30px repeat, " +
+              base
+            );
+          if (id === "anime")
+            return "linear-gradient(135deg,#ff83c9 0 35%,#7fe9ff 35% 65%,#fff 65% 72%,#ff83c9 72%)";
+          if (id === "carrot")
+            return "repeating-linear-gradient(90deg,#ff6b1a 0 13px,#55a944 13px 17px)";
+          if (id === "log")
+            return "repeating-radial-gradient(circle,#4d2d1b 0 2px,#8a5a32 3px 8px)";
+          if (id === "hearts")
+            return (
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 34 C 6 24 2 12 12 8 C 16 6 20 10 20 14 C 20 10 24 6 28 8 C 38 12 34 24 20 34 Z' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 22px 22px repeat, " +
+              base
+            );
+          if (id === "germany")
+            return "linear-gradient(to bottom, #111 0 33.33%, #d82929 33.33% 66.66%, #f2c324 66.66% 100%)";
+          if (id === "kraken")
+            return "repeating-linear-gradient(115deg,#713b9c 0 10px,#d493ff 10px 13px,#713b9c 13px 21px)";
+          if (id === "pulse")
+            return "linear-gradient(165deg,#121c25 0 44%,#45ffdc 45% 52%,#121c25 53%)";
+          if (id === "hot-pink") return "#ff1493";
+          return base;
+        }
+        const CHALLENGE_SKINS = TRACKS.map((t, i) => {
+          const m = CHALLENGE_META[i];
+          return {
+            id: m[1],
+            name: m[0],
+            track: t.name,
+            // -2.5 offset trims the earlier +2.5 buffer, netting a 5-second cut
+            target: Math.ceil(((t.len * 3) / m[2] - 2.5) * 2) / 2,
+            base: m[3],
+            preview: challengePreview(m[1], m[3]),
+          };
+        });
+        const DIAMOND_SKIN = {
+          id: "diamond",
+          name: "Diamond Camo",
+          base: "#e8fcff",
+          trim: "#b7c8ff",
+          preview:
+            "repeating-linear-gradient(45deg, #ffffff 0 3px, #a0f0ff 3px 6px, #d7b8ff 6px 9px, #7fe9ff 9px 12px)," +
+            "repeating-linear-gradient(-45deg, transparent 0 4px, rgba(255,255,255,0.7) 4px 5px)",
+        };
+        function allChallengeSkinsUnlocked() {
+          return CHALLENGE_SKINS.every((s) => progress.skins[s.id]);
+        }
+        function skinUnlocked(s) {
+          if (s.id === "diamond") return allChallengeSkinsUnlocked();
+          return !s.track || !!progress.skins[s.id];
+        }
+        function selectedSkin() {
+          const all = DEFAULT_SKINS.concat(CHALLENGE_SKINS, DIAMOND_SKIN);
+          return (
+            all.find((s) => s.id === progress.skin && skinUnlocked(s)) ||
+            DEFAULT_SKINS[0]
+          );
+        }
+        saveProgress();
+
         /* ============================================================
    CANVAS / VIEW
    ============================================================ */
@@ -2465,9 +2931,11 @@
    hidden, so this cannot trap anything out of reach. */
         function fitSheets() {
           document.querySelectorAll(".screen .sheet").forEach((el) => {
-            // scrollHeight is the content height whether or not it is clipped,
-            // and toggle with a boolean is a no-op when the answer hasn't
-            // changed — so the observers below cannot drive each other
+            // Menu never scrolls — CSS overrides this too, but skip the toggle.
+            if (el.closest("#menu")) {
+              el.classList.remove("scrolls");
+              return;
+            }
             el.classList.toggle(
               "scrolls",
               el.scrollHeight > el.clientHeight + 1,
@@ -2767,6 +3235,7 @@
               nv = track.nrm[i];
             const off = col * track.half * spread;
             const T = TIERS[skill];
+            const playerSkin = selectedSkin();
             const b = makeBoat({
               x: p.x + nv.x * off,
               y: p.y + nv.y * off,
@@ -2776,8 +3245,9 @@
               lap: -1, // sat behind the line; crossing it starts lap 1
               ai: r !== null,
               name: r ? r.name : playerName(),
-              col: r ? r.col : "#ffd84a",
-              trim: r ? r.trim : "#c99a12",
+              col: r ? r.col : playerSkin.base || playerSkin.preview,
+              trim: r ? r.trim : playerSkin.trim || "#17313a",
+              skin: r ? null : playerSkin.id,
               power: r ? T.power * (1 - k * 0.012) : 1, // slight spread across the field
               tier: T,
               steerCmd: 0,
@@ -4262,9 +4732,20 @@
                 nv = track.nrm[i];
               const x = p.x + nv.x * lane * track.half,
                 y = p.y + nv.y * lane * track.half;
-              // don't stack them, and don't bury a boost
+              // Keep every hazard's full influence clear of the starting grid.
+              // Larger fleets extend farther behind the line than startClear's
+              // fixed end-of-lap buffer can account for.
               let clash = false;
+              for (const b of boats) {
+                const rr = cfg.r + 35;
+                if ((b.x - x) ** 2 + (b.y - y) ** 2 < rr * rr) {
+                  clash = true;
+                  break;
+                }
+              }
+              // don't stack them, and don't bury a boost
               for (const h of hazards) {
+                if (clash) break;
                 const rr = HAZ[h.type].r + cfg.r;
                 if ((h.x - x) ** 2 + (h.y - y) ** 2 < rr * rr) {
                   clash = true;
@@ -4345,9 +4826,10 @@
               b.inEddy = Math.max(b.inEddy, f);
               const ux = dx / d,
                 uy = dy / d;
-              // inward pull plus a tangential swirl, so you arrive turning
-              b.vx += (ux * 165 + -uy * h.dir * 205) * f * dt;
-              b.vy += (uy * 165 + ux * h.dir * 205) * f * dt;
+              // ux/uy point inward, so their clockwise perpendicular is
+              // (uy, -ux). Keep current, artwork and hull rotation on h.dir.
+              b.vx += (ux * 165 + uy * h.dir * 205) * f * dt;
+              b.vy += (uy * 165 - ux * h.dir * 205) * f * dt;
               b.h += h.dir * 2.1 * f * f * dt;
             }
           }
@@ -4467,7 +4949,7 @@
                 ctx.beginPath();
                 for (let k = 0; k <= 30; k++) {
                   const t = k / 30;
-                  const a = arm * 2.09 + t * 4.4 * h.dir;
+                  const a = arm * 2.09 - t * 4.4 * h.dir;
                   const rr = h.r * (0.1 + t * 0.86);
                   const x = Math.cos(a) * rr,
                     y = Math.sin(a) * rr;
@@ -5124,7 +5606,7 @@
           ctx.restore();
         }
 
-        function hull(b) {
+        function traceHull() {
           ctx.beginPath();
           ctx.moveTo(19, 0);
           ctx.quadraticCurveTo(8, -8.5, -9, -8);
@@ -5133,8 +5615,322 @@
           ctx.lineTo(-9, 8);
           ctx.quadraticCurveTo(8, 8.5, 19, 0);
           ctx.closePath();
-          ctx.fillStyle = b.col;
-          ctx.fill();
+        }
+
+        function paintPlayerSkin(id, base) {
+          ctx.fillStyle = base || "#ffd84a";
+          ctx.fillRect(-16, -9, 36, 18);
+          const stripes = (colour, offset = 0) => {
+            ctx.strokeStyle = colour;
+            ctx.lineWidth = 3;
+            for (let x = -18 + offset; x < 22; x += 8) {
+              ctx.beginPath();
+              ctx.moveTo(x, -10);
+              ctx.lineTo(x + 7, 10);
+              ctx.stroke();
+            }
+          };
+          if (["woodland", "desert", "winter", "fall"].includes(id)) {
+            const palette =
+              id === "woodland"
+                ? ["#26351d", "#617b3a", "#8a6941", "#3b2a1a"]
+                : id === "desert"
+                  ? ["#8d7045", "#c4a370", "#e0c895", "#5f4a2e"]
+                  : id === "winter"
+                    ? ["#dcebf1", "#8097a2", "#3d4a52", "#c9d6dc"]
+                    : ["#3d2c1a", "#8b5a2b", "#c07a2c", "#63552a"];
+            ctx.fillStyle = palette[1];
+            ctx.fillRect(-16, -9, 36, 18);
+            const blobs = [
+              [-13, -6, 3.2, 2.3, 0, 0.4],
+              [-8, -6, 3.5, 2.2, 3, -0.2],
+              [-3, -7, 3, 2.4, 2, 0.6],
+              [3, -7, 3.4, 2, 0, 0.3],
+              [8, -5, 3.6, 2.4, 3, -0.4],
+              [13, -6, 3, 2.4, 2, 0.8],
+              [17, -3, 2.8, 2, 0, 0],
+              [-15, -1, 3, 2.6, 3, 0.2],
+              [-10, 0, 2.6, 2, 2, -0.5],
+              [-4, 0, 3.4, 2, 0, 0.4],
+              [1, -1, 2.8, 2, 3, 0],
+              [6, 1, 3.2, 2.4, 2, -0.3],
+              [11, 0, 3, 2, 0, 0.6],
+              [16, 2, 2.8, 2.4, 3, 0],
+              [-13, 5, 3.2, 2.4, 0, 0.3],
+              [-8, 6, 3, 2.4, 2, -0.4],
+              [-3, 5, 3.4, 2, 3, 0.2],
+              [3, 6, 3, 2.4, 0, -0.5],
+              [8, 5, 3.6, 2, 2, 0.4],
+              [13, 6, 3, 2.4, 3, 0],
+              [17, 5, 2.6, 2, 0, 0.6],
+            ];
+            blobs.forEach(([x, y, rx, ry, pi, rot]) => {
+              ctx.fillStyle = palette[pi];
+              ctx.beginPath();
+              ctx.ellipse(x, y, rx, ry, rot, 0, 7);
+              ctx.fill();
+            });
+          } else if (id === "fish") {
+            const drawFish = (fx, fy, s, dir) => {
+              ctx.save();
+              ctx.translate(fx, fy);
+              ctx.scale(dir, 1);
+              ctx.fillStyle = "#0f4d63";
+              ctx.beginPath();
+              ctx.ellipse(0, 0, 4 * s, 2 * s, 0, 0, 7);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(-3.5 * s, 0);
+              ctx.lineTo(-6.5 * s, -2.4 * s);
+              ctx.lineTo(-4.6 * s, 0);
+              ctx.lineTo(-6.5 * s, 2.4 * s);
+              ctx.closePath();
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(-0.5 * s, -1.7 * s);
+              ctx.lineTo(1.5 * s, -3.2 * s);
+              ctx.lineTo(2.4 * s, -1.7 * s);
+              ctx.closePath();
+              ctx.fill();
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(2.6 * s, -0.7 * s, 0.6, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = "#0f4d63";
+              ctx.beginPath();
+              ctx.arc(2.7 * s, -0.7 * s, 0.28, 0, 7);
+              ctx.fill();
+              ctx.restore();
+            };
+            drawFish(-9, -4, 1.05, 1);
+            drawFish(2, 4, 1.15, -1);
+            drawFish(13, -3, 1.0, 1);
+          } else if (id === "leviathan") {
+            ctx.strokeStyle = "#5eb5a5";
+            ctx.lineWidth = 1.5;
+            for (let x = -12; x < 18; x += 6)
+              for (let y = -6; y <= 6; y += 6) {
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI);
+                ctx.stroke();
+              }
+          } else if (id === "monaco") {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(-16, -9, 36, 9);
+            ctx.fillStyle = "#e32636";
+            ctx.fillRect(-16, 0, 36, 9);
+          } else if (id === "amsterdam") {
+            ctx.fillStyle = "#e32636";
+            ctx.fillRect(-16, -9, 36, 4);
+            ctx.fillStyle = "#151515";
+            ctx.fillRect(-16, -5, 36, 10);
+            ctx.fillStyle = "#e32636";
+            ctx.fillRect(-16, 5, 36, 4);
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2.6;
+            ctx.lineCap = "round";
+            [-11, 0, 11].forEach((cx) => {
+              ctx.beginPath();
+              ctx.moveTo(cx - 3, -3.6);
+              ctx.lineTo(cx + 3, 3.6);
+              ctx.moveTo(cx + 3, -3.6);
+              ctx.lineTo(cx - 3, 3.6);
+              ctx.stroke();
+            });
+            ctx.lineCap = "butt";
+          } else if (id === "waterfall") {
+            stripes("#dffaff", 2);
+            ctx.strokeStyle = "#126b9a";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-16, 4);
+            ctx.quadraticCurveTo(0, -3, 20, 3);
+            ctx.stroke();
+          } else if (
+            id === "red-tiger" ||
+            id === "blue-tiger" ||
+            id === "zebra"
+          ) {
+            stripes(id === "zebra" ? "#121212" : "#151515");
+          } else if (id === "polka") {
+            ctx.fillStyle = "#fff";
+            for (let x = -12; x < 18; x += 8)
+              for (let y = -5; y <= 5; y += 10) {
+                ctx.beginPath();
+                ctx.arc(x, y, 2.2, 0, 7);
+                ctx.fill();
+              }
+          } else if (id === "phonebox") {
+            ctx.strokeStyle = "#f7d8bd";
+            ctx.lineWidth = 1.2;
+            [-8, 0, 8].forEach((x) => ctx.strokeRect(x, -5, 6, 10));
+          } else if (id === "fire") {
+            ctx.fillStyle = "#ffd84a";
+            for (let x = -13; x < 18; x += 8) {
+              ctx.beginPath();
+              ctx.moveTo(x, 8);
+              ctx.quadraticCurveTo(x + 2, -8, x + 6, 8);
+              ctx.fill();
+            }
+          } else if (id === "arrows") {
+            ctx.strokeStyle = "#111";
+            ctx.lineWidth = 2.4;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            [-11, -3, 5, 13].forEach((x) => {
+              ctx.beginPath();
+              ctx.moveTo(x - 3, -5);
+              ctx.lineTo(x + 3, 0);
+              ctx.lineTo(x - 3, 5);
+              ctx.stroke();
+            });
+            ctx.lineCap = "butt";
+            ctx.lineJoin = "miter";
+          } else if (id === "smiley") {
+            const face = (fx) => {
+              ctx.fillStyle = "#111";
+              ctx.beginPath();
+              ctx.arc(fx - 2, -2, 0.9, 0, 7);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(fx + 2, -2, 0.9, 0, 7);
+              ctx.fill();
+              ctx.strokeStyle = "#111";
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.arc(fx, 0.5, 2.6, 0.2, Math.PI - 0.2);
+              ctx.stroke();
+            };
+            face(-8);
+            face(7);
+          } else if (id === "anime") {
+            stripes("#7fe9ff", 4);
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(7, 0, 4, 0, 7);
+            ctx.fill();
+            ctx.fillStyle = "#3c174f";
+            ctx.beginPath();
+            ctx.arc(8, 0, 2, 0, 7);
+            ctx.fill();
+          } else if (id === "carrot") {
+            ctx.fillStyle = "#55a944";
+            [-5, 2, 9].forEach((x) => ctx.fillRect(x, -8, 3, 6));
+          } else if (id === "log") {
+            ctx.strokeStyle = "#4d2d1b";
+            ctx.lineWidth = 1.5;
+            [-9, 2, 13].forEach((x) => {
+              ctx.beginPath();
+              ctx.arc(x, 0, 5, 0, 7);
+              ctx.stroke();
+            });
+          } else if (id === "hearts") {
+            ctx.fillStyle = "#fff";
+            const heart = (cx, cy, s) => {
+              ctx.beginPath();
+              ctx.moveTo(cx, cy + s * 1.15);
+              ctx.bezierCurveTo(
+                cx - s * 1.7,
+                cy - s * 0.4,
+                cx - s * 0.6,
+                cy - s * 1.4,
+                cx,
+                cy - s * 0.35,
+              );
+              ctx.bezierCurveTo(
+                cx + s * 0.6,
+                cy - s * 1.4,
+                cx + s * 1.7,
+                cy - s * 0.4,
+                cx,
+                cy + s * 1.15,
+              );
+              ctx.closePath();
+              ctx.fill();
+            };
+            heart(-9, 0, 2.8);
+            heart(2, -1, 2.4);
+            heart(11, 1, 2.8);
+          } else if (id === "germany") {
+            ctx.fillStyle = "#111";
+            ctx.fillRect(-16, -9, 36, 6);
+            ctx.fillStyle = "#d82929";
+            ctx.fillRect(-16, -3, 36, 6);
+            ctx.fillStyle = "#f2c324";
+            ctx.fillRect(-16, 3, 36, 6);
+          } else if (id === "kraken") {
+            ctx.strokeStyle = "#d493ff";
+            ctx.lineWidth = 2;
+            [-8, 0, 8].forEach((x) => {
+              ctx.beginPath();
+              ctx.moveTo(x, -8);
+              ctx.bezierCurveTo(x + 7, -2, x - 7, 2, x, 8);
+              ctx.stroke();
+            });
+          } else if (id === "pulse") {
+            ctx.strokeStyle = "#45ffdc";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-16, 1);
+            ctx.lineTo(-7, 1);
+            ctx.lineTo(-3, -6);
+            ctx.lineTo(2, 7);
+            ctx.lineTo(7, -2);
+            ctx.lineTo(20, -2);
+            ctx.stroke();
+          } else if (id === "hot-pink") {
+            ctx.fillStyle = "#ff1493";
+            ctx.fillRect(-16, -9, 36, 18);
+          } else if (id === "diamond") {
+            const grd = ctx.createLinearGradient(-16, -9, 20, 9);
+            grd.addColorStop(0, "#ffffff");
+            grd.addColorStop(0.25, "#a0f0ff");
+            grd.addColorStop(0.5, "#d7b8ff");
+            grd.addColorStop(0.75, "#7fe9ff");
+            grd.addColorStop(1, "#ffffff");
+            ctx.fillStyle = grd;
+            ctx.fillRect(-16, -9, 36, 18);
+            const shine = ["#ffffff", "#e6f9ff", "#d9c4ff", "#9adfff"];
+            for (let y = -8; y <= 8; y += 2.5) {
+              const row = Math.round((y + 8) / 2.5);
+              for (let x = -14 + (row % 2 ? 1.2 : -1); x <= 18; x += 3) {
+                ctx.fillStyle = shine[(row + x) & 3];
+                ctx.beginPath();
+                ctx.moveTo(x, y - 1.1);
+                ctx.lineTo(x + 1.2, y);
+                ctx.lineTo(x, y + 1.1);
+                ctx.lineTo(x - 1.2, y);
+                ctx.closePath();
+                ctx.fill();
+              }
+            }
+            ctx.fillStyle = "rgba(255,255,255,0.95)";
+            [
+              [-10, -4],
+              [3, 3],
+              [10, -5],
+              [-3, 5],
+              [13, 4],
+            ].forEach(([sx, sy]) => {
+              ctx.beginPath();
+              ctx.arc(sx, sy, 0.75, 0, 7);
+              ctx.fill();
+            });
+          }
+        }
+
+        function hull(b) {
+          traceHull();
+          if (b.skin) {
+            ctx.save();
+            ctx.clip();
+            paintPlayerSkin(b.skin, b.col);
+            ctx.restore();
+          } else {
+            ctx.fillStyle = b.col;
+            ctx.fill();
+          }
+          traceHull();
           ctx.strokeStyle = "rgba(4,20,28,.55)";
           ctx.lineWidth = 1.4;
           ctx.stroke();
@@ -5397,6 +6193,21 @@
           state = S.done;
           const r = frameRanked,
             place = r.indexOf(me) + 1;
+          const nextCourse = TRACKS[courseIdx + 1];
+          const unlocksNext =
+            nextCourse &&
+            !courseUnlocked(courseIdx + 1) &&
+            !progress.completed[track.name];
+          const challenge = CHALLENGE_SKINS[courseIdx];
+          const unlockedSkin =
+            totalLaps === 3 &&
+            me.total <= challenge.target &&
+            !progress.skins[challenge.id];
+          const hadDiamond = allChallengeSkinsUnlocked();
+          progress.completed[track.name] = true;
+          if (unlockedSkin) progress.skins[challenge.id] = true;
+          const unlockedDiamond = !hadDiamond && allChallengeSkinsUnlocked();
+          saveProgress();
           rTitle.textContent = place === 1 ? "Won it" : ordinal(place);
           const tail =
             place === 1
@@ -5405,6 +6216,10 @@
           const bits = ["your best lap " + fmt(me.bestLap)];
           if (newLapRecord) bits.push("new lap record");
           if (newTotalRecord) bits.push("new " + totalLaps + "-lap record");
+          if (unlocksNext && courseUnlocked(courseIdx + 1))
+            bits.push("unlocked " + nextCourse.name);
+          if (unlockedSkin) bits.push("unlocked " + challenge.name + " skin");
+          if (unlockedDiamond) bits.push("unlocked Diamond Camo");
           rSub.textContent =
             track.name +
             " · " +
@@ -5424,6 +6239,8 @@
             is_total_record: !!newTotalRecord,
           });
           refreshRecords();
+          syncCourses();
+          refreshSkins();
           rBody.innerHTML = "";
           r.forEach((b, i) => {
             const tr = document.createElement("tr");
@@ -5457,6 +6274,8 @@
           resultsEl.classList.remove("hidden");
           document.body.classList.remove("racing");
           touch.classList.remove("on");
+          if (unlockedDiamond) showSkinPop(DIAMOND_SKIN);
+          else if (unlockedSkin) showSkinPop(challenge);
         }
 
         function projectTotal(b) {
@@ -5525,9 +6344,13 @@
             "</h3><p>" +
             t.desc +
             "</p>" +
-            '<p class="tilerec"></p></div>';
+            '<p class="tilerec"></p></div>' +
+            '<span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span><em></em></span>';
           drawCourseThumb(el.querySelector("canvas"), t);
-          el.onclick = () => pickCourse(i, el.closest("#coursePop") !== null);
+          el.onclick = () => {
+            if (!courseUnlocked(i)) return;
+            pickCourse(i, el.closest("#coursePop") !== null);
+          };
           return el;
         }
 
@@ -5541,6 +6364,7 @@
         document.getElementById("popCount").textContent = TRACKS.length;
 
         function pickCourse(i, fromPop) {
+          if (!courseUnlocked(i)) return;
           courseIdx = i;
           plotFit = null;
           track = TRACKS[i];
@@ -5565,20 +6389,29 @@
           document
             .querySelectorAll("#courses .course, #popGrid .course")
             .forEach((el) => {
-              const on = +el.dataset.i === courseIdx;
+              const i = +el.dataset.i;
+              const on = i === courseIdx;
+              const locked = !courseUnlocked(i);
               el.classList.toggle("sel", on);
+              el.classList.toggle("locked", locked);
               el.setAttribute("aria-selected", on);
+              el.setAttribute("aria-disabled", locked);
+              const msg =
+                locked && i > 0
+                  ? "Complete a race of " + TRACKS[i - 1].name + " to unlock"
+                  : "";
+              el.title = msg;
+              const em = el.querySelector(".lockbadge em");
+              if (em) em.textContent = msg;
             });
           syncDots();
         }
 
         function syncDots() {
-          const first = coursesEl.children[0];
-          if (!first) return;
-          const step = first.offsetWidth + 8;
-          const i = step > 0 ? Math.round(coursesEl.scrollLeft / step) : 0;
-          dotsEl.querySelectorAll("i").forEach((d, n) => {
-            d.classList.toggle("on", n === i);
+          const dots = dotsEl.querySelectorAll("i");
+          if (!dots.length) return;
+          dots.forEach((d, n) => {
+            d.classList.toggle("on", n === courseIdx);
           });
         }
         coursesEl.addEventListener("scroll", syncDots, { passive: true });
@@ -5629,6 +6462,101 @@
         }
         refreshRecords();
 
+        const skinsEl = document.getElementById("skinsMenu"),
+          skinGridEl = document.getElementById("skinGrid");
+        const ALL_SKINS = DEFAULT_SKINS.concat(CHALLENGE_SKINS, DIAMOND_SKIN);
+        function refreshSkins() {
+          skinGridEl.innerHTML = "";
+          ALL_SKINS.forEach((s) => {
+            const unlocked = skinUnlocked(s);
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className =
+              "skin-card" +
+              (progress.skin === s.id ? " sel" : "") +
+              (unlocked ? "" : " locked");
+            card.style.setProperty("--skin-preview", s.preview || s.base);
+            card.setAttribute("aria-pressed", progress.skin === s.id);
+            card.setAttribute("aria-disabled", !unlocked);
+            let note = "Always available";
+            if (s.track)
+              note = unlocked
+                ? "Unlocked on " + s.track
+                : s.track + " · 3 laps under " + fmt(s.target);
+            else if (s.id === "diamond")
+              note = unlocked
+                ? "All challenges complete"
+                : "Unlock all 25 challenge skins";
+            card.innerHTML =
+              '<span class="skin-swatch"><span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span></span></span><b>' +
+              s.name +
+              "</b><small>" +
+              note +
+              "</small>";
+            card.onclick = () => {
+              if (!unlocked) return;
+              progress.skin = s.id;
+              saveProgress();
+              if (me && !me.ai) {
+                me.skin = s.id;
+                me.col = s.base || s.preview;
+                me.trim = s.trim || "#17313a";
+              }
+              refreshSkins();
+            };
+            skinGridEl.appendChild(card);
+          });
+        }
+        refreshSkins();
+
+        document.getElementById("homeSkins").onclick = () => {
+          menuEl.classList.add("hidden");
+          skinsEl.classList.remove("hidden");
+          refreshSkins();
+          requestAnimationFrame(fitSheets);
+        };
+        document.getElementById("skinsDone").onclick = () => {
+          skinsEl.classList.add("hidden");
+          menuEl.classList.remove("hidden");
+          requestAnimationFrame(fitSheets);
+        };
+
+        const skinPopEl = document.getElementById("skinPop"),
+          skinPopSwatch = document.getElementById("skinPopSwatch"),
+          skinPopName = document.getElementById("skinPopName"),
+          skinPopSub = document.getElementById("skinPopSub");
+        let pendingSkin = null;
+        function showSkinPop(s) {
+          pendingSkin = s;
+          skinPopSwatch.style.setProperty(
+            "--skin-preview",
+            s.preview || s.base,
+          );
+          skinPopName.textContent = s.name;
+          skinPopSub.textContent =
+            s.id === "diamond" ? "Diamond Camo unlocked" : "New skin unlocked";
+          skinPopEl.classList.remove("hidden");
+          requestAnimationFrame(fitSheets);
+        }
+        function closeSkinPop() {
+          skinPopEl.classList.add("hidden");
+          pendingSkin = null;
+        }
+        document.getElementById("skinPopClose").onclick = closeSkinPop;
+        document.getElementById("skinPopEquip").onclick = () => {
+          if (pendingSkin) {
+            progress.skin = pendingSkin.id;
+            saveProgress();
+            if (me && !me.ai) {
+              me.skin = pendingSkin.id;
+              me.col = pendingSkin.base || pendingSkin.preview;
+              me.trim = pendingSkin.trim || "#17313a";
+            }
+            refreshSkins();
+          }
+          closeSkinPop();
+        };
+
         function segment(id, attr, set) {
           const wrap = document.getElementById(id);
           wrap.addEventListener("click", (e) => {
@@ -5656,6 +6584,59 @@
             SETTINGS.name = nameInput.value.slice(0, 18);
             saveSettings();
           });
+          // iOS scrolls the layout viewport to bring the focused input into
+          // view. With a fixed-position app that shifts the whole page right
+          // and never comes back — so undo it as soon as it happens.
+          const resetScroll = () => {
+            window.scrollTo(0, 0);
+            document.documentElement.scrollLeft = 0;
+            document.body.scrollLeft = 0;
+          };
+          const menuSheet = nameInput.closest(".sheet");
+          let vpHandler = null;
+          const adjustForKeyboard = () => {
+            if (!menuSheet) return;
+            const inputRect = nameInput.getBoundingClientRect();
+            const vp = window.visualViewport;
+            const visibleBottom = vp
+              ? vp.offsetTop + vp.height
+              : window.innerHeight;
+            const needed = inputRect.bottom - (visibleBottom - 24);
+            // Only ever shift further up; don't undo an existing shift here.
+            if (needed > 0) {
+              const current = parseFloat(menuSheet.dataset.shift || "0");
+              const total = current + needed;
+              menuSheet.style.transform = `translateY(${-total}px)`;
+              menuSheet.dataset.shift = String(total);
+            }
+          };
+          nameInput.addEventListener("focus", () => {
+            // Keyboard opens over ~250ms on iOS; adjust part-way and again once open.
+            setTimeout(adjustForKeyboard, 120);
+            setTimeout(adjustForKeyboard, 320);
+            if (window.visualViewport) {
+              vpHandler = adjustForKeyboard;
+              window.visualViewport.addEventListener("resize", vpHandler);
+            }
+          });
+          nameInput.addEventListener("blur", () => {
+            if (menuSheet) {
+              menuSheet.style.transform = "";
+              menuSheet.dataset.shift = "0";
+            }
+            if (vpHandler && window.visualViewport) {
+              window.visualViewport.removeEventListener("resize", vpHandler);
+              vpHandler = null;
+            }
+            requestAnimationFrame(resetScroll);
+          });
+          addEventListener(
+            "scroll",
+            () => {
+              if (window.scrollX || window.scrollY) resetScroll();
+            },
+            { passive: true },
+          );
         }
 
         document.getElementById("start").onclick = () => {
@@ -5902,11 +6883,13 @@
    ============================================================ */
         // idle backdrop so the menu isn't sitting on a flat colour
         track = TRACKS[0];
+        const idleSkin = selectedSkin();
         me = makeBoat({
           x: track.pts[0].x,
           y: track.pts[0].y,
-          col: "#ffd84a",
-          trim: "#c99a12",
+          col: idleSkin.base || idleSkin.preview,
+          trim: idleSkin.trim || "#17313a",
+          skin: idleSkin.id,
           power: 1,
           name: playerName(),
         });
