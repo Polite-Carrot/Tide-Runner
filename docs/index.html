@@ -17,6 +17,35 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
     <meta name="theme-color" content="#04141c" />
+    <!-- Web only. The native iOS/Android shells set window.Capacitor before any
+         page script runs (Capacitor's own bridge, injected by the runtime, not
+         by this page), so its absence is what "web" means here. The gtag
+         library is only ever appended to the document when that check fails,
+         so nothing analytics-related loads, runs, or reaches the network
+         inside the app — not "loaded but suppressed", genuinely never
+         requested. Native tracking, when it exists, will branch on the same
+         check rather than this snippet. -->
+    <script>
+      if (
+        !(
+          window.Capacitor &&
+          window.Capacitor.isNativePlatform &&
+          window.Capacitor.isNativePlatform()
+        )
+      ) {
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () {
+          dataLayer.push(arguments);
+        };
+        gtag("js", new Date());
+        gtag("config", "G-2JK7DZ59VV");
+        var gaScript = document.createElement("script");
+        gaScript.async = true;
+        gaScript.src =
+          "https://www.googletagmanager.com/gtag/js?id=G-2JK7DZ59VV";
+        document.head.appendChild(gaScript);
+      }
+    </script>
     <!-- No *-web-app-capable and no apple-mobile-web-app-status-bar-style.
          Since iOS 17 a site added to the home screen opens as a web app anyway
          and takes its presentation from the manifest, so the legacy metas buy
@@ -1520,9 +1549,10 @@
           <tbody id="rBody"></tbody>
         </table>
         <div class="btnrow">
-          <button class="go-btn" id="again" style="margin-left: 0">
-            Race again
+          <button class="go-btn" id="nextRace" style="margin-left: 0">
+            Next race
           </button>
+          <button class="ghost" id="again">Race again</button>
           <button class="ghost" id="back">Change course</button>
         </div>
       </div>
@@ -2664,6 +2694,20 @@
           );
         }
 
+        /* ============================================================
+   ANALYTICS
+   ============================================================ */
+        /* Thin wrapper so the rest of the game never has to check whether
+   analytics actually loaded — an ad blocker, being offline when the async
+   script was requested, or running in the native shell (where window.gtag
+   is never defined at all, see the head) all just make this a no-op.
+   Named trackEvent rather than track: track is already the current
+   course object, reassigned constantly below. */
+        function trackEvent(name, params) {
+          if (typeof window.gtag === "function")
+            window.gtag("event", name, params || {});
+        }
+
         function startRace() {
           track = TRACKS[courseIdx];
           const n = track.n;
@@ -2676,6 +2720,12 @@
               Math.floor(Math.random() * (track.fleet[1] - track.fleet[0] + 1))
             : track.fleet || 4;
           const fleet = Math.max(2, Math.min(want, RIVALS.length + 1));
+          trackEvent("level_start", {
+            level_name: track.name,
+            difficulty: TIERS[skill].name,
+            laps: totalLaps,
+            fleet_size: fleet,
+          });
           const perRow = fleet > 4 ? 3 : 2;
           const spread = perRow === 3 ? 0.42 : 0.3;
           // rivals occupy the front of the grid; you start at the back
@@ -5332,6 +5382,16 @@
             bits.join(" · ") +
             ". " +
             tail;
+          trackEvent("level_end", {
+            level_name: track.name,
+            success: true,
+            place,
+            difficulty: TIERS[skill].name,
+            laps: totalLaps,
+            total_time: Math.round(me.total * 10) / 10,
+            is_lap_record: !!newLapRecord,
+            is_total_record: !!newTotalRecord,
+          });
           refreshRecords();
           rBody.innerHTML = "";
           r.forEach((b, i) => {
@@ -5576,6 +5636,15 @@
           initAudio();
           startRace();
         };
+        document.getElementById("nextRace").onclick = () => {
+          initAudio();
+          // pickCourse does the course-switch bookkeeping (respawns hazards,
+          // fauna, boosts, moored boats; syncs the menu tiles for whenever the
+          // player does go back) — the same path a manual pick from the rail
+          // or the popup goes through, just advanced by one instead of chosen.
+          pickCourse((courseIdx + 1) % TRACKS.length, false);
+          startRace();
+        };
         document.getElementById("back").onclick = () => {
           state = S.menu;
           resultsEl.classList.add("hidden");
@@ -5632,6 +5701,18 @@
           startRace();
         }
         function exitToMenu() {
+          // pausedFrom, not state: pauseGame() already moved state to S.pause,
+          // so pausedFrom is where checking "was a race actually happening"
+          // lives. S.count (the pre-race countdown) doesn't count as an
+          // abandoned level — nothing has been raced yet.
+          if (pausedFrom === S.race) {
+            trackEvent("level_end", {
+              level_name: track.name,
+              success: false,
+              difficulty: TIERS[skill].name,
+              laps: totalLaps,
+            });
+          }
           state = S.menu;
           pausedFrom = null;
           pauseEl.classList.add("hidden");

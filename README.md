@@ -101,6 +101,11 @@ the HUD while you race. They live in `localStorage` under `tiderunner.records.v1
 that refuses to answer (private windows, sandboxed frames) is handled, and records simply
 stop persisting beyond the session rather than breaking the game.
 
+**Next race**, on the results screen, moves straight to the next course in the list (wrapping
+from Skerryvore Sound back to Ouse Bends) and starts it — for a "just keep playing" session
+rather than a deliberate pick each time. **Race again** and **Change course** are still there
+alongside it.
+
 ## Controls
 
 | Action | Keyboard | Touch |
@@ -111,6 +116,26 @@ stop persisting beyond the session rather than breaking the game.
 | Restart | `R` | **Restart race** in the pause menu |
 
 Touch controls appear automatically on coarse-pointer devices.
+
+## Analytics
+
+The web build sends gameplay events to Google Analytics (GA4, `G-2JK7DZ59VV`): `level_start`
+when a race begins, `level_end` when it resolves — `success: true` on finishing, `success: false`
+on exiting to the menu mid-race, both carrying the course, difficulty and lap count, and the
+finish carries place, total time and whether it was a new record. Quitting during the pre-race
+countdown doesn't count as abandoning a level, since nothing has been raced yet.
+
+**Web only, deliberately.** The gtag library is appended to the document — not just called —
+only when `window.Capacitor.isNativePlatform()` is absent or false, so inside the iOS and
+Android apps it is never requested at all, not merely suppressed. Neither native shell has its
+own analytics yet; that gate is where it will branch when they do. `docs/privacy.html` discloses
+this and is the source of truth if the two drift.
+
+There's no boat/skin customisation feature yet, so there's nothing to fire a "skin selected"
+event from. The natural shape for it, whenever it lands, is a `select_content` event with
+`content_type: "boat_skin"` and `item_id` set to the skin's name — GA4's own recommended
+schema for a cosmetic pick, which is what would let it show up in the standard reports rather
+than needing a custom one.
 
 ### Filling the screen
 

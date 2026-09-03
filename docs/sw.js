@@ -1,5 +1,5 @@
 /* Bump on every deploy to invalidate the previous cache. */
-const CACHE = 'tiderunner-v16';
+const CACHE = 'tiderunner-v17';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,13 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const req = event.request;
   if(req.method !== 'GET') return;
+  /* Cross-origin requests (GA4's gtag.js and the collect beacons it sends) are
+     left to the browser untouched. Without this, an offline fetch of one of
+     them fell through to the final .catch() below, which resolves to
+     index.html — a document handed back as the body of a failed script
+     request. Harmless in practice (analytics never surfaces to the player),
+     but wrong, and easy to avoid by not intercepting what isn't this app's. */
+  if(new URL(req.url).origin !== location.origin) return;
 
   /* The page itself goes to the network first, falling back to the cache when
      offline. Cache-first served a stale index.html on every launch: the old
