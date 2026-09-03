@@ -3,6 +3,10 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.politecarrot.tiderunner"
     compileSdk = rootProject.ext.compileSdkVersion
+    // Pin to a Build-Tools version already installed under ~/Library/Android/sdk
+    // — AGP 8.13's default is 35.0.0, which dl.google.com kept returning 503
+    // for on this network. 36.1.0 is complete and compatible with compileSdk 36.
+    buildToolsVersion "36.1.0"
     defaultConfig {
         applicationId "com.politecarrot.tiderunner"
         minSdkVersion rootProject.ext.minSdkVersion
