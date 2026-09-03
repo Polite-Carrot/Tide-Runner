@@ -1015,15 +1015,6 @@
       }
 
       /* ---------- touch controls ---------- */
-      .buildstamp {
-        margin: 14px 0 0;
-        font-size: 10px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: rgba(234, 247, 244, 0.38);
-        text-align: center;
-      }
-
       /* A stretched box, not a measurement API: position: fixed with inset: 0
          and no height is laid out against the true fixed viewport, which on an
          installed iOS app is the full window including the area behind the
@@ -1788,7 +1779,6 @@
             <span></span>
           </button>
         </div>
-        <p class="buildstamp" id="buildStamp"></p>
         <div class="btnstack">
           <button class="go-btn" id="settingsDone">Done</button>
         </div>
@@ -6780,11 +6770,6 @@
         document.getElementById("homeSettings").onclick = () =>
           openSettings("menu");
         document.getElementById("settingsDone").onclick = closeSettings;
-        // document.lastModified is the served file's own timestamp, so this
-        // says which build is actually running — worth having when a change
-        // appears not to have landed.
-        document.getElementById("buildStamp").textContent =
-          "Build " + document.lastModified;
 
         musicTog.onclick = () => {
           SETTINGS.music = !SETTINGS.music;
