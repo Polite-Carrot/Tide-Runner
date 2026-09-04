@@ -1715,15 +1715,45 @@
         right: var(--sheet-pad);
         z-index: 2;
       }
+      /* A miniature of the actual wheel — same segment colours as
+         segColors/the gear wedges in buildSpinWheel(), same pointer-and-hub
+         silhouette — rather than a plain coin, so the launcher reads as
+         "this opens the spinner" at a glance. */
       .spin-launch-icon {
+        position: relative;
         width: 48px;
         height: 48px;
         flex: 0 0 auto;
         border-radius: 50%;
         border: 2px solid var(--amber);
-        background: var(--abyss);
+        background: conic-gradient(
+          #0c4257 0deg 45deg,
+          #123a2e 45deg 90deg,
+          #072a3a 90deg 135deg,
+          #0c4257 135deg 180deg,
+          #123a2e 180deg 225deg,
+          #072a3a 225deg 270deg,
+          #0c4257 270deg 315deg,
+          #123a2e 315deg 360deg
+        );
         display: grid;
         place-items: center;
+      }
+      .spin-launch-icon::before {
+        content: "";
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 7px solid var(--amber);
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+      }
+      .spin-launch-icon .coin-icon {
+        filter: drop-shadow(0 0 2px rgba(4, 20, 28, 0.9));
       }
 
       .gear-list {
