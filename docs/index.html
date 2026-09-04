@@ -2972,16 +2972,14 @@
    is the same progress.skins map challenge skins already use, which is
    what lets skinUnlocked/selectedSkin/refreshSkins treat every skin
    uniformly regardless of how it was earned. */
-        /* Prices are a graduated ladder against coinsForFinish()'s actual 3-12
-   per-race range, not the old laps x multiplier economy this shop was
-   first priced against — Union Jack's 200 (a 20-65 race grind under the
-   new formula) has been brought down in line with the others rather than
-   left stranded above them. */
+        /* Every flag costs the same 75 coins — a flat price rather than a
+   ladder, against coinsForFinish()'s actual 3-12-per-race range (roughly
+   6-25 races). */
         const SHOP_SKINS = [
           {
             id: "rising-sun",
             name: "Rising Sun",
-            price: 25,
+            price: 75,
             base: "#ffffff",
             trim: "#bc002d",
             preview:
@@ -2990,7 +2988,7 @@
           {
             id: "tricolore",
             name: "Tricolore",
-            price: 40,
+            price: 75,
             base: "#0055a4",
             trim: "#ef4135",
             preview:
@@ -2999,7 +2997,7 @@
           {
             id: "union-jack",
             name: "Union Jack",
-            price: 55,
+            price: 75,
             base: "#00247d",
             trim: "#cf142b",
             preview:
@@ -3008,7 +3006,7 @@
           {
             id: "stars-and-stripes",
             name: "Stars and Stripes",
-            price: 70,
+            price: 75,
             base: "#b31942",
             trim: "#0a3161",
             preview:

@@ -146,16 +146,10 @@ finish and is skipped under `prefers-reduced-motion`), separate from the plain-E
 sentence rather than folded into it. On the Skins screen it sits beside the running balance.
 
 **Shop skins** are bought with coins rather than earned, for cosmetics that don't fit a
-time-and-course challenge — four flags so far, each an SVG pattern built the same way the
-existing Monaco/Germany/Amsterdam challenge-skin flags are, priced as a graduated ladder
-against `coinsForFinish()`'s actual 3-12-per-race range:
-
-| Skin | Price |
-| --- | --- |
-| Rising Sun | 25 |
-| Tricolore | 40 |
-| Union Jack | 55 (was 200, set against the old formula — repriced along with the rest) |
-| Stars and Stripes | 70 |
+time-and-course challenge — four flags so far (Rising Sun, Tricolore, Union Jack, Stars and
+Stripes), each an SVG pattern built the same way the existing Monaco/Germany/Amsterdam
+challenge-skin flags are. All four cost the same **75 coins** — a flat price rather than a
+ladder, roughly 6-25 races against `coinsForFinish()`'s 3-12-per-race range.
 
 A locked, affordable shop skin buys and equips itself on tap, no confirmation step, matching
 how every other single-tap choice in this menu already works; short of the price, tapping does
