@@ -184,6 +184,17 @@ behaves identically regardless of which grid it's in. Only one grid is shown at 
 via a `.seg` tab bar (the same segmented-control style as the Laps/Rivals pickers); opening the
 menu defaults to whichever tab holds the currently equipped skin, via `skinCategoryFor()`.
 
+**Nine solid colours now**, not five — Harbour Gold, Jet Black, Volt Green, Flare Red and Ion
+Cyan, plus Pearl White, Riptide Purple, Sunset Orange and Coral Pink.
+
+**Every card previews the actual boat, not a flat swatch.** `traceHull()`, `paintPlayerSkin()`
+and `hull()` used to be closed over the live game's own canvas context; they now take a context
+as their first argument, so the exact same drawing code that paints the racing boat also paints
+a tiny boat-shaped icon on each Skins card and on the "new skin unlocked" popup, via one shared
+`drawSkinPreview(canvas, skin)`. What you see in the menu is pixel-for-pixel what you get on the
+water — hull shape, flag or pattern, trim accent and all — instead of a rectangle in the skin's
+base colour.
+
 ## Controls
 
 | Action   | Keyboard          | Touch                              |
