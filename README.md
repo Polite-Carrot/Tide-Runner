@@ -110,7 +110,7 @@ from Skerryvore Sound back to Ouse Bends) and starts it — for a "just keep pla
 rather than a deliberate pick each time. **Race again** and **Change course** are still there
 alongside it.
 
-## Skins and coins
+## The Boathouse, coins and gear
 
 **Courses unlock in order** — finishing one (any place, any difficulty) unlocks the next.
 `courseUnlocked(i)` checks every course before `i`; picking a locked one, from the rail, the
@@ -201,14 +201,61 @@ fixed 36×18 hull rect fills the whole canvas edge to edge, at 40% opacity — t
 itself over it at full brightness. A flag or camo now reads at a glance before you've even
 picked the boat shape out of the card, without hand-drawing a second version of every pattern.
 
+**The Skins screen is now the Boathouse**, and skins are one part of it rather than the whole
+thing. "Your name" moved in from the pre-race screen — same `#playerName` input, same
+`SETTINGS.name`/`saveSettings()` wiring, just relocated — so there's a reason to open the
+Boathouse even when you're not spending coins. "Your boat" collapsed from three always-visible
+tabbed grids down to a single summary card (the equipped skin's own `drawSkinPreview()`, its
+name and category) with a **Browse** button; the three tabs and grids didn't go anywhere, they
+just moved into `#skinsBrowsePop`, a full-screen popup that mirrors `#coursePop` — same overlay
+CSS, same open/close/Escape pattern — rather than inventing a second kind of popup.
+
+**Gear is a consumable, not a skin.** A flag is bought once and stays bought;
+`progress.skins[id]` only ever needs to be a boolean. Gear gets bought, used, and bought again,
+so it needed an actual count: `progress.gear[id]`, incremented by `buyGear()` and decremented
+both by buying and by spending a charge in a race. `progress.carriedGear` says which one loads
+into the next race — picked independently of how many you own, so you can queue up "buy more
+Nets" before you've bought your first one. Three items so far, all defined in one place
+(`GEAR_ITEMS`, right next to the shop skins) with a small hand-drawn canvas icon apiece, reused
+unmodified for the shop row, the in-race HUD button and the "+1 X" spin-wheel wedge:
+
+| Item         | Price | Effect                                                                     |
+| ------------ | ----- | -------------------------------------------------------------------------- |
+| Net          | 25    | Drops behind the boat; the next rival to cross it loses way for 2s         |
+| Nitro Charge | 30    | An extra 3.4s of boost, triggered on demand instead of found on the course |
+| Torpedo      | 45    | Fires from the bow; a hit knocks the rival's heading and speed hard        |
+
+**In the race, gear reuses physics that already exist rather than inventing new ones.** Nitro
+just sets `b.boost` — the same field a boost pickup sets, so the flame trail and HUD glow are
+free. Net pushes a `{ type: "net", owner, ttl, spent }` object into the same `hazards` array a
+course's weed beds live in; `hazardForces()` gets one more `else if` branch that skips the
+boat that dropped it, cuts velocity hard on the first rival to touch it, and marks it `spent` so
+one net only ever catches one boat, then `stepHazards()` sweeps it out. Torpedo is the one
+genuinely new moving thing — a straight-line shot in its own `torpedoes` array, stepped and
+collision-checked in `stepTorpedoes()`, called from `update()` right after `stepHazards()`.
+Gear is player-only for this first pass: rivals never carry or trigger it, so there's no AI
+decision-making to get right yet, only the mechanics themselves. Trigger it with `Space` on
+desktop or the amber circular button that appears bottom-left during a race (mirroring the
+pause button's own corner and styling) whenever `carriedGear` has a charge left; it disappears
+the moment you're out, same as the boost/HUD elements it borrows from.
+
+**A daily spin gives away a taste of the gear economy for free.** One spin per calendar day
+(`progress.lastSpin`, a plain `YYYY-M-D` string compared against `todayKey()` — a played-out
+day, not a rolling 24 hours), weighted toward small coin amounts with two of the three gear
+items as the rarer outcome and a 75-coin jackpot at the bottom of the odds. The wheel is drawn
+from the same `SPIN_REWARDS` list the payout logic reads, so it can't show a wedge spinning
+couldn't actually land on. Winning gear calls the exact same "increment `progress.gear[id]`"
+line buying it would.
+
 ## Controls
 
-| Action   | Keyboard          | Touch                              |
-| -------- | ----------------- | ---------------------------------- |
-| Throttle | `W` / `↑`         | **GO** pad                         |
-| Astern   | `S` / `↓`         | **Reverse** pad                    |
-| Helm     | `A` `D` / `←` `→` | Left thumb joystick                |
-| Restart  | `R`               | **Restart race** in the pause menu |
+| Action   | Keyboard          | Touch                                                       |
+| -------- | ----------------- | ----------------------------------------------------------- |
+| Throttle | `W` / `↑`         | **GO** pad                                                  |
+| Astern   | `S` / `↓`         | **Reverse** pad                                             |
+| Helm     | `A` `D` / `←` `→` | Left thumb joystick                                         |
+| Restart  | `R`               | **Restart race** in the pause menu                          |
+| Use gear | `Space`           | Amber circular button, bottom-left, while carrying a charge |
 
 Touch controls appear automatically on coarse-pointer devices.
 

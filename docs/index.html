@@ -801,6 +801,44 @@
         flex: none;
       }
 
+      /* ---------- browse-skins popup: same overlay as the courses one ---------- */
+      #skinsBrowsePop {
+        position: fixed;
+        inset: 0;
+        height: var(--app-h);
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        background: #05161f;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        padding: calc(14px + env(safe-area-inset-top))
+          calc(14px + env(safe-area-inset-right))
+          calc(14px + env(safe-area-inset-bottom))
+          calc(14px + env(safe-area-inset-left));
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.22s,
+          visibility 0.22s;
+      }
+      #skinsBrowsePop.on {
+        opacity: 1;
+        visibility: visible;
+      }
+      #skinsBrowsePop .skin-tabs {
+        margin-top: 11px;
+      }
+      #skinsBrowseGrids {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding-top: 4px;
+      }
+      #skinsBrowseGrids .skin-grid {
+        margin-bottom: 4px;
+      }
+
       .more:focus-visible {
         outline: 1px solid var(--chart);
         outline-offset: 2px;
@@ -1213,6 +1251,40 @@
       body.racing .pause-btn {
         display: inline-flex;
       }
+      /* ---------- use-gear button: same treatment as pause, other corner ---------- */
+      .gear-use-btn {
+        position: fixed;
+        bottom: calc(22px + env(safe-area-inset-bottom));
+        left: calc(20px + env(safe-area-inset-left));
+        z-index: 6;
+        pointer-events: auto;
+        cursor: pointer;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        width: 54px;
+        height: 54px;
+        padding: 0;
+        border-radius: 50%;
+        color: var(--amber);
+        background: var(--panel);
+        border: 1px solid rgba(255, 216, 74, 0.5);
+        font: inherit;
+      }
+      body.racing .gear-use-btn.show {
+        display: flex;
+      }
+      .gear-use-btn canvas {
+        width: 24px;
+        height: 24px;
+      }
+      .gear-use-btn b {
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1;
+      }
       .pause-btn::before,
       .pause-btn::after {
         content: "";
@@ -1348,6 +1420,271 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
+
+      /* ---------- boathouse: name, daily spin, boat summary, gear ---------- */
+      .boathouse-name {
+        margin-bottom: 20px;
+      }
+      .bh-section {
+        margin-bottom: 20px;
+      }
+      .bh-section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .bh-sub {
+        font-size: 10px;
+        letter-spacing: 0.03em;
+        color: rgba(234, 247, 244, 0.5);
+        white-space: nowrap;
+      }
+
+      .boat-summary {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        border: 1px solid var(--hair);
+        background: rgba(127, 233, 216, 0.04);
+        border-radius: 2px;
+        padding: 10px;
+        font: inherit;
+        color: var(--foam);
+        text-align: left;
+        cursor: pointer;
+      }
+      .boat-summary-canvas {
+        display: block;
+        width: 96px;
+        height: 48px;
+        flex: 0 0 auto;
+        border: 1px solid rgba(234, 247, 244, 0.18);
+        background: rgba(4, 20, 28, 0.4);
+      }
+      .boat-summary .meta {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .boat-summary .cat {
+        display: block;
+        font-size: 9.5px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--chart);
+        margin: 0 0 2px;
+      }
+      .boat-summary b {
+        display: block;
+        font-family: var(--display);
+        font-size: 20px;
+        letter-spacing: 0.01em;
+      }
+      .boat-summary .browse-cta {
+        flex: 0 0 auto;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: #04141c;
+        background: var(--chart);
+        border-radius: 3px;
+        padding: 10px 14px;
+      }
+
+      .spin-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        border: 1px solid var(--hair);
+        background: rgba(127, 233, 216, 0.04);
+        border-radius: 2px;
+        padding: 12px;
+      }
+      .wheel-wrap {
+        position: relative;
+        width: 108px;
+        height: 108px;
+        flex: 0 0 auto;
+      }
+      .wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: block;
+        filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+        transition: transform 4.2s cubic-bezier(0.13, 0.7, 0.1, 1);
+      }
+      .wheel-hub {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 24px;
+        height: 24px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: var(--abyss);
+        border: 2px solid var(--amber);
+        display: grid;
+        place-items: center;
+      }
+      .pointer {
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-top: 12px solid var(--amber);
+        z-index: 2;
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+      }
+      .spin-copy {
+        flex: 1 1 190px;
+        min-width: 0;
+      }
+      .spin-copy p {
+        margin: 0 0 10px;
+        font-size: 11px;
+        line-height: 1.55;
+        color: rgba(234, 247, 244, 0.6);
+      }
+      .spin-btn {
+        width: auto;
+        display: inline-block;
+        padding: 9px 20px;
+        font-size: 13px;
+      }
+      .spin-btn:disabled {
+        background: rgba(255, 216, 74, 0.25);
+        color: rgba(234, 247, 244, 0.4);
+        cursor: not-allowed;
+      }
+      .spin-result {
+        margin: 8px 0 0;
+        color: var(--stbd);
+        font-weight: 600;
+        font-size: 12px;
+        min-height: 1.3em;
+      }
+
+      .gear-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .gear-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid var(--hair);
+        background: rgba(127, 233, 216, 0.04);
+        border-radius: 2px;
+        padding: 10px;
+      }
+      .gear-row.picked {
+        border-color: var(--amber);
+        background: rgba(255, 216, 74, 0.07);
+      }
+      .gear-icon-box {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(234, 247, 244, 0.18);
+      }
+      .gear-icon {
+        width: 26px;
+        height: 26px;
+      }
+      .gear-info {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .gear-info b {
+        display: block;
+        font-family: var(--display);
+        font-size: 16px;
+        letter-spacing: 0.02em;
+      }
+      .gear-info .desc {
+        display: block;
+        font-size: 10px;
+        line-height: 1.5;
+        color: rgba(234, 247, 244, 0.5);
+        margin-top: 2px;
+        max-width: 42ch;
+      }
+      .gear-buy {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+      }
+      .gear-owned {
+        font-size: 10.5px;
+        letter-spacing: 0.03em;
+        color: rgba(234, 247, 244, 0.6);
+        white-space: nowrap;
+      }
+      .gear-owned b {
+        color: var(--amber);
+        font-family: var(--mono);
+      }
+      .buy-btn {
+        font: inherit;
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: #1a1200;
+        background: var(--amber);
+        border: 0;
+        border-radius: 3px;
+        padding: 7px 11px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .buy-btn:disabled {
+        background: rgba(255, 216, 74, 0.25);
+        color: rgba(234, 247, 244, 0.4);
+        cursor: not-allowed;
+      }
+      .pick-btn {
+        font: inherit;
+        font-size: 10px;
+        letter-spacing: 0.03em;
+        color: rgba(234, 247, 244, 0.55);
+        background: transparent;
+        border: 1px solid var(--hair);
+        border-radius: 3px;
+        padding: 4px 8px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .gear-row.picked .pick-btn {
+        color: var(--amber);
+        border-color: var(--amber);
+      }
+      @media (max-width: 480px) {
+        .boat-summary {
+          flex-wrap: wrap;
+        }
+        .gear-row {
+          flex-wrap: wrap;
+        }
+        .gear-buy {
+          flex-direction: row;
+          align-items: center;
+          margin-left: auto;
+        }
+      }
+
       .setrow {
         display: flex;
         justify-content: space-between;
@@ -1521,16 +1858,6 @@
           margin-left: 0;
           width: 100%;
         }
-        /* flex-basis is on the main axis, and the main axis is now vertical:
-           left alone, the name field would claim 200px of height */
-        #menu .name-field {
-          flex: 0 0 auto;
-        }
-        #menu .name-input {
-          max-width: none;
-          padding: 6px 10px;
-          font-size: 16px;
-        }
         /* the cards keep their plotter and their name; the strapline and the
            record line are what go, since both repeat elsewhere */
         #menu .course p {
@@ -1663,6 +1990,10 @@
     </div>
 
     <button class="pause-btn" id="pauseBtn" aria-label="Pause"></button>
+    <button class="gear-use-btn" id="useGearBtn" aria-label="Use gear">
+      <canvas id="useGearIcon" width="40" height="40"></canvas>
+      <b id="useGearCount">0</b>
+    </button>
 
     <!-- usage-data consent banner: shown once, before analytics is ever
          requested. Send usage data in Settings is the same choice, editable
@@ -1705,8 +2036,12 @@
             />
           </h1>
           <div class="brand-actions">
-            <button class="gear skin-tool" id="homeSkins" aria-label="Skins">
-              Skins
+            <button
+              class="gear skin-tool"
+              id="homeSkins"
+              aria-label="Boathouse"
+            >
+              Boathouse
             </button>
             <button
               class="gear"
@@ -1752,19 +2087,6 @@
               ><button data-s="3">Insane</button>
             </div>
           </div>
-          <div class="name-field">
-            <p class="label">Your name <span class="opt">(optional)</span></p>
-            <input
-              class="name-input"
-              id="playerName"
-              type="text"
-              placeholder="You"
-              maxlength="18"
-              autocomplete="off"
-              spellcheck="false"
-              aria-label="Your name"
-            />
-          </div>
           <button class="go-btn" id="start">Start race</button>
         </div>
       </div>
@@ -1785,33 +2107,121 @@
       </div>
     </div>
 
-    <!-- skins -->
+    <!-- boathouse: name, skins, gear, daily spin -->
     <div class="screen hidden" id="skinsMenu">
-      <div class="sheet panel" style="max-width: 760px">
+      <div class="sheet panel scrolls" style="max-width: 760px">
         <div class="brand">
-          <h1 style="font-size: clamp(30px, 7vw, 48px)">Skins</h1>
-          <p class="tag">
-            Beat a course's target to claim its challenge skin, or buy one with
-            coins earned from racing.
-          </p>
+          <h1 style="font-size: clamp(30px, 7vw, 48px)">Boathouse</h1>
+          <p class="tag">Kit out your boat, your name and your gear locker.</p>
           <span class="coin-balance"
             ><span class="coin-icon small" aria-hidden="true"></span
             ><b id="coinBalance">0</b> coins</span
           >
         </div>
-        <div class="seg skin-tabs" id="skinTabs" role="tablist">
-          <button type="button" data-cat="colours" role="tab">Colours</button
-          ><button type="button" data-cat="flags" role="tab">Flags</button
-          ><button type="button" data-cat="challenges" role="tab">
-            Challenges
+
+        <div class="name-field boathouse-name">
+          <p class="label">Your name <span class="opt">(optional)</span></p>
+          <input
+            class="name-input"
+            id="playerName"
+            type="text"
+            placeholder="You"
+            maxlength="18"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Your name"
+          />
+        </div>
+
+        <div class="bh-section">
+          <div class="bh-section-head">
+            <p class="label" style="margin: 0">Daily spin</p>
+            <span class="bh-sub" id="spinStatus">Free spin ready</span>
+          </div>
+          <div class="spin-card">
+            <div class="wheel-wrap">
+              <div class="pointer"></div>
+              <svg id="wheelSvg" class="wheel" viewBox="0 0 200 200"></svg>
+              <div class="wheel-hub">
+                <span class="coin-icon" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="spin-copy">
+              <p>
+                One spin, free, every time you open the Boathouse — mostly
+                coins, sometimes a free piece of Gear.
+              </p>
+              <button class="go-btn spin-btn" type="button" id="spinBtn">
+                Spin
+              </button>
+              <p class="spin-result" id="spinResult" aria-live="polite"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bh-section">
+          <div class="bh-section-head">
+            <p class="label" style="margin: 0">Your boat</p>
+            <span class="bh-sub">Colours · Flags · Challenges</span>
+          </div>
+          <button class="boat-summary" type="button" id="boatSummary">
+            <canvas
+              class="boat-summary-canvas"
+              id="boatSummaryCanvas"
+              width="300"
+              height="150"
+            ></canvas>
+            <span class="meta">
+              <span class="cat" id="boatSummaryCat">Colour · equipped</span>
+              <b id="boatSummaryName">Harbour Gold</b>
+            </span>
+            <span class="browse-cta" aria-hidden="true">Browse ›</span>
           </button>
         </div>
-        <div class="skin-grid" id="skinGridColours"></div>
-        <div class="skin-grid" id="skinGridFlags"></div>
-        <div class="skin-grid" id="skinGridChallenges"></div>
+
+        <div class="bh-section">
+          <div class="bh-section-head">
+            <p class="label" style="margin: 0">Gear</p>
+            <span class="bh-sub">Buy with coins · used up in the race</span>
+          </div>
+          <p class="tag" style="margin: 0 0 10px">
+            One runs out and you buy another — not something you unlock once.
+            Pick which one you're carrying; racing without any is free.
+          </p>
+          <div class="gear-list" id="gearList"></div>
+        </div>
+
         <div class="btnstack">
           <button class="go-btn" id="skinsDone">Done</button>
         </div>
+      </div>
+    </div>
+
+    <!-- browse skins: full screen, mirrors #coursePop -->
+    <div
+      id="skinsBrowsePop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="skinsBrowseTitle"
+      aria-hidden="true"
+    >
+      <div class="pop-head">
+        <h2 id="skinsBrowseTitle">Browse skins</h2>
+        <button class="pop-close" id="skinsBrowseClose" aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div class="seg skin-tabs" id="skinTabs" role="tablist">
+        <button type="button" data-cat="colours" role="tab">Colours</button
+        ><button type="button" data-cat="flags" role="tab">Flags</button
+        ><button type="button" data-cat="challenges" role="tab">
+          Challenges
+        </button>
+      </div>
+      <div id="skinsBrowseGrids">
+        <div class="skin-grid" id="skinGridColours"></div>
+        <div class="skin-grid" id="skinGridFlags"></div>
+        <div class="skin-grid" id="skinGridChallenges"></div>
       </div>
     </div>
 
@@ -2778,7 +3188,15 @@
         }
 
         const PROG_KEY = "tiderunner.progress.v1";
-        let progress = { completed: {}, skins: {}, skin: "harbour", coins: 0 };
+        let progress = {
+          completed: {},
+          skins: {},
+          skin: "harbour",
+          coins: 0,
+          gear: {},
+          carriedGear: null,
+          lastSpin: 0,
+        };
         try {
           const raw = localStorage.getItem(PROG_KEY);
           const parsed = raw ? JSON.parse(raw) : null;
@@ -3210,6 +3628,164 @@
           },
         ];
 
+        /* Gear: consumables rather than unlocks, so progress.gear[id] is a
+   count rather than the boolean progress.skins[id] every skin shares.
+   Buying increments it; using one in a race decrements it. */
+        const GEAR_ITEMS = [
+          {
+            id: "net",
+            name: "Net",
+            price: 25,
+            desc: "Lay it across the channel — the next boat through loses way for 2s.",
+            box: "#0c4257",
+            draw(c) {
+              c.strokeStyle = "#c9a568";
+              c.lineWidth = 1.8;
+              c.beginPath();
+              c.moveTo(4, 10);
+              c.lineTo(36, 26);
+              c.moveTo(4, 18);
+              c.lineTo(36, 34);
+              c.moveTo(4, 26);
+              c.lineTo(28, 38);
+              c.moveTo(36, 10);
+              c.lineTo(4, 26);
+              c.moveTo(36, 18);
+              c.lineTo(4, 34);
+              c.moveTo(36, 26);
+              c.lineTo(12, 38);
+              c.stroke();
+            },
+          },
+          {
+            id: "torpedo",
+            name: "Torpedo",
+            price: 45,
+            desc: "Straight down your wake — a clean hit knocks their bow off-line.",
+            box: "#1c1420",
+            draw(c) {
+              c.fillStyle = "#e8402a";
+              c.beginPath();
+              c.ellipse(18, 20, 14, 4.5, 0, 0, Math.PI * 2);
+              c.fill();
+              c.beginPath();
+              c.moveTo(10, 20);
+              c.lineTo(4, 15);
+              c.lineTo(4, 25);
+              c.closePath();
+              c.fill();
+              c.fillStyle = "#ff8a6b";
+              c.beginPath();
+              c.moveTo(30, 15);
+              c.lineTo(38, 20);
+              c.lineTo(30, 25);
+              c.closePath();
+              c.fill();
+              c.strokeStyle = "#ffb199";
+              c.lineWidth = 1.4;
+              c.lineCap = "round";
+              c.beginPath();
+              c.moveTo(-4, 16);
+              c.lineTo(4, 16);
+              c.moveTo(-4, 20);
+              c.lineTo(6, 20);
+              c.moveTo(-4, 24);
+              c.lineTo(4, 24);
+              c.stroke();
+              c.lineCap = "butt";
+            },
+          },
+          {
+            id: "nitro",
+            name: "Nitro Charge",
+            price: 30,
+            desc: "A few seconds of raw thrust, once, whenever you trigger it.",
+            box: "#241405",
+            draw(c) {
+              c.fillStyle = "#ffd84a";
+              c.beginPath();
+              c.moveTo(20, 4);
+              c.bezierCurveTo(12, 16, 12, 24, 20, 36);
+              c.bezierCurveTo(28, 24, 28, 16, 20, 4);
+              c.closePath();
+              c.fill();
+              c.fillStyle = "#ff8a3d";
+              c.beginPath();
+              c.moveTo(20, 14);
+              c.bezierCurveTo(16, 21, 16, 26, 20, 32);
+              c.bezierCurveTo(24, 26, 24, 21, 20, 14);
+              c.closePath();
+              c.fill();
+            },
+          },
+        ];
+        function drawGearIcon(canvas, item) {
+          const c = canvas.getContext("2d");
+          const w = canvas.width,
+            h = canvas.height;
+          c.clearRect(0, 0, w, h);
+          c.save();
+          c.scale(w / 40, h / 40);
+          item.draw(c);
+          c.restore();
+        }
+        function gearOwned(id) {
+          return progress.gear[id] || 0;
+        }
+        function buyGear(item) {
+          if (progress.coins < item.price) return false;
+          progress.coins -= item.price;
+          progress.gear[item.id] = gearOwned(item.id) + 1;
+          if (!progress.carriedGear) progress.carriedGear = item.id;
+          saveProgress();
+          return true;
+        }
+        function gearRow(item) {
+          const row = document.createElement("div");
+          row.className =
+            "gear-row" + (progress.carriedGear === item.id ? " picked" : "");
+          row.dataset.id = item.id;
+          const affordable = progress.coins >= item.price;
+          row.innerHTML =
+            '<span class="gear-icon-box" style="background:' +
+            item.box +
+            '"><canvas class="gear-icon" width="40" height="40"></canvas></span>' +
+            '<div class="gear-info"><b>' +
+            item.name +
+            '</b><span class="desc">' +
+            item.desc +
+            "</span></div>" +
+            '<div class="gear-buy">' +
+            '<span class="gear-owned">Owned <b class="ownedAmt">' +
+            gearOwned(item.id) +
+            "</b></span>" +
+            '<button class="pick-btn" type="button">' +
+            (progress.carriedGear === item.id ? "Carrying" : "Carry this") +
+            "</button>" +
+            '<button class="buy-btn" type="button"' +
+            (affordable ? "" : " disabled") +
+            ">Buy · " +
+            item.price +
+            "</button></div>";
+          drawGearIcon(row.querySelector(".gear-icon"), item);
+          row.querySelector(".pick-btn").onclick = () => {
+            progress.carriedGear = item.id;
+            saveProgress();
+            refreshGear();
+          };
+          row.querySelector(".buy-btn").onclick = () => {
+            if (buyGear(item)) {
+              coinBalanceEl.textContent = progress.coins;
+              refreshGear();
+            }
+          };
+          return row;
+        }
+        function refreshGear() {
+          gearListEl.innerHTML = "";
+          GEAR_ITEMS.forEach((g) => gearListEl.appendChild(gearRow(g)));
+        }
+
         function allChallengeSkinsUnlocked() {
           return CHALLENGE_SKINS.every((s) => progress.skins[s.id]);
         }
@@ -3545,6 +4121,9 @@
               bump: 0,
               spawnT: 0,
               bumpSfxT: 0,
+              netted: 0,
+              carriedGear: null,
+              gearCharges: 0,
             },
             o,
           );
@@ -3625,6 +4204,10 @@
             boats.push(b);
           });
           me = boats[boats.length - 1]; // you are the last one off the grid
+          me.carriedGear = progress.carriedGear;
+          me.gearCharges = me.carriedGear ? gearOwned(me.carriedGear) : 0;
+          torpedoes.length = 0;
+          refreshGearHud();
           wake.length = 0;
           trail.length = 0;
           spawnFauna();
@@ -3665,6 +4248,7 @@
             if (state === S.race || state === S.count) pauseGame();
             else if (state === S.pause) resumeGame();
           }
+          if (e.key === " " && state === S.race) useGear();
         });
         addEventListener("keyup", (e) => {
           keys[e.key.toLowerCase()] = false;
@@ -4172,7 +4756,13 @@
             cy = Math.sin(b.h);
           let f = b.vx * cx + b.vy * cy;
           let l = -b.vx * cy + b.vy * cx;
-          const extra = b.shallow ? 1.7 : b.weed ? 1.25 : 0;
+          const extra = b.shallow
+            ? 1.7
+            : b.weed
+              ? 1.25
+              : b.netted > 0
+                ? 1.5
+                : 0;
           f -= (f * (1.1 + extra) + 0.0016 * f * Math.abs(f)) * dt;
           l -= l * (4.6 + extra) * dt;
           b.vx = f * cx - l * cy;
@@ -4266,6 +4856,7 @@
           }
           if (b.bump > 0) b.bump -= dt;
           if (b.bumpSfxT > 0) b.bumpSfxT -= dt;
+          if (b.netted > 0) b.netted -= dt;
         }
 
         function autopilot(b, dt) {
@@ -5068,6 +5659,8 @@
    HAZARDS — things in the water
    ============================================================ */
         let hazards = [];
+        let torpedoes = [];
+        const TORPEDO_SPEED = 340;
 
         const HAZ = {
           // r is the radius the boat reacts to, in world px
@@ -5154,6 +5747,10 @@
         function stepHazards(dt) {
           for (const h of hazards) {
             h.spin += dt * (h.type === "eddy" ? 1.5 * h.dir : 0.5);
+            if (h.type === "net") {
+              h.ttl -= dt;
+              continue;
+            }
             if (h.type !== "log") continue;
             // timber rides the current, turning slowly as it goes
             const t = track.tan[h.i];
@@ -5173,6 +5770,10 @@
               h.y += uy * (nr.d - (track.half - 26));
             }
           }
+          if (hazards.some((h) => h.type === "net" && (h.spent || h.ttl <= 0)))
+            hazards = hazards.filter(
+              (h) => h.type !== "net" || (!h.spent && h.ttl > 0),
+            );
         }
 
         /* Forces that act on a hull sitting in a hazard: the pull and swirl of a
@@ -5201,6 +5802,15 @@
               b.vx += (ux * 165 + uy * h.dir * 205) * f * dt;
               b.vy += (uy * 165 - ux * h.dir * 205) * f * dt;
               b.h += h.dir * 2.1 * f * f * dt;
+            } else if (h.type === "net" && b !== h.owner && !h.spent) {
+              // one catch per net, and never the boat that dropped it
+              h.spent = true;
+              b.netted = 2;
+              b.vx *= 0.15;
+              b.vy *= 0.15;
+              if (b === me) sfxBump(0.7);
+              if (!REDUCED)
+                for (let i = 0; i < 6; i++) spray(b.x, b.y, "#c9a568", 1.4);
             }
           }
         }
@@ -5235,6 +5845,74 @@
               }
             }
           }
+        }
+
+        /* Gear, in the race: player-only for now — rivals never carry or
+   trigger it. Net and Nitro reuse the hazard-drag and boost mechanics a
+   course hazard or a boost pickup already drive; Torpedo is the one
+   genuinely new moving thing, a straight-line shot resolved in
+   stepTorpedoes(). */
+        function useGear() {
+          if (state !== S.race || !me || me.done) return;
+          if (!me.carriedGear || me.gearCharges <= 0) return;
+          const type = me.carriedGear;
+          me.gearCharges--;
+          progress.gear[type] = Math.max(0, gearOwned(type) - 1);
+          saveProgress();
+          if (type === "nitro") {
+            me.boost = 3.4;
+            sfxBoost();
+            if (!REDUCED)
+              for (let i = 0; i < 7; i++) spray(me.x, me.y, "#ffd84a", 1.5);
+          } else if (type === "net") {
+            hazards.push({
+              type: "net",
+              x: me.x - Math.cos(me.h) * 18,
+              y: me.y - Math.sin(me.h) * 18,
+              r: 46,
+              owner: me,
+              ttl: 9,
+              spent: false,
+              spin: 0,
+            });
+          } else if (type === "torpedo") {
+            torpedoes.push({
+              x: me.x + Math.cos(me.h) * 22,
+              y: me.y + Math.sin(me.h) * 22,
+              vx: Math.cos(me.h) * TORPEDO_SPEED,
+              vy: Math.sin(me.h) * TORPEDO_SPEED,
+              owner: me,
+              life: 2.6,
+            });
+          }
+          refreshGearHud();
+        }
+        function stepTorpedoes(dt) {
+          if (!torpedoes.length) return;
+          torpedoes = torpedoes.filter((t) => {
+            t.x += t.vx * dt;
+            t.y += t.vy * dt;
+            t.life -= dt;
+            if (t.life <= 0) return false;
+            for (const b of boats) {
+              if (b === t.owner || b.eaten > 0) continue;
+              const dx = b.x - t.x,
+                dy = b.y - t.y;
+              if (dx * dx + dy * dy > 20 * 20) continue;
+              b.vx *= 0.25;
+              b.vy *= 0.25;
+              b.h += (Math.random() < 0.5 ? -1 : 1) * 0.55;
+              b.bump = 0.4;
+              if (b === me && b.bumpSfxT <= 0) {
+                sfxBump(1);
+                b.bumpSfxT = 0.5;
+              }
+              if (!REDUCED)
+                for (let i = 0; i < 6; i++) spray(b.x, b.y, "#e8402a", 1.6);
+              return false;
+            }
+            return true;
+          });
         }
 
         function spawnBoosts() {
@@ -5765,6 +6443,7 @@
           raceT += dt;
           stepFauna(dt);
           stepHazards(dt);
+          stepTorpedoes(dt);
           stepMoored(dt);
           slipstream();
           for (const b of boats) {
@@ -6869,8 +7548,28 @@
         const skinsEl = document.getElementById("skinsMenu"),
           skinGridColoursEl = document.getElementById("skinGridColours"),
           skinGridFlagsEl = document.getElementById("skinGridFlags"),
-          skinGridChallengesEl = document.getElementById("skinGridChallenges");
+          skinGridChallengesEl = document.getElementById("skinGridChallenges"),
+          skinsBrowsePopEl = document.getElementById("skinsBrowsePop"),
+          boatSummaryCanvasEl = document.getElementById("boatSummaryCanvas"),
+          boatSummaryCatEl = document.getElementById("boatSummaryCat"),
+          boatSummaryNameEl = document.getElementById("boatSummaryName"),
+          gearListEl = document.getElementById("gearList");
         const coinBalanceEl = document.getElementById("coinBalance");
+        const SKIN_CATEGORY_LABEL = {
+          colours: "Colour",
+          flags: "Flag",
+          challenges: "Challenge",
+        };
+        function openSkinsBrowse() {
+          skinsBrowsePopEl.classList.add("on");
+          skinsBrowsePopEl.setAttribute("aria-hidden", "false");
+          document.getElementById("skinsBrowseClose").focus();
+        }
+        function closeSkinsBrowse() {
+          skinsBrowsePopEl.classList.remove("on");
+          skinsBrowsePopEl.setAttribute("aria-hidden", "true");
+          document.getElementById("boatSummary").focus();
+        }
         const SKIN_CATEGORY_GRIDS = {
           colours: skinGridColoursEl,
           flags: skinGridFlagsEl,
@@ -6979,12 +7678,20 @@
               me.trim = s.trim || "#17313a";
             }
             refreshSkins();
+            if (skinsBrowsePopEl.classList.contains("on")) closeSkinsBrowse();
           };
           return card;
         }
         function fillSkinGrid(el, skins) {
           el.innerHTML = "";
           skins.forEach((s) => el.appendChild(skinCard(s)));
+        }
+        function refreshBoatSummary() {
+          const s = selectedSkin();
+          drawSkinPreview(boatSummaryCanvasEl, s);
+          boatSummaryCatEl.textContent =
+            SKIN_CATEGORY_LABEL[skinCategoryFor(s.id)] + " · equipped";
+          boatSummaryNameEl.textContent = s.name;
         }
         function refreshSkins() {
           coinBalanceEl.textContent = progress.coins;
@@ -6994,6 +7701,8 @@
             skinGridChallengesEl,
             CHALLENGE_SKINS.concat(DIAMOND_SKIN),
           );
+          refreshBoatSummary();
+          refreshGear();
         }
         refreshSkins();
         showSkinCategory(skinCategoryFor(progress.skin));
@@ -7003,6 +7712,7 @@
           skinsEl.classList.remove("hidden");
           refreshSkins();
           showSkinCategory(skinCategoryFor(progress.skin));
+          refreshSpinStatus();
           requestAnimationFrame(fitSheets);
         };
         document.getElementById("skinsDone").onclick = () => {
@@ -7010,6 +7720,181 @@
           menuEl.classList.remove("hidden");
           requestAnimationFrame(fitSheets);
         };
+        document.getElementById("boatSummary").onclick = openSkinsBrowse;
+        document.getElementById("skinsBrowseClose").onclick = closeSkinsBrowse;
+        addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && skinsBrowsePopEl.classList.contains("on")) {
+            e.stopPropagation();
+            closeSkinsBrowse();
+          }
+        });
+
+        /* Daily spin: one free spin per calendar day, weighted toward small
+   coin amounts with a couple of gear items as the rarer outcome — a taste
+   of the gear economy above rather than a way around it. The wheel is
+   built from this same list, so it can never show an outcome spinning
+   couldn't actually give you. */
+        const SPIN_REWARDS = [
+          { label: "15", sub: "coins", type: "coins", amount: 15, weight: 18 },
+          { label: "NET", sub: "+1 gear", type: "gear", id: "net", weight: 8 },
+          { label: "25", sub: "coins", type: "coins", amount: 25, weight: 14 },
+          { label: "10", sub: "coins", type: "coins", amount: 10, weight: 20 },
+          {
+            label: "NITRO",
+            sub: "+1 gear",
+            type: "gear",
+            id: "nitro",
+            weight: 8,
+          },
+          { label: "40", sub: "coins", type: "coins", amount: 40, weight: 10 },
+          { label: "10", sub: "coins", type: "coins", amount: 10, weight: 20 },
+          { label: "75", sub: "coins", type: "coins", amount: 75, weight: 2 },
+        ];
+        function todayKey() {
+          const d = new Date();
+          return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+        }
+        function spinAvailable() {
+          return progress.lastSpin !== todayKey();
+        }
+        (function buildSpinWheel() {
+          const svg = document.getElementById("wheelSvg");
+          const ns = "http://www.w3.org/2000/svg";
+          const n = SPIN_REWARDS.length;
+          const cx = 100,
+            cy = 100,
+            r = 98;
+          const segColors = ["#0c4257", "#072a3a"];
+          SPIN_REWARDS.forEach((rw, i) => {
+            const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
+            const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+            const x0 = cx + r * Math.cos(a0),
+              y0 = cy + r * Math.sin(a0);
+            const x1 = cx + r * Math.cos(a1),
+              y1 = cy + r * Math.sin(a1);
+            const path = document.createElementNS(ns, "path");
+            path.setAttribute(
+              "d",
+              "M" +
+                cx +
+                "," +
+                cy +
+                " L" +
+                x0.toFixed(2) +
+                "," +
+                y0.toFixed(2) +
+                " A" +
+                r +
+                "," +
+                r +
+                " 0 0,1 " +
+                x1.toFixed(2) +
+                "," +
+                y1.toFixed(2) +
+                " Z",
+            );
+            path.setAttribute(
+              "fill",
+              rw.type === "gear" ? "#123a2e" : segColors[i % 2],
+            );
+            path.setAttribute("stroke", "rgba(127,233,216,0.3)");
+            path.setAttribute("stroke-width", "1");
+            svg.appendChild(path);
+
+            const mid = (a0 + a1) / 2;
+            const midDeg = (mid * 180) / Math.PI + 90;
+            const lx = cx + r * 0.65 * Math.cos(mid);
+            const ly = cy + r * 0.65 * Math.sin(mid);
+            const g = document.createElementNS(ns, "g");
+            g.setAttribute(
+              "transform",
+              "rotate(" +
+                midDeg.toFixed(2) +
+                " " +
+                lx.toFixed(2) +
+                " " +
+                ly.toFixed(2) +
+                ")",
+            );
+            const t1 = document.createElementNS(ns, "text");
+            t1.setAttribute("x", lx);
+            t1.setAttribute("y", ly - 2);
+            t1.setAttribute("text-anchor", "middle");
+            t1.setAttribute("font-family", "Barlow Condensed, sans-serif");
+            t1.setAttribute("font-weight", "700");
+            t1.setAttribute("font-size", rw.type === "gear" ? "13" : "18");
+            t1.setAttribute("fill", rw.type === "gear" ? "#7fe9d8" : "#ffd84a");
+            t1.textContent = rw.label;
+            g.appendChild(t1);
+            const t2 = document.createElementNS(ns, "text");
+            t2.setAttribute("x", lx);
+            t2.setAttribute("y", ly + 10);
+            t2.setAttribute("text-anchor", "middle");
+            t2.setAttribute("font-family", "IBM Plex Mono, monospace");
+            t2.setAttribute("font-size", "6.5");
+            t2.setAttribute("fill", "rgba(234,247,244,0.65)");
+            t2.textContent = rw.sub;
+            g.appendChild(t2);
+            svg.appendChild(g);
+          });
+        })();
+        function weightedSpinIndex() {
+          const total = SPIN_REWARDS.reduce((s, r) => s + r.weight, 0);
+          let x = Math.random() * total;
+          for (let i = 0; i < SPIN_REWARDS.length; i++) {
+            if (x < SPIN_REWARDS[i].weight) return i;
+            x -= SPIN_REWARDS[i].weight;
+          }
+          return SPIN_REWARDS.length - 1;
+        }
+        let wheelRotation = 0;
+        let spinning = false;
+        const wheelEl = document.getElementById("wheelSvg"),
+          spinBtnEl = document.getElementById("spinBtn"),
+          spinStatusEl = document.getElementById("spinStatus"),
+          spinResultEl = document.getElementById("spinResult");
+        function refreshSpinStatus() {
+          if (spinning) return;
+          if (spinAvailable()) {
+            spinStatusEl.textContent = "Free spin ready";
+            spinBtnEl.disabled = false;
+            spinBtnEl.textContent = "Spin";
+          } else {
+            spinStatusEl.textContent = "Come back tomorrow";
+            spinBtnEl.disabled = true;
+            spinBtnEl.textContent = "Spun today";
+          }
+        }
+        spinBtnEl.onclick = () => {
+          if (spinning || !spinAvailable()) return;
+          spinning = true;
+          spinBtnEl.disabled = true;
+          spinResultEl.textContent = "";
+          const idx = weightedSpinIndex();
+          const segAngle = 360 / SPIN_REWARDS.length;
+          const segMid = idx * segAngle + segAngle / 2;
+          wheelRotation += 360 * 5 + (360 - segMid);
+          wheelEl.style.transform = "rotate(" + wheelRotation + "deg)";
+          setTimeout(() => {
+            const reward = SPIN_REWARDS[idx];
+            progress.lastSpin = todayKey();
+            if (reward.type === "coins") {
+              progress.coins += reward.amount;
+              spinResultEl.textContent = "+" + reward.amount + " coins!";
+            } else {
+              progress.gear[reward.id] = gearOwned(reward.id) + 1;
+              if (!progress.carriedGear) progress.carriedGear = reward.id;
+              spinResultEl.textContent =
+                "+1 " + GEAR_ITEMS.find((g) => g.id === reward.id).name + "!";
+            }
+            saveProgress();
+            coinBalanceEl.textContent = progress.coins;
+            refreshGear();
+            spinning = false;
+            refreshSpinStatus();
+          }, 4300);
+        };
+        refreshSpinStatus();
 
         const skinPopEl = document.getElementById("skinPop"),
           skinPopCanvas = document.getElementById("skinPopCanvas"),
@@ -7239,6 +8124,23 @@
           if (settingsReturn === "pause") pauseEl.classList.remove("hidden");
           settingsReturn = null;
         }
+
+        const useGearBtnEl = document.getElementById("useGearBtn"),
+          useGearIconEl = document.getElementById("useGearIcon"),
+          useGearCountEl = document.getElementById("useGearCount");
+        function refreshGearHud() {
+          const item =
+            me && me.carriedGear && me.gearCharges > 0
+              ? GEAR_ITEMS.find((g) => g.id === me.carriedGear)
+              : null;
+          useGearBtnEl.classList.toggle("show", !!item);
+          if (!item) return;
+          drawGearIcon(useGearIconEl, item);
+          useGearCountEl.textContent = me.gearCharges;
+        }
+        useGearBtnEl.onclick = () => {
+          useGear();
+        };
 
         pauseBtn.onclick = pauseGame;
         document.getElementById("resumeBtn").onclick = resumeGame;
