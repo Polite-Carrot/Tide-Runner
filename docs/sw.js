@@ -1,11 +1,12 @@
 /* Bump on every deploy to invalidate the previous cache. */
-const CACHE = "tiderunner-v34";
+const CACHE = "tiderunner-v35";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./polite-carrot-logo.svg",
   "./polite-carrot-name.svg",
+  "./tiderunner-wordmark.png",
   "./apple-touch-icon.png?v=2",
   "./icon-192.png",
   "./icon-512.png",

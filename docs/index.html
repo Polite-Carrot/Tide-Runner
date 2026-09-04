@@ -552,9 +552,10 @@
         letter-spacing: 0.005em;
         text-transform: uppercase;
       }
-      h1 em {
-        font-style: normal;
-        color: var(--chart);
+      .brand-logo {
+        display: block;
+        height: clamp(38px, 9vw, 62px);
+        width: auto;
       }
       .tag {
         font-size: 11px;
@@ -1696,7 +1697,13 @@
     <div class="screen" id="menu">
       <div class="sheet panel">
         <div class="brand">
-          <h1>Tide<em>runner</em></h1>
+          <h1>
+            <img
+              class="brand-logo"
+              src="tiderunner-wordmark.png"
+              alt="Tiderunner"
+            />
+          </h1>
           <div class="brand-actions">
             <button class="gear skin-tool" id="homeSkins" aria-label="Skins">
               Skins

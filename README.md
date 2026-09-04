@@ -341,6 +341,10 @@ Inside `docs/index.html` the code is grouped into commented sections: course def
 track generation, boat physics and AI, audio, fauna, boosts, moored scenery, rendering, the
 chartplotter, and the HUD and menu screens.
 
+The main menu's title is `docs/tiderunner-wordmark.png` (the same wordmark the app icon uses),
+not styled text — it's an `<img>` inside the `<h1>`, sized by `.brand-logo`'s `height: clamp(...)`
+so it scales the same way the old text title did.
+
 Courses are either generated — a closed loop with sinusoidal meanders laid over it — or laid
 out by hand as control points. Either way two limits have to hold: no corner tighter than
 the hull can turn, and enough land left between two reaches that they don't merge into one
