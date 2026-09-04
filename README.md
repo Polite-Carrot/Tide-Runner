@@ -225,30 +225,45 @@ is overridden back to `overflow: hidden` regardless of which way that toggle lan
 so it needed an actual count: `progress.gear[id]`, incremented by `buyGear()` and decremented
 both by buying and by spending a charge in a race. Every item you own comes with you into the
 next race — there's no single "carried" slot to pick between them, so buying a second kind of
-gear doesn't cost you the first. Three items so far, all defined in one place (`GEAR_ITEMS`,
+gear doesn't cost you the first. Four items so far, all defined in one place (`GEAR_ITEMS`,
 right next to the shop skins) with a small hand-drawn canvas icon apiece, reused unmodified for
 the shop row, the in-race HUD stack and the "+1 X" spin-wheel wedge:
 
-| Item         | Price | Effect                                                                     |
-| ------------ | ----- | -------------------------------------------------------------------------- |
-| Net          | 25    | Drops behind the boat; the next rival to cross it loses way for 2s         |
-| Nitro Charge | 30    | An extra 3.4s of boost, triggered on demand instead of found on the course |
-| Torpedo      | 45    | Fires from the bow; a hit knocks the rival's heading and speed hard        |
+| Item           | Price | Effect                                                                     |
+| -------------- | ----- | -------------------------------------------------------------------------- |
+| Net            | 25    | Drops behind the boat; the next rival to cross it loses way to a near-stop |
+| Nitro Charge   | 30    | An extra 3.4s of boost, triggered on demand instead of found on the course |
+| Torpedo        | 45    | Fires from the bow; a hit brings the rival to a near-stop, same as a net   |
+| Tracer Torpedo | 60    | Locks onto the boat ahead of you at launch and curves to chase them down   |
 
 **In the race, gear reuses physics that already exist rather than inventing new ones.** Nitro
 just sets `b.boost` — the same field a boost pickup sets, so the flame trail and HUD glow are
 free. Net pushes a `{ type: "net", owner, ttl, spent }` object into the same `hazards` array a
 course's weed beds live in; `hazardForces()` gets one more `else if` branch that skips the
-boat that dropped it, cuts velocity hard on the first rival to touch it, and marks it `spent` so
+boat that dropped it, cuts its velocity to 4% — a near-total stop, the same weight as running
+into a buoy, rather than the milder slowdown both Net and Torpedo shipped with at first, which
+playtesting found barely noticeable — on the first rival to touch it, and marks it `spent` so
 one net only ever catches one boat, then `stepHazards()` sweeps it out. `drawHazards()` gets its
 own `net` case too — a cross-hatched lattice inside an ellipse outline — rather than falling
 through to the log drawing, which is what it did at first (invisible in practice, since a net
 has no `h.a`/`h.wob` for the log branch to rotate and bob by, so the transform went to `NaN` and
-nothing painted). Torpedo is the one genuinely new moving thing — a straight-line shot in its
-own `torpedoes` array, stepped and collision-checked in `stepTorpedoes()`, called from `update()`
+nothing painted). Torpedo is the genuinely new moving thing — a straight-line shot in its own
+`torpedoes` array, stepped and collision-checked in `stepTorpedoes()`, called from `update()`
 right after `stepHazards()`; `drawTorpedoes()` is its equivalent of `drawHazards()`, added
 alongside it — the first version had the physics and hit detection working but nothing drawing
 the torpedo itself, so firing one looked and felt like nothing had happened even when it landed.
+It shares the net's 4% hit — same "dead stop" weight, different delivery.
+
+**Tracer Torpedo is a torpedo with `homing: true` and a locked-on `target`, not a new system.**
+`boatAhead(b)` — next to `ranked()`, since it's just "one place better in that same order" — is
+called once at launch to find whoever's currently ahead of the player; the target doesn't
+change even if someone else takes that spot mid-flight, and the leader firing one just gets a
+plain straight shot, `target` being `null`, rather than the charge doing nothing. Every frame in
+`stepTorpedoes()`, a homing torpedo turns at most `TRACER_TURN_RATE` (3.2 rad/s) toward its
+target's current position — a chase with a real turn radius a target can juke, not a snap-to
+guarantee — before moving and running the same hit check every torpedo does.
+`drawTorpedoes()`'s only concession to it is colour: teal instead of red, `t.homing` picked at
+draw time, same shape.
 
 `me.gear` (an id → count map, seeded from `progress.gear` at `startRace()`) tracks what the
 player is carrying for the race, separately from `progress.gear`, which `useGear(type)` also
@@ -256,8 +271,8 @@ decrements immediately so a mid-race quit doesn't hand back an unspent charge. G
 player-only for this first pass: rivals never carry or trigger it, so there's no AI
 decision-making to get right yet, only the mechanics themselves. The HUD shows one circle per
 gear type you're still carrying, stacked bottom-left above the pause button (mirroring its
-corner and styling) rather than a single button for one selected item, since you can carry all
-three kinds at once now; each circle's count badge reads `9+` once it passes nine so it never
+corner and styling) rather than a single button for one selected item, since you can carry every
+kind at once now; each circle's count badge reads `9+` once it passes nine so it never
 grows past what the circle can hold. Tap a circle to fire that item, or press `Space` on desktop
 to fire whichever owned item comes first in `GEAR_ITEMS` order; a circle disappears the moment
 that item's count hits zero.

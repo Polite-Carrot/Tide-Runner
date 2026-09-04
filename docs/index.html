@@ -3829,7 +3829,7 @@
    Buying increments it; using one in a race decrements it. */
         // TESTING ONLY — every price below is 1 coin so the buy/carry/use
         // loop is cheap to exercise. Restore the real prices (net 25,
-        // torpedo 45, nitro 30) before shipping.
+        // torpedo 45, nitro 30, tracer 60) before shipping.
         const GEAR_ITEMS = [
           {
             id: "net",
@@ -3915,6 +3915,58 @@
               c.bezierCurveTo(24, 26, 24, 21, 20, 14);
               c.closePath();
               c.fill();
+            },
+          },
+          {
+            id: "tracer",
+            name: "Tracer Torpedo",
+            price: 1,
+            desc: "Locks onto the boat ahead of you and curves to chase them down.",
+            box: "#0a1f22",
+            draw(c) {
+              c.fillStyle = "#1f8f7a";
+              c.beginPath();
+              c.ellipse(18, 20, 14, 4.5, 0, 0, Math.PI * 2);
+              c.fill();
+              c.beginPath();
+              c.moveTo(10, 20);
+              c.lineTo(4, 15);
+              c.lineTo(4, 25);
+              c.closePath();
+              c.fill();
+              c.fillStyle = "#7fe9d8";
+              c.beginPath();
+              c.moveTo(30, 15);
+              c.lineTo(38, 20);
+              c.lineTo(30, 25);
+              c.closePath();
+              c.fill();
+              c.strokeStyle = "#bdf3ea";
+              c.lineWidth = 1.4;
+              c.lineCap = "round";
+              c.beginPath();
+              c.moveTo(-4, 16);
+              c.lineTo(4, 16);
+              c.moveTo(-4, 20);
+              c.lineTo(6, 20);
+              c.moveTo(-4, 24);
+              c.lineTo(4, 24);
+              c.stroke();
+              c.lineCap = "butt";
+              // targeting reticle: reads as "this one tracks" at a glance
+              c.strokeStyle = "#eafff9";
+              c.lineWidth = 1;
+              c.beginPath();
+              c.arc(31, 8, 5, 0, Math.PI * 2);
+              c.moveTo(31, 1);
+              c.lineTo(31, 5);
+              c.moveTo(31, 11);
+              c.lineTo(31, 15);
+              c.moveTo(24, 8);
+              c.lineTo(28, 8);
+              c.moveTo(34, 8);
+              c.lineTo(38, 8);
+              c.stroke();
             },
           },
         ];
@@ -5852,6 +5904,9 @@
         let hazards = [];
         let torpedoes = [];
         const TORPEDO_SPEED = 340;
+        // Radians/sec a Tracer Torpedo can curve toward its target — a
+        // noticeable chase, not an inescapable snap-to-target lock.
+        const TRACER_TURN_RATE = 3.2;
 
         const HAZ = {
           // r is the radius the boat reacts to, in world px
@@ -5994,11 +6049,13 @@
               b.vy += (uy * 165 - ux * h.dir * 205) * f * dt;
               b.h += h.dir * 2.1 * f * f * dt;
             } else if (h.type === "net" && b !== h.owner && !h.spent) {
-              // one catch per net, and never the boat that dropped it
+              // one catch per net, and never the boat that dropped it — a
+              // near-total stop, same weight as a buoy strike, not just a
+              // slowdown
               h.spent = true;
               b.netted = 2;
-              b.vx *= 0.15;
-              b.vy *= 0.15;
+              b.vx *= 0.04;
+              b.vy *= 0.04;
               if (b === me) sfxBump(0.7);
               if (!REDUCED)
                 for (let i = 0; i < 6; i++) spray(b.x, b.y, "#c9a568", 1.4);
@@ -6040,9 +6097,9 @@
 
         /* Gear, in the race: player-only for now — rivals never carry or
    trigger it. Net and Nitro reuse the hazard-drag and boost mechanics a
-   course hazard or a boost pickup already drive; Torpedo is the one
-   genuinely new moving thing, a straight-line shot resolved in
-   stepTorpedoes(). */
+   course hazard or a boost pickup already drive; Torpedo and Tracer
+   Torpedo are the genuinely new moving thing, both resolved in
+   stepTorpedoes() — a tracer is just a torpedo with homing turned on. */
         function useGear(type) {
           if (state !== S.race || !me || me.done) return;
           if (!type || (me.gear[type] || 0) <= 0) return;
@@ -6065,7 +6122,8 @@
               spent: false,
               spin: 0,
             });
-          } else if (type === "torpedo") {
+          } else if (type === "torpedo" || type === "tracer") {
+            const homing = type === "tracer";
             torpedoes.push({
               x: me.x + Math.cos(me.h) * 22,
               y: me.y + Math.sin(me.h) * 22,
@@ -6073,6 +6131,13 @@
               vy: Math.sin(me.h) * TORPEDO_SPEED,
               owner: me,
               life: 2.6,
+              homing,
+              // Locked in at launch, not re-picked mid-flight — if they're
+              // passed before impact, the tracer keeps chasing them rather
+              // than retargeting onto whoever's ahead now. No one ahead (the
+              // leader firing one) just flies it straight, same as a plain
+              // Torpedo, rather than wasting the charge doing nothing.
+              target: homing ? boatAhead(me) : null,
             });
           }
           refreshGearHud();
@@ -6080,6 +6145,20 @@
         function stepTorpedoes(dt) {
           if (!torpedoes.length) return;
           torpedoes = torpedoes.filter((t) => {
+            if (t.homing && t.target && t.target.eaten <= 0 && !t.target.done) {
+              const wantAngle = Math.atan2(t.target.y - t.y, t.target.x - t.x);
+              const curAngle = Math.atan2(t.vy, t.vx);
+              let diff = wantAngle - curAngle;
+              while (diff > Math.PI) diff -= 2 * Math.PI;
+              while (diff < -Math.PI) diff += 2 * Math.PI;
+              const turn = Math.max(
+                -TRACER_TURN_RATE * dt,
+                Math.min(TRACER_TURN_RATE * dt, diff),
+              );
+              const heading = curAngle + turn;
+              t.vx = Math.cos(heading) * TORPEDO_SPEED;
+              t.vy = Math.sin(heading) * TORPEDO_SPEED;
+            }
             t.x += t.vx * dt;
             t.y += t.vy * dt;
             t.life -= dt;
@@ -6089,8 +6168,9 @@
               const dx = b.x - t.x,
                 dy = b.y - t.y;
               if (dx * dx + dy * dy > 20 * 20) continue;
-              b.vx *= 0.25;
-              b.vy *= 0.25;
+              // a near-total stop, same weight as a buoy strike
+              b.vx *= 0.04;
+              b.vy *= 0.04;
               b.h += (Math.random() < 0.5 ? -1 : 1) * 0.55;
               b.bump = 0.4;
               if (b === me && b.bumpSfxT <= 0) {
@@ -6098,13 +6178,13 @@
                 b.bumpSfxT = 0.5;
               }
               if (!REDUCED)
-                for (let i = 0; i < 6; i++) spray(b.x, b.y, "#e8402a", 1.6);
+                for (let i = 0; i < 6; i++)
+                  spray(b.x, b.y, t.homing ? "#7fe9d8" : "#e8402a", 1.6);
               return false;
             }
             return true;
           });
         }
-
         function spawnBoosts() {
           boosts = [];
           const step = Math.max(6, Math.round(560 / track.spacing));
@@ -6270,11 +6350,11 @@
             ctx.moveTo(-9, 0);
             ctx.lineTo(-17, 0);
             ctx.stroke();
-            ctx.fillStyle = "#e8402a";
+            ctx.fillStyle = t.homing ? "#1f8f7a" : "#e8402a";
             ctx.beginPath();
             ctx.ellipse(0, 0, 9, 3.2, 0, 0, 7);
             ctx.fill();
-            ctx.fillStyle = "#ff8a6b";
+            ctx.fillStyle = t.homing ? "#7fe9d8" : "#ff8a6b";
             ctx.beginPath();
             ctx.moveTo(9, 0);
             ctx.lineTo(5, -2.6);
@@ -6655,6 +6735,15 @@
             if (b.done) return 1;
             return pb - pa;
           });
+        }
+        // Whoever's one place better than b right now — the Tracer
+        // Torpedo's lock-on target. Reuses the same order the HUD's own
+        // place number comes from, so "the boat ahead of you" means exactly
+        // what it looks like on screen. null for the leader.
+        function boatAhead(b) {
+          const order = ranked();
+          const i = order.indexOf(b);
+          return i > 0 ? order[i - 1] : null;
         }
 
         /* ============================================================
