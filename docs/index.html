@@ -1328,12 +1328,24 @@
       .gear:hover {
         background: rgba(127, 233, 216, 0.1);
       }
+      /* Amber rather than the plain teal every other corner icon gets — this
+         one leads to the coin economy, so it should read as an invitation to
+         spend, not just another utility button next to Settings. */
       .skin-tool {
-        width: 54px;
+        width: auto;
+        height: 42px;
+        padding: 0 18px;
         font-family: var(--display);
-        font-size: 11px;
+        font-weight: 700;
+        font-size: 13px;
         letter-spacing: 0.06em;
         text-transform: uppercase;
+        color: var(--amber);
+        border-color: rgba(255, 216, 74, 0.45);
+        background: rgba(255, 216, 74, 0.08);
+      }
+      .skin-tool:hover {
+        background: rgba(255, 216, 74, 0.16);
       }
       .skin-grid {
         display: grid;
@@ -2073,9 +2085,10 @@
             <button
               class="gear skin-tool"
               id="homeSkins"
-              aria-label="Boathouse"
+              aria-label="My Boat"
+              title="My Boat"
             >
-              Boathouse
+              My Boat
             </button>
             <button
               class="gear"
