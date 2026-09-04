@@ -270,6 +270,20 @@ closing the Boathouse before spinning the armed bonus just means watching anothe
 time) and needs swapping for a real rewarded-ad SDK call before shipping, calling `onComplete()`
 only once the viewer has actually earned the reward.
 
+**The wheel itself lives in its own full-screen popup (`#spinPop`), not inline in the
+Boathouse.** The Daily Spin section there is just a launcher — reusing the `.boat-summary`
+card pattern verbatim (icon, meta text, a chip CTA) with `#spinStatus` as its live status line
+— that opens the popup on tap. The popup follows the same `.screen` + centered `.sheet.panel`
+convention as the skin-unlock celebration (`#skinPop`), just with the wheel scaled way up
+(`.wheel-wrap-big`) so the spin reads as the main event rather than something happening in a
+corner of a longer scrolling page. Landing flashes the wedge that was actually won
+(`wheelPaths[idx]`, a per-segment reference array `buildSpinWheel()` fills in alongside the SVG
+it already builds) and pops the reward line in with a small scale animation, then the popup
+closes itself two seconds later — `spinBtnEl.onclick`'s existing reward-resolution callback,
+extended rather than replaced. It can also be dismissed early with the `✕` or `Escape`, which
+just hides the overlay; the reward is already committed to `progress` by the time either could
+fire, so there's nothing to lose by closing early.
+
 ## Controls
 
 | Action   | Keyboard          | Touch                                                       |

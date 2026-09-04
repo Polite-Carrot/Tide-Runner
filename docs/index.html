@@ -1513,16 +1513,6 @@
         padding: 10px 14px;
       }
 
-      .spin-card {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-        border: 1px solid var(--hair);
-        background: rgba(127, 233, 216, 0.04);
-        border-radius: 2px;
-        padding: 12px;
-      }
       .wheel-wrap {
         position: relative;
         width: 108px;
@@ -1562,16 +1552,6 @@
         border-top: 12px solid var(--amber);
         z-index: 2;
         filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
-      }
-      .spin-copy {
-        flex: 1 1 190px;
-        min-width: 0;
-      }
-      .spin-copy p {
-        margin: 0 0 10px;
-        font-size: 11px;
-        line-height: 1.55;
-        color: rgba(234, 247, 244, 0.6);
       }
       .spin-btn {
         width: auto;
@@ -1634,11 +1614,90 @@
         width: 100%;
       }
       .spin-result {
-        margin: 8px 0 0;
+        margin: 14px 0 0;
         color: var(--stbd);
-        font-weight: 600;
-        font-size: 12px;
+        font-weight: 700;
+        font-size: 20px;
         min-height: 1.3em;
+      }
+      /* Pop-in on the reward line — re-triggered each spin by toggling the
+         class off and back on (see spinBtnEl.onclick), since simply
+         re-adding an already-present class doesn't restart a CSS animation. */
+      .spin-result.show {
+        animation: spinResultPop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+      }
+      @keyframes spinResultPop {
+        0% {
+          transform: scale(0.6);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      /* Big wheel for the full-screen spin popup — same wheel, just scaled
+         up, with the pointer and hub scaled to match. */
+      .wheel-wrap-big {
+        width: min(70vw, 280px);
+        height: min(70vw, 280px);
+        margin: 4px auto 18px;
+      }
+      .wheel-wrap-big .pointer {
+        top: -12px;
+        border-left-width: 11px;
+        border-right-width: 11px;
+        border-top-width: 18px;
+      }
+      .wheel-wrap-big .wheel-hub {
+        width: 38px;
+        height: 38px;
+      }
+      /* The winning wedge flashes once the wheel lands, so the win reads at
+         a glance instead of only living in the text underneath. */
+      .wheel path.wheel-win {
+        animation: wheelWinGlow 0.85s ease-in-out 2;
+      }
+      @keyframes wheelWinGlow {
+        0%,
+        100% {
+          filter: none;
+        }
+        50% {
+          filter: brightness(1.9) drop-shadow(0 0 9px rgba(255, 216, 74, 0.9));
+        }
+      }
+      /* Widened for the popup's own layout without touching display: the
+         spin button is inline-block and the ad button toggles
+         none/inline-flex via .show — both already center fine under
+         text-align:center once they've got a width to fill. */
+      #spinPop .spin-btn,
+      #spinPop .ad-spin-btn {
+        width: 100%;
+        max-width: 220px;
+      }
+      #spinPop .ad-spin-btn {
+        margin-top: 10px;
+      }
+      /* .brand is itself position:relative (it anchors .brand-actions
+         elsewhere), which makes it a positioned sibling too — without an
+         explicit z-index here it paints on top of this absolutely
+         positioned close button and swallows its clicks. */
+      .spin-pop-close {
+        position: absolute;
+        top: var(--sheet-pad);
+        right: var(--sheet-pad);
+        z-index: 2;
+      }
+      .spin-launch-icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        border: 2px solid var(--amber);
+        background: var(--abyss);
+        display: grid;
+        place-items: center;
       }
 
       .gear-list {
@@ -2183,36 +2242,18 @@
         <div class="bh-section">
           <div class="bh-section-head">
             <p class="label" style="margin: 0">Daily spin</p>
-            <span class="bh-sub" id="spinStatus">Free spin ready</span>
+            <span class="bh-sub">Free, once a day</span>
           </div>
-          <div class="spin-card">
-            <div class="wheel-wrap">
-              <div class="pointer"></div>
-              <svg id="wheelSvg" class="wheel" viewBox="0 0 200 200"></svg>
-              <div class="wheel-hub">
-                <span class="coin-icon" aria-hidden="true"></span>
-              </div>
-            </div>
-            <div class="spin-copy">
-              <p>
-                One spin, free, every time you open the Boathouse — mostly
-                coins, sometimes a free piece of Gear.
-              </p>
-              <button class="go-btn spin-btn" type="button" id="spinBtn">
-                Spin
-              </button>
-              <button class="ad-spin-btn" type="button" id="adSpinBtn">
-                <span class="ad-play-ico" aria-hidden="true"></span>
-                <span id="adSpinBtnLabel">Watch an ad for another spin</span>
-                <span
-                  class="ad-progress"
-                  id="adProgress"
-                  aria-hidden="true"
-                ></span>
-              </button>
-              <p class="spin-result" id="spinResult" aria-live="polite"></p>
-            </div>
-          </div>
+          <button class="boat-summary" type="button" id="spinLaunchBtn">
+            <span class="spin-launch-icon" aria-hidden="true">
+              <span class="coin-icon" aria-hidden="true"></span>
+            </span>
+            <span class="meta">
+              <b>Spin the wheel</b>
+              <span class="cat" id="spinStatus">Free spin ready</span>
+            </span>
+            <span class="browse-cta" aria-hidden="true">Spin ›</span>
+          </button>
         </div>
 
         <div class="bh-section">
@@ -2279,6 +2320,44 @@
         <div class="skin-grid" id="skinGridColours"></div>
         <div class="skin-grid" id="skinGridFlags"></div>
         <div class="skin-grid" id="skinGridChallenges"></div>
+      </div>
+    </div>
+
+    <!-- daily spin: full screen so the wheel and the win both read big -->
+    <div
+      class="screen hidden"
+      id="spinPop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="spinPopTitle"
+    >
+      <div class="sheet panel" style="max-width: 420px; text-align: center">
+        <button
+          class="pop-close spin-pop-close"
+          id="spinPopClose"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+        <div class="brand" style="padding-right: 0; justify-content: center">
+          <h1 id="spinPopTitle" style="font-size: clamp(28px, 6.4vw, 44px)">
+            Daily Spin
+          </h1>
+        </div>
+        <div class="wheel-wrap wheel-wrap-big">
+          <div class="pointer"></div>
+          <svg id="wheelSvg" class="wheel" viewBox="0 0 200 200"></svg>
+          <div class="wheel-hub">
+            <span class="coin-icon" aria-hidden="true"></span>
+          </div>
+        </div>
+        <button class="go-btn spin-btn" type="button" id="spinBtn">Spin</button>
+        <button class="ad-spin-btn" type="button" id="adSpinBtn">
+          <span class="ad-play-ico" aria-hidden="true"></span>
+          <span id="adSpinBtnLabel">Watch an ad for another spin</span>
+          <span class="ad-progress" id="adProgress" aria-hidden="true"></span>
+        </button>
+        <p class="spin-result" id="spinResult" aria-live="polite"></p>
       </div>
     </div>
 
@@ -7867,6 +7946,9 @@
         function adSpinAvailable() {
           return !spinAvailable() && progress.lastAdSpin !== todayKey();
         }
+        // Filled in by buildSpinWheel(), in reward order — lets the spin
+        // handler flash the wedge that was actually won.
+        const wheelPaths = [];
         (function buildSpinWheel() {
           const svg = document.getElementById("wheelSvg");
           const ns = "http://www.w3.org/2000/svg";
@@ -7910,6 +7992,7 @@
             path.setAttribute("stroke", "rgba(127,233,216,0.3)");
             path.setAttribute("stroke-width", "1");
             svg.appendChild(path);
+            wheelPaths.push(path);
 
             const mid = (a0 + a1) / 2;
             const midDeg = (mid * 180) / Math.PI + 90;
@@ -8020,7 +8103,9 @@
           const isBonus = !spinAvailable() && bonusSpinArmed;
           spinning = true;
           spinBtnEl.disabled = true;
+          spinResultEl.classList.remove("show");
           spinResultEl.textContent = "";
+          wheelPaths.forEach((p) => p.classList.remove("wheel-win"));
           const idx = weightedSpinIndex();
           const segAngle = 360 / SPIN_REWARDS.length;
           const segMid = idx * segAngle + segAngle / 2;
@@ -8047,9 +8132,37 @@
             refreshGear();
             spinning = false;
             refreshSpinStatus();
+            // Highlight the win: flash the wedge it actually landed on and
+            // pop the reward text in, then close on their behalf a couple
+            // of seconds later so the popup doesn't just sit there waiting
+            // to be dismissed.
+            wheelPaths[idx].classList.add("wheel-win");
+            void spinResultEl.offsetWidth; // restart the pop-in animation
+            spinResultEl.classList.add("show");
+            setTimeout(() => {
+              if (!spinPopEl.classList.contains("hidden")) closeSpinPop();
+            }, 2000);
           }, 4300);
         };
         refreshSpinStatus();
+
+        const spinPopEl = document.getElementById("spinPop");
+        function openSpinPop() {
+          spinPopEl.classList.remove("hidden");
+          refreshSpinStatus();
+          requestAnimationFrame(fitSheets);
+        }
+        function closeSpinPop() {
+          spinPopEl.classList.add("hidden");
+        }
+        document.getElementById("spinLaunchBtn").onclick = openSpinPop;
+        document.getElementById("spinPopClose").onclick = closeSpinPop;
+        addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !spinPopEl.classList.contains("hidden")) {
+            e.stopPropagation();
+            closeSpinPop();
+          }
+        });
 
         const skinPopEl = document.getElementById("skinPop"),
           skinPopCanvas = document.getElementById("skinPopCanvas"),
