@@ -87,13 +87,12 @@
         --shelf: #0c4257;
         --shoal: #157f86;
         --foam: #eaf7f4;
-        --chart: #7fe9d8;
+        --tint: 127, 233, 216;
         --port: #e8402a;
         --stbd: #2fcb7b;
         --amber: #ffd84a;
 
         --panel: rgba(4, 20, 28, 0.74);
-        --hair: rgba(127, 233, 216, 0.28);
 
         --display:
           "Barlow Condensed", "Arial Narrow", Haettenschweiler, Impact,
@@ -101,6 +100,27 @@
         --mono:
           "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
           monospace;
+      }
+      /* The interface takes the colour of the world you're racing. Every teal
+         in the stylesheet resolves through --tint, so a world is that one
+         triple; data-world is set on <body> whenever the course changes.
+         --amber, --port and --stbd stay put — coins are coins, and the marks
+         are still red and green whatever they're floating in.
+
+         The two derived colours have to be declared on body rather than :root
+         alongside --tint. A custom property is substituted where it's
+         computed, so --chart declared at :root bakes in the root's --tint and
+         children inherit that finished value — overriding --tint further down
+         would do nothing to it. Declared here, both resolve against whichever
+         --tint won on body. */
+      body {
+        --chart: rgb(var(--tint));
+        --hair: rgba(var(--tint), 0.28);
+      }
+      body[data-world="lava"] {
+        --tint: 255, 138, 76;
+        --panel: rgba(24, 10, 6, 0.78);
+        --abyss: #170a06;
       }
 
       * {
@@ -153,7 +173,7 @@
         font-size: 9px;
         letter-spacing: 0.22em;
         text-transform: uppercase;
-        color: rgba(127, 233, 216, 0.72);
+        color: rgba(var(--tint), 0.72);
       }
       .coin-balance {
         font-family: var(--mono);
@@ -302,7 +322,7 @@
       .bar {
         margin-top: 6px;
         height: 4px;
-        background: rgba(127, 233, 216, 0.14);
+        background: rgba(var(--tint), 0.14);
         overflow: hidden;
       }
       .bar i {
@@ -569,33 +589,90 @@
         font-size: 9.5px;
         letter-spacing: 0.22em;
         text-transform: uppercase;
-        color: rgba(127, 233, 216, 0.72);
+        color: rgba(var(--tint), 0.72);
         margin: 0 0 8px;
       }
 
-      /* One row that scrolls sideways, rather than a block of thumbnails that
-         pushes Start race off the bottom of a phone. Cards are narrow enough
-         that the next one is always part-visible, which — with the dots — is
-         what says there is more to the side. */
       /* The selected course, as one card — the rail of every course plus its
          dots row plus the "all courses" button was three rows of the menu for
          a job the popup already does better, and Start race has always been
-         the thing fighting for that space. */
+         the thing fighting for that space. The map on the left, everything
+         you'd want to know about it stacked on the right, and changing course
+         as its own call to action underneath rather than a chip on the card. */
+      .course-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid var(--hair);
+        background: rgba(var(--tint), 0.04);
+        border-radius: 2px;
+        padding: 10px;
+      }
       .course-summary-canvas {
         display: block;
-        width: 100px;
-        height: 62px;
+        width: 120px;
+        height: 84px;
         flex: 0 0 auto;
         border: 1px solid rgba(234, 247, 244, 0.18);
         background: rgba(4, 20, 28, 0.4);
       }
-      .course-stats {
+      .course-meta {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .course-meta b {
         display: block;
-        margin-top: 3px;
+        font-family: var(--display);
+        font-size: 20px;
+        letter-spacing: 0.01em;
+      }
+      .course-desc {
+        display: block;
+        font-size: 9.5px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--chart);
+        margin: 1px 0 7px;
+      }
+      /* label left, value right, one stat per row */
+      .course-stats {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 2px 10px;
+        margin: 0;
+        font-size: 10.5px;
+      }
+      .course-stats dt {
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: rgba(234, 247, 244, 0.45);
+      }
+      .course-stats dd {
+        margin: 0;
+        text-align: right;
         font-family: var(--mono);
+        color: var(--foam);
+      }
+      .change-course {
+        width: 100%;
+        margin-top: 8px;
+        padding: 10px;
+        font: inherit;
         font-size: 10px;
-        letter-spacing: 0.02em;
-        color: rgba(234, 247, 244, 0.55);
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--chart);
+        background: rgba(var(--tint), 0.06);
+        border: 1px solid var(--hair);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .change-course:hover {
+        background: rgba(var(--tint), 0.12);
+      }
+      .change-course:focus-visible {
+        outline: 1px solid var(--chart);
+        outline-offset: 2px;
       }
       .course-tabs {
         margin-top: 11px;
@@ -622,7 +699,7 @@
         scroll-snap-align: start;
         flex: 0 0 132px;
         padding: 10px 10px 8px;
-        background: rgba(127, 233, 216, 0.04);
+        background: rgba(var(--tint), 0.04);
         border: 1px solid var(--hair);
         cursor: pointer;
         text-align: left;
@@ -633,7 +710,7 @@
           border-color 0.15s;
       }
       .course:hover {
-        background: rgba(127, 233, 216, 0.1);
+        background: rgba(var(--tint), 0.1);
       }
       .course.sel {
         border-color: var(--amber);
@@ -739,7 +816,7 @@
         align-items: center;
         gap: 10px;
         padding-bottom: 11px;
-        border-bottom: 1px solid rgba(127, 233, 216, 0.13);
+        border-bottom: 1px solid rgba(var(--tint), 0.13);
       }
       .pop-head h2 {
         margin: 0;
@@ -771,7 +848,7 @@
         cursor: pointer;
       }
       .pop-close:hover {
-        background: rgba(127, 233, 216, 0.1);
+        background: rgba(var(--tint), 0.1);
       }
       /* the cell sizes the card now that there's no rail to do it */
       .course-grid .course {
@@ -859,7 +936,7 @@
         font: inherit;
         /* iOS auto-zooms inputs under 16px, which shifts the fixed layout. */
         font-size: 16px;
-        background: rgba(127, 233, 216, 0.06);
+        background: rgba(var(--tint), 0.06);
         border: 1px solid var(--hair);
         color: var(--foam);
         padding: 8px 11px;
@@ -867,7 +944,7 @@
       }
       .name-input:focus {
         outline: 1px solid var(--chart);
-        background: rgba(127, 233, 216, 0.1);
+        background: rgba(var(--tint), 0.1);
       }
       .name-input::placeholder {
         color: rgba(234, 247, 244, 0.35);
@@ -908,7 +985,7 @@
       .keys kbd {
         font-family: var(--mono);
         font-size: 10px;
-        background: rgba(127, 233, 216, 0.12);
+        background: rgba(var(--tint), 0.12);
         border: 1px solid var(--hair);
         padding: 2px 6px;
         color: var(--chart);
@@ -924,7 +1001,7 @@
         font-size: 9px;
         letter-spacing: 0.2em;
         text-transform: uppercase;
-        color: rgba(127, 233, 216, 0.7);
+        color: rgba(var(--tint), 0.7);
         text-align: left;
         font-weight: 400;
         padding: 0 8px 7px 0;
@@ -932,7 +1009,7 @@
       }
       td {
         padding: 9px 8px 9px 0;
-        border-bottom: 1px solid rgba(127, 233, 216, 0.12);
+        border-bottom: 1px solid rgba(var(--tint), 0.12);
         font-size: 13px;
       }
       tr.you td {
@@ -982,7 +1059,7 @@
         cursor: pointer;
       }
       .ghost:hover {
-        background: rgba(127, 233, 216, 0.1);
+        background: rgba(var(--tint), 0.1);
       }
 
       /* ---------- usage-data consent banner ---------- */
@@ -1051,7 +1128,7 @@
         color: var(--chart);
       }
       #consentDecline:hover {
-        background: rgba(127, 233, 216, 0.1);
+        background: rgba(var(--tint), 0.1);
       }
 
       /* ---------- startup identity ---------- */
@@ -1144,7 +1221,7 @@
         width: var(--joy-size);
         height: var(--joy-size);
         border-radius: 50%;
-        border: 1px solid rgba(127, 233, 216, 0.42);
+        border: 1px solid rgba(var(--tint), 0.42);
         background: rgba(4, 20, 28, 0.58);
         box-shadow:
           inset 0 0 0 1px rgba(234, 247, 244, 0.04),
@@ -1161,7 +1238,7 @@
       .joy::after {
         content: "";
         position: absolute;
-        background: rgba(127, 233, 216, 0.16);
+        background: rgba(var(--tint), 0.16);
         pointer-events: none;
       }
       .joy::before {
@@ -1180,7 +1257,7 @@
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
         background: rgba(4, 20, 28, 0.76);
-        border-color: rgba(127, 233, 216, 0.72);
+        border-color: rgba(var(--tint), 0.72);
       }
       .joy .thumb {
         position: absolute;
@@ -1189,7 +1266,7 @@
         width: 42%;
         height: 42%;
         border-radius: 50%;
-        background: rgba(127, 233, 216, 0.58);
+        background: rgba(var(--tint), 0.58);
         border: 1px solid rgba(234, 247, 244, 0.82);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
         transform: translate(-50%, -50%);
@@ -1291,14 +1368,14 @@
         display: grid;
         place-items: center;
         border: 1px solid var(--hair);
-        background: rgba(127, 233, 216, 0.04);
+        background: rgba(var(--tint), 0.04);
         color: var(--chart);
         cursor: pointer;
         font-size: 18px;
         line-height: 1;
       }
       .gear:hover {
-        background: rgba(127, 233, 216, 0.1);
+        background: rgba(var(--tint), 0.1);
       }
       /* Amber rather than the plain teal every other corner icon gets — this
          one leads to the coin economy, so it should read as an invitation to
@@ -1337,7 +1414,7 @@
         min-width: 0;
         padding: 9px;
         color: var(--foam);
-        background: rgba(127, 233, 216, 0.04);
+        background: rgba(var(--tint), 0.04);
         border: 1px solid var(--hair);
         font: inherit;
         text-align: left;
@@ -1466,7 +1543,7 @@
         gap: 14px;
         width: 100%;
         border: 1px solid var(--hair);
-        background: rgba(127, 233, 216, 0.04);
+        background: rgba(var(--tint), 0.04);
         border-radius: 2px;
         padding: 10px;
         font: inherit;
@@ -1578,7 +1655,7 @@
         font-weight: 600;
         letter-spacing: 0.02em;
         color: var(--chart);
-        background: rgba(127, 233, 216, 0.06);
+        background: rgba(var(--tint), 0.06);
         border: 1px solid var(--chart);
         border-radius: 3px;
         cursor: pointer;
@@ -1738,7 +1815,7 @@
         align-items: center;
         gap: 12px;
         border: 1px solid var(--hair);
-        background: rgba(127, 233, 216, 0.04);
+        background: rgba(var(--tint), 0.04);
         border-radius: 2px;
         padding: 10px;
       }
@@ -1839,7 +1916,7 @@
         height: 28px;
         border-radius: 14px;
         border: 1px solid var(--hair);
-        background: rgba(127, 233, 216, 0.08);
+        background: rgba(var(--tint), 0.08);
         position: relative;
         cursor: pointer;
         padding: 0;
@@ -1963,7 +2040,8 @@
           grid-column: 1 / -1;
         }
         #menu .sheet > .bh-section-head,
-        #menu .sheet > .boat-summary {
+        #menu .sheet > .course-card,
+        #menu .sheet > .change-course {
           grid-column: 1;
         }
         #menu .sheet > .row {
@@ -2164,19 +2242,23 @@
           <p class="label" style="margin: 0">Course</p>
           <span class="bh-sub" id="courseWorld">Rivers</span>
         </div>
-        <button class="boat-summary" type="button" id="courseSummary">
+        <div class="course-card">
           <canvas
             class="course-summary-canvas"
             id="courseSummaryCanvas"
-            width="200"
-            height="124"
+            width="240"
+            height="168"
           ></canvas>
-          <span class="meta">
+          <div class="course-meta">
             <b id="courseSummaryName">Ouse Bends</b>
-            <span class="cat" id="courseSummaryDesc">Wide · meandering</span>
-            <span class="course-stats" id="courseSummaryStats"></span>
-          </span>
-          <span class="browse-cta" aria-hidden="true">Change ›</span>
+            <span class="course-desc" id="courseSummaryDesc"
+              >Wide · meandering</span
+            >
+            <dl class="course-stats" id="courseSummaryStats"></dl>
+          </div>
+        </div>
+        <button class="change-course" type="button" id="courseChange">
+          Change course
         </button>
 
         <div class="row">
@@ -4287,6 +4369,8 @@
             plot: "rgba(12,66,87,.95)",
             plotEdge: "rgba(127,233,216,.16)",
             fauna: true,
+            lakes: false,
+            cones: false,
           },
           lava: {
             flats: "#1a1210",
@@ -4305,6 +4389,12 @@
             thumbEdge: "rgba(255,170,90,.4)",
             plot: "rgba(150,62,12,.95)",
             plotEdge: "rgba(255,170,90,.2)",
+            lakes: true,
+            lakeRim: "#4a2c1e",
+            lakePool: "#c9500e",
+            lakeCore: "#ff9c3a",
+            // channel marks are spatter cones rather than floating buoys
+            cones: true,
             // no idle whales, rays or shoals on basalt — the hunting shark
             // stepFauna() summons when you run aground still comes, until
             // there's a lava creature to send instead
@@ -4607,6 +4697,7 @@
           wake.length = 0;
           trail.length = 0;
           spawnFauna();
+          spawnLakes();
           spawnBoosts();
           spawnHazards();
           spawnMoored();
@@ -5575,6 +5666,82 @@
           add("shark", Math.round(7 * sc));
           add("ray", Math.round(6 * sc));
           add("shoal", Math.round(13 * sc));
+        }
+
+        /* Standing lava out on the basalt — what the wildlife is to a river,
+   scenery you pass rather than anything you can touch. Blobs are baked once
+   per course rather than wobbled per frame: there are dozens on screen and
+   they sit still in the world, so there's nothing to animate but the glow. */
+        const LAKES = [];
+        function spawnLakes() {
+          LAKES.length = 0;
+          if (!themeOf(track).lakes) return;
+          const bd = track.bounds,
+            pad = 260;
+          const sc = Math.max(1, Math.min(2.6, track.len / 4200));
+          let made = 0,
+            tries = 0;
+          const want = Math.round(16 * sc);
+          while (made < want && tries < want * 90) {
+            tries++;
+            const x =
+              bd.minx - pad + Math.random() * (bd.maxx - bd.minx + pad * 2);
+            const y =
+              bd.miny - pad + Math.random() * (bd.maxy - bd.miny + pad * 2);
+            const r = 34 + Math.random() * 78;
+            // clear of the channel by the lake's own radius, so none of them
+            // crowd the racing line or bleed under the bank
+            if (channelDist(x, y).d < track.half + 90 + r) continue;
+            if (LAKES.some((l) => Math.hypot(l.x - x, l.y - y) < l.r + r + 40))
+              continue;
+            const lobes = 9 + Math.floor(Math.random() * 4);
+            const pts = [];
+            for (let k = 0; k < lobes; k++) {
+              const a = (k / lobes) * Math.PI * 2;
+              const rr = r * (0.72 + Math.random() * 0.42);
+              pts.push({ x: x + Math.cos(a) * rr, y: y + Math.sin(a) * rr });
+            }
+            LAKES.push({ x, y, r, pts, phase: Math.random() * 7 });
+            made++;
+          }
+        }
+        /* The lake outline at a fraction of its size. Every ring is the same
+   irregular shape shrunk toward the centre rather than a circle clipped to
+   it — a circle inside a blob just reads as a disc with a bitten edge, which
+   is exactly what the first cut looked like. */
+        function lakePath(l, k) {
+          ctx.beginPath();
+          const at = (i) => {
+            const p = l.pts[i % l.pts.length];
+            return { x: l.x + (p.x - l.x) * k, y: l.y + (p.y - l.y) * k };
+          };
+          const first = at(0);
+          ctx.moveTo(first.x, first.y);
+          for (let i = 1; i <= l.pts.length; i++) {
+            const p = at(i),
+              q = at(i + 1);
+            ctx.quadraticCurveTo(p.x, p.y, (p.x + q.x) / 2, (p.y + q.y) / 2);
+          }
+          ctx.closePath();
+        }
+        function drawLakes() {
+          if (!LAKES.length) return;
+          const pal = themeOf(track);
+          for (const l of LAKES) {
+            // cooled rim, then the pool, then a core that breathes
+            lakePath(l, 1);
+            ctx.fillStyle = pal.lakeRim;
+            ctx.fill();
+            lakePath(l, 0.84);
+            ctx.fillStyle = pal.lakePool;
+            ctx.fill();
+            ctx.globalAlpha =
+              0.55 + (REDUCED ? 0.2 : Math.sin(waveT * 1.3 + l.phase) * 0.2);
+            lakePath(l, 0.52);
+            ctx.fillStyle = pal.lakeCore;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
         }
 
         function stepFauna(dt) {
@@ -7033,7 +7200,9 @@
           ctx.scale(cam.s, cam.s);
           ctx.translate(-cam.x, -cam.y);
 
-          // wildlife lives out on the flats, so it goes down before the banks
+          // lava lakes and wildlife both live out on the flats, so they go
+          // down before the banks are drawn over them
+          drawLakes();
           const vr = (Math.max(W, H) / cam.s) * 0.75 + 200;
           for (const c of FAUNA)
             if (Math.abs(c.x - cam.x) < vr && Math.abs(c.y - cam.y) < vr)
@@ -7126,14 +7295,45 @@
           }
           ctx.globalAlpha = 1;
 
-          // buoys
+          // marks — buoys on water, spatter cones on lava. Either way the
+          // colour still says which side to leave it: the game is "keep the
+          // reds to port" whatever the marks are made of.
           const blink = Math.sin(waveT * 3.2) * 0.5 + 0.5;
           for (const by of track.buoys) {
+            const port = by.side === "port";
             ctx.fillStyle = "rgba(0,0,0,.28)";
             ctx.beginPath();
             ctx.ellipse(by.x + 3, by.y + 4, 10, 7, 0, 0, 7);
             ctx.fill();
-            ctx.fillStyle = by.side === "port" ? "#e8402a" : "#2fcb7b";
+            if (pal.cones) {
+              // a spatter cone from above: a rock skirt lit from the top left
+              // so it sits up off the ground, then the crater, then the molten
+              // eye that pulses
+              ctx.fillStyle = "#241610";
+              ctx.beginPath();
+              ctx.arc(by.x, by.y, 11, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = "#3b241a";
+              ctx.beginPath();
+              ctx.arc(by.x - 0.8, by.y - 1, 9.4, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = "#573523";
+              ctx.beginPath();
+              ctx.arc(by.x - 1.4, by.y - 1.8, 7.2, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = port ? "#e8402a" : "#2fcb7b";
+              ctx.beginPath();
+              ctx.arc(by.x, by.y, 4.4, 0, 7);
+              ctx.fill();
+              ctx.globalAlpha = 0.3 + blink * 0.7;
+              ctx.fillStyle = port ? "#ffd0a0" : "#c9ffdd";
+              ctx.beginPath();
+              ctx.arc(by.x, by.y, 2.3, 0, 7);
+              ctx.fill();
+              ctx.globalAlpha = 1;
+              continue;
+            }
+            ctx.fillStyle = port ? "#e8402a" : "#2fcb7b";
             ctx.beginPath();
             ctx.arc(by.x, by.y, 9, 0, 7);
             ctx.fill();
@@ -7142,7 +7342,7 @@
             ctx.arc(by.x, by.y, 4.4, 0, 7);
             ctx.fill();
             ctx.globalAlpha = 0.25 + blink * 0.55;
-            ctx.fillStyle = by.side === "port" ? "#ff8a7a" : "#9dffc9";
+            ctx.fillStyle = port ? "#ff8a7a" : "#9dffc9";
             ctx.beginPath();
             ctx.arc(by.x, by.y, 2.2, 0, 7);
             ctx.fill();
@@ -7889,7 +8089,7 @@
           popEl = document.getElementById("coursePop"),
           popGridsEl = document.getElementById("popGrids"),
           courseTabsEl = document.getElementById("courseTabs"),
-          courseSummaryEl = document.getElementById("courseSummary"),
+          courseChangeEl = document.getElementById("courseChange"),
           courseSummaryCanvas = document.getElementById("courseSummaryCanvas"),
           courseSummaryName = document.getElementById("courseSummaryName"),
           courseSummaryDesc = document.getElementById("courseSummaryDesc"),
@@ -7999,17 +8199,31 @@
    it. Records are read live rather than cached, same as the tiles. */
         function refreshCourseSummary() {
           const t = TRACKS[courseIdx];
+          // the whole interface follows the world — see body[data-world] in the
+          // stylesheet, which is only ever a --tint swap
+          document.body.dataset.world = t.theme;
           drawCourseThumb(courseSummaryCanvas, t);
           courseSummaryName.textContent = t.name;
           courseSummaryDesc.textContent = t.desc;
           courseWorldEl.textContent = THEME_LABEL[t.theme] || t.theme;
           const lap = bestLapFor(t.name);
           const total = bestTotalFor(t.name, totalLaps);
-          const parts = [fleetLabel(t) + " boats"];
-          if (lap) parts.push("best lap " + fmt(lap));
-          if (total) parts.push("best " + totalLaps + "-lap " + fmt(total));
-          else if (!lap) parts.push("no times yet");
-          courseSummaryStats.textContent = parts.join(" · ");
+          // a row per stat, and an em dash rather than a missing row for a
+          // record you haven't set — the card keeps its height, and a blank
+          // says there's something there to go and beat
+          const rows = [
+            ["Boats", fleetLabel(t)],
+            ["Best lap", lap ? fmt(lap) : "—"],
+            ["Best " + totalLaps + "-lap", total ? fmt(total) : "—"],
+          ];
+          courseSummaryStats.innerHTML = "";
+          for (const [k, v] of rows) {
+            const dt = document.createElement("dt");
+            dt.textContent = k;
+            const dd = document.createElement("dd");
+            dd.textContent = v;
+            courseSummaryStats.append(dt, dd);
+          }
         }
 
         function pickCourse(i, fromPop) {
@@ -8019,6 +8233,7 @@
           track = TRACKS[i];
           track._path = null;
           spawnFauna();
+          spawnLakes();
           spawnBoosts();
           spawnHazards();
           spawnMoored();
@@ -8060,9 +8275,9 @@
         function closeCoursePop() {
           popEl.classList.remove("on");
           popEl.setAttribute("aria-hidden", "true");
-          courseSummaryEl.focus();
+          courseChangeEl.focus();
         }
-        courseSummaryEl.onclick = openCoursePop;
+        courseChangeEl.onclick = openCoursePop;
         document.getElementById("popClose").onclick = closeCoursePop;
         addEventListener("keydown", (e) => {
           if (e.key === "Escape" && popEl.classList.contains("on")) {
@@ -8897,6 +9112,7 @@
         cam.y = me.y;
         cam.s = 1;
         spawnFauna();
+        spawnLakes();
         spawnBoosts();
         spawnHazards();
 

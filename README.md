@@ -12,13 +12,14 @@ dependencies beyond a webfont.
 ## Racing
 
 - **Thirty courses across two worlds** — twenty-five rivers and five lava channels — each with
-  its own width and character. The menu shows only the one you've got selected, as a card
-  carrying its plotter trace, its name, how many boats it fields and your best lap and best
-  total on it; **Change** opens the full list as a popup grid with a tab per world. That card
-  replaced a sideways-scrolling rail of every course, its dots row and an "all courses"
-  button — three rows for a job the popup already did better, and **Start race** has always
-  been the thing fighting for that space. Verified on an iPhone SE, an iPhone 14, a phone in
-  landscape and an iPad.
+  its own width and character. The menu shows only the one you've got selected: its plotter
+  trace on the left, and on the right its name, its character and a row per stat — how many
+  boats it fields, your best lap, your best total, an em dash where you haven't set one yet
+  rather than a missing row. **Change course** underneath opens the full list as a popup grid
+  with a tab per world. That card replaced a sideways-scrolling rail of every course, its dots
+  row and an "all courses" button — three rows for a job the popup already did better, and
+  **Start race** has always been the thing fighting for that space. Verified on an iPhone SE,
+  an iPhone 14, a phone in landscape and an iPad.
 
   **Each world unlocks on its own chain**: its first course is open from the start and every
   one after that wants the previous finished. So Ember Flow is raceable immediately rather
@@ -87,9 +88,27 @@ dependencies beyond a webfont.
   The ground tile is randomised and used to be built once globally, so it's cached per theme
   rather than per course; rebuilding it on every pick would reshuffle the ground underfoot.
 
-  It's cosmetic for now — the molten channel doesn't hurt you any more than water does. Idle
-  wildlife doesn't spawn on basalt, though the shark that comes for you when you run aground
-  still does, until there's a lava creature to send instead.
+  **The interface takes the colour of the world you're racing.** Every teal in the stylesheet
+  resolves through one `--tint` triple, so a world's UI is that one declaration —
+  `body[data-world]`, set whenever the course changes, turns the panels, rules and accents
+  ember on lava. `--amber`, `--port` and `--stbd` stay put: coins are coins, and the marks are
+  still red and green whatever they're floating in. The two derived colours, `--chart` and
+  `--hair`, have to be declared on `body` rather than next to `--tint` on `:root` — a custom
+  property is substituted where it's computed, so declaring `--chart` at `:root` bakes in the
+  root's tint and children inherit that finished value, and overriding `--tint` further down
+  does nothing to it.
+
+  **Out on the basalt there are lava lakes**, what the wildlife is to a river: scenery you
+  pass rather than anything you can touch. Blobs are baked once per course and drawn as the
+  same irregular outline shrunk toward its centre three times — rim, pool, and a core that
+  breathes. Clipping a circle inside the blob instead, which is what the first cut did, just
+  reads as a disc with a bitten edge. **The channel marks are spatter cones** rather than
+  floating buoys, lit from the top left so they sit up off the ground, but still red to port
+  and green to starboard: the game is "keep the reds to port" whatever the marks are made of.
+
+  Otherwise it's cosmetic for now — the molten channel doesn't hurt you any more than water
+  does. Idle wildlife doesn't spawn on basalt, though the shark that comes for you when you
+  run aground still does, until there's a lava creature to send instead.
 
 - **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
   9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
