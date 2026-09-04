@@ -345,6 +345,14 @@ grows past what the circle can hold. Tap a circle to fire that item, or press `S
 to fire whichever owned item comes first in `GEAR_ITEMS` order; a circle disappears the moment
 that item's count hits zero.
 
+**On touch the stack moves out from under your thumb.** The stick is a floating one — it
+appears wherever you press — so on a phone it lands straight on top of a stack anchored in the
+bottom-left corner, which is exactly where a right-handed player puts their left thumb. On
+every `pointerdown` the body takes a `joy-left`/`joy-right` class from which half of the screen
+the stick landed in, and the stack moves to the other side and up clear of the pause button.
+It keeps that side after the stick is released rather than snapping back — otherwise letting go
+to reach for a gear button would drop it right back under the thumb that just let go.
+
 **A daily spin gives away a taste of the gear economy for free.** One spin per calendar day
 (`progress.lastSpin`, a plain `YYYY-M-D` string compared against `todayKey()` — a played-out
 day, not a rolling 24 hours), weighted toward small coin amounts with two of the three gear
@@ -391,13 +399,13 @@ fire, so there's nothing to lose by closing early.
 
 ## Controls
 
-| Action   | Keyboard          | Touch                                                             |
-| -------- | ----------------- | ----------------------------------------------------------------- |
-| Throttle | `W` / `↑`         | **GO** pad                                                        |
-| Astern   | `S` / `↓`         | **Reverse** pad                                                   |
-| Helm     | `A` `D` / `←` `→` | Left thumb joystick                                               |
-| Restart  | `R`               | **Restart race** in the pause menu                                |
-| Use gear | `Space`           | Amber circular buttons, stacked bottom-left, one per item carried |
+| Action   | Keyboard          | Touch                                                            |
+| -------- | ----------------- | ---------------------------------------------------------------- |
+| Throttle | `W` / `↑`         | **GO** pad                                                       |
+| Astern   | `S` / `↓`         | **Reverse** pad                                                  |
+| Helm     | `A` `D` / `←` `→` | Left thumb joystick                                              |
+| Restart  | `R`               | **Restart race** in the pause menu                               |
+| Use gear | `Space`           | Amber circular buttons, one per item carried, opposite the stick |
 
 Touch controls appear automatically on coarse-pointer devices.
 

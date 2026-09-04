@@ -1316,6 +1316,24 @@
       body.racing .gear-stack.show {
         display: flex;
       }
+      /* Touch play drops a floating stick wherever the thumb lands, which on a
+         phone is usually straight on top of these. The stack flips to the side
+         the stick isn't on and sits above the corner furniture, so it stays
+         reachable with the other thumb — and it holds that side after the
+         stick is released rather than jumping back under the thumb that just
+         let go of it. */
+      body.joy-left .gear-stack,
+      body.joy-right .gear-stack {
+        bottom: calc(80px + env(safe-area-inset-bottom));
+      }
+      body.joy-left .gear-stack {
+        left: auto;
+        right: calc(20px + env(safe-area-inset-right));
+      }
+      body.joy-right .gear-stack {
+        left: calc(20px + env(safe-area-inset-left));
+        right: auto;
+      }
       .gear-use-btn {
         pointer-events: auto;
         cursor: pointer;
@@ -4796,6 +4814,10 @@
             const y = Math.max(margin, Math.min(H - margin, originY));
             joy.style.left = `${x}px`;
             joy.style.top = `${y}px`;
+            // send the gear stack to the other side of the screen — see
+            // body.joy-left / .joy-right in the stylesheet
+            document.body.classList.toggle("joy-left", x < W / 2);
+            document.body.classList.toggle("joy-right", x >= W / 2);
             touch.setPointerCapture(e.pointerId);
             joy.classList.add("act");
           });
@@ -8101,6 +8123,9 @@
    same course — a canvas carries no pixels through cloneNode. */
         function drawCourseThumb(c, t) {
           const g = c.getContext("2d");
+          // the popup's tiles each get a fresh canvas, but the menu card reuses
+          // one every time the course changes — without this the traces stack
+          g.clearRect(0, 0, c.width, c.height);
           const bd = t.bounds,
             pad = 12;
           const s = Math.min(
