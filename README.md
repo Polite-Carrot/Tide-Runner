@@ -23,8 +23,13 @@ dependencies beyond a webfont.
 
   **On a phone the menu runs down the middle.** Below 560px the laps/rivals/start row wraps
   into a stack, and a stack of left-aligned groups of different widths reads as ragged — so
-  they centre, and the eye has one line to follow down to Start race. The desktop layout, where
-  the three sit side by side on one line, is untouched.
+  they centre, and the eye has one line to follow down to Start race. The results sheet's
+  header centres with it, so finishing a race doesn't swing the layout back to the left. The
+  desktop layout, where the three sit side by side on one line, is untouched.
+
+  **The laps and rivals segments are equal columns** (`grid-auto-columns: minmax(42px, 1fr)`),
+  not flex. Selecting a lap count bolds its label, and under flex that grew the one button —
+  2/3/5 were never the same width twice, and the group visibly shifted on every tap.
 
   **Each world unlocks on its own chain**: its first course is open from the start and every
   one after that wants the previous finished. So Ember Flow is raceable immediately rather
@@ -162,11 +167,17 @@ the world rather than down the whole list, so finishing the last river doesn't d
 lava unannounced. **Race again**, **Change course** — which opens the picker straight away
 rather than dropping you on the menu to find it — and **Main menu** sit alongside it.
 
-All four are the same box: same size, same outline, transparent. The primary is picked out by
-colour alone, amber against the others' teal, rather than by being a solid slab twice the size
-of everything near it. `.go-btn` is outlined app-wide now, so Start race, Done, Resume and Spin
-all read as the same kind of thing — a half-migrated mix of solid and outlined primaries would
-look worse than either.
+All four are the same box — same width, same height, same label size — in one centred block:
+two columns above 560px, a single stack below, where two columns would be narrower than
+"Change course" needs and every label would wrap to two lines. The primary is picked out by
+being **filled** rather than by being bigger: `.go-btn` takes `var(--chart)` as its background
+and knocks its label back out of the fill with `-webkit-text-stroke`, so the CTA is the exact
+inverse of the `.ghost` buttons beside it. Nothing in that family is amber any more — the CTA
+takes the world's colour with everything else, teal on the rivers and ember on lava. The
+text-stroke is behind an `@supports` guard, since without it a transparent fill would leave the
+label invisible; plain dark-on-tint is the fallback. `.go-btn` is styled app-wide, so Start
+race, Done, Resume and Spin all read as the same kind of thing — a half-migrated mix of two
+primary treatments would look worse than either.
 
 ## The Boathouse, coins and gear
 

@@ -904,6 +904,14 @@
         display: flex;
         border: 1px solid var(--hair);
       }
+      /* Equal columns for the pre-race choices: with plain flex, selecting a
+         lap count bolded its label and grew that one button, so 2/3/5 were
+         never the same width twice. */
+      .row .seg {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(42px, 1fr);
+      }
       .seg button {
         font: inherit;
         font-size: 13px;
@@ -950,9 +958,10 @@
         color: rgba(234, 247, 244, 0.35);
       }
 
-      /* Outlined rather than a solid amber slab: the box and the label are the
-         same colour, so the primary sits in the same family as the .ghost
-         buttons beside it and is told apart by colour alone. */
+      /* The primary is the inverse of the .ghost buttons beside it: same tint,
+         but filled, with the label knocked back out of the fill as an outline.
+         Nothing here is amber any more, so the CTA takes the world's colour
+         with everything else — ember on lava, teal on the rivers. */
       .go-btn {
         margin-left: auto;
         font-family: var(--display);
@@ -962,15 +971,23 @@
         text-transform: uppercase;
         padding: 11px 30px 10px;
         cursor: pointer;
-        background: transparent;
-        color: var(--amber);
-        border: 1px solid var(--amber);
+        background: var(--chart);
+        color: var(--abyss);
+        border: 1px solid var(--chart);
         transition:
           transform 0.12s,
-          background 0.15s;
+          filter 0.15s;
+      }
+      /* Guarded: without text-stroke the transparent fill would leave the
+         label invisible, so plain dark-on-tint above stands as the fallback. */
+      @supports (-webkit-text-stroke: 1px currentColor) {
+        .go-btn {
+          color: transparent;
+          -webkit-text-stroke: 1px var(--abyss);
+        }
       }
       .go-btn:hover {
-        background: rgba(255, 216, 74, 0.12);
+        filter: brightness(1.12);
       }
       .go-btn:active {
         transform: translateY(1px);
@@ -1043,20 +1060,38 @@
         color: rgba(234, 247, 244, 0.72);
         font-style: italic;
       }
+      /* Four choices in one centred block of equal boxes. A wrapping flex row
+         left them ragged — two long labels on one line, two short ones on the
+         next — where equal columns give the eye a single centred group. The
+         block stacks below 560px: two columns there would be narrower than
+         "Change course" needs, and the labels would wrap to two lines. */
       .btnrow {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 9px;
-        margin-top: 18px;
-        flex-wrap: wrap;
+        margin: 18px auto 0;
+        max-width: 300px;
       }
-      /* Four choices sitting together, so the primary matches the rest box for
-         box and is picked out by its colour rather than by being bigger. */
+      @media (min-width: 560px) {
+        .btnrow {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          max-width: 432px;
+        }
+      }
+      /* The primary matches the rest box for box and is picked out by being
+         filled rather than by being bigger. */
       .btnrow .go-btn {
         margin-left: 0;
         font-weight: 600;
         font-size: 17px;
         letter-spacing: 0.08em;
         padding: 9px 18px;
+      }
+      .btnrow .go-btn,
+      .btnrow .ghost {
+        width: 100%;
+        text-align: center;
+        white-space: nowrap;
       }
       .ghost {
         font-family: var(--display);
@@ -1665,10 +1700,12 @@
         font-size: 13px;
       }
       .spin-btn:disabled {
-        background: transparent;
-        border-color: rgba(255, 216, 74, 0.3);
+        background: rgba(var(--tint), 0.14);
+        border-color: transparent;
         color: rgba(234, 247, 244, 0.4);
+        -webkit-text-stroke: 0;
         cursor: not-allowed;
+        filter: none;
       }
       /* Rewarded-ad bonus spin: a distinct outline treatment (teal, a play
          triangle) rather than the solid amber primary button, so it reads as
@@ -2082,6 +2119,15 @@
           content: "·";
           margin-right: 9px;
           opacity: 0.45;
+        }
+        /* Same treatment on the results sheet, so finishing a race doesn't
+           swing the layout back over to the left. */
+        #results .brand {
+          justify-content: center;
+          text-align: center;
+        }
+        #results .coin-reward {
+          justify-content: center;
         }
       }
 
