@@ -4363,6 +4363,7 @@
               spawnT: 0,
               bumpSfxT: 0,
               netted: 0,
+              stunned: 0,
               gear: {},
             },
             o,
@@ -4980,6 +4981,10 @@
             push += BOOST_ACC;
             b.boost -= dt;
           }
+          // stunned by a Net/Torpedo hit: dead in the water, not just
+          // slowed — no thrust at all until it wears off, so the hit reads
+          // as a real setback rather than a speed bump you shrug off next frame
+          if (b.stunned > 0) push = 0;
           b.vx += Math.cos(b.h) * push * dt;
           b.vy += Math.sin(b.h) * push * dt;
 
@@ -5100,6 +5105,7 @@
           if (b.bump > 0) b.bump -= dt;
           if (b.bumpSfxT > 0) b.bumpSfxT -= dt;
           if (b.netted > 0) b.netted -= dt;
+          if (b.stunned > 0) b.stunned -= dt;
         }
 
         function autopilot(b, dt) {
@@ -6051,9 +6057,12 @@
             } else if (h.type === "net" && b !== h.owner && !h.spent) {
               // one catch per net, and never the boat that dropped it — a
               // near-total stop, same weight as a buoy strike, not just a
-              // slowdown
+              // slowdown, and it sticks: no thrust at all for the first
+              // 0.5s (b.stunned), then extra drag through the rest of the
+              // 2s (b.netted) so it doesn't just snap back up to speed
               h.spent = true;
               b.netted = 2;
+              b.stunned = 0.5;
               b.vx *= 0.04;
               b.vy *= 0.04;
               if (b === me) sfxBump(0.7);
@@ -6168,9 +6177,12 @@
               const dx = b.x - t.x,
                 dy = b.y - t.y;
               if (dx * dx + dy * dy > 20 * 20) continue;
-              // a near-total stop, same weight as a buoy strike
+              // a near-total stop, same weight as a buoy strike, and no
+              // thrust at all for 0.5s so it doesn't just accelerate right
+              // back up next frame
               b.vx *= 0.04;
               b.vy *= 0.04;
+              b.stunned = 0.5;
               b.h += (Math.random() < 0.5 ? -1 : 1) * 0.55;
               b.bump = 0.4;
               if (b === me && b.bumpSfxT <= 0) {

@@ -254,6 +254,16 @@ alongside it — the first version had the physics and hit detection working but
 the torpedo itself, so firing one looked and felt like nothing had happened even when it landed.
 It shares the net's 4% hit — same "dead stop" weight, different delivery.
 
+**The 4% hit alone still recovered too fast to feel like it landed.** Zeroing velocity for one
+frame didn't stop the engine from pushing straight back up to speed on the next one — cutting
+speed is not the same as taking speed away for a while. Both hits now also set `b.stunned = 0.5`,
+a new boat field `stepBoat()` checks right after computing thrust (throttle and any active boost
+alike): while it's above zero, `push` is forced to `0` before it's applied to velocity, so there's
+no acceleration at all for half a second — the river current still nudges a stunned boat along
+and it can still be steered, just not driven, before thrust comes back on its own. Net's older
+`b.netted` (2s of extra drag) still runs underneath it: 0–0.5s is a dead stop, 0.5–2s is sluggish
+recovery, rather than the hit being fully over in one frame.
+
 **Tracer Torpedo is a torpedo with `homing: true` and a locked-on `target`, not a new system.**
 `boatAhead(b)` — next to `ranked()`, since it's just "one place better in that same order" — is
 called once at launch to find whoever's currently ahead of the player; the target doesn't
