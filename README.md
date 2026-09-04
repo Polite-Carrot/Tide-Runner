@@ -195,6 +195,12 @@ a tiny boat-shaped icon on each Skins card and on the "new skin unlocked" popup,
 water — hull shape, flag or pattern, trim accent and all — instead of a rectangle in the skin's
 base colour.
 
+**The card backdrop is the same pattern too, blown up and dimmed behind the boat.**
+`drawSkinPreview()` calls `paintPlayerSkin()` a second time first, scaled non-uniformly so its
+fixed 36×18 hull rect fills the whole canvas edge to edge, at 40% opacity — then draws the boat
+itself over it at full brightness. A flag or camo now reads at a glance before you've even
+picked the boat shape out of the card, without hand-drawing a second version of every pattern.
+
 ## Controls
 
 | Action   | Keyboard          | Touch                              |

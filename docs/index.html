@@ -6894,16 +6894,32 @@
           const c = canvas.getContext("2d");
           const w = canvas.width,
             h = canvas.height;
+          const col = s.base || s.preview;
+          const trim = s.trim || "#17313a";
           c.clearRect(0, 0, w, h);
+
+          // Backdrop: the same pattern paintPlayerSkin() draws on the hull,
+          // blown up to fill the whole card and dimmed, so a flag or camo
+          // reads at a glance even before the boat itself is picked out.
+          const RECT_W = 36,
+            RECT_H = 18,
+            RECT_CX = 2,
+            RECT_CY = 0;
+          const bx = w / RECT_W,
+            by = h / RECT_H;
+          c.save();
+          c.translate(w / 2 - RECT_CX * bx, h / 2 - RECT_CY * by);
+          c.scale(bx, by);
+          c.globalAlpha = 0.4;
+          paintPlayerSkin(c, s.id, col);
+          c.restore();
+
+          // Foreground: the boat itself, full brightness, hull-clipped.
           const scale = Math.min(w / 44, h / 20);
           c.save();
           c.translate(w / 2, h / 2);
           c.scale(scale, scale);
-          hull(c, {
-            skin: s.id,
-            col: s.base || s.preview,
-            trim: s.trim || "#17313a",
-          });
+          hull(c, { skin: s.id, col, trim });
           c.restore();
         }
         function skinCard(s) {
