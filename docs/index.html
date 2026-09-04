@@ -1773,7 +1773,12 @@
             ><b id="coinBalance">0</b> coins</span
           >
         </div>
-        <div class="skin-grid" id="skinGrid"></div>
+        <p class="label">Colours</p>
+        <div class="skin-grid" id="skinGridColours"></div>
+        <p class="label">Flags</p>
+        <div class="skin-grid" id="skinGridFlags"></div>
+        <p class="label">Challenges</p>
+        <div class="skin-grid" id="skinGridChallenges"></div>
         <div class="btnstack">
           <button class="go-btn" id="skinsDone">Done</button>
         </div>
@@ -2977,8 +2982,8 @@
    6-25 races). */
         const SHOP_SKINS = [
           {
-            id: "rising-sun",
-            name: "Rising Sun",
+            id: "japan",
+            name: "Japan",
             price: 75,
             base: "#ffffff",
             trim: "#bc002d",
@@ -2986,8 +2991,8 @@
               "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%23ffffff'/%3E%3Ccircle cx='30' cy='15' r='9' fill='%23bc002d'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
           },
           {
-            id: "tricolore",
-            name: "Tricolore",
+            id: "france",
+            name: "France",
             price: 75,
             base: "#0055a4",
             trim: "#ef4135",
@@ -2995,8 +3000,8 @@
               "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='20' height='30' fill='%230055a4'/%3E%3Crect x='20' width='20' height='30' fill='%23ffffff'/%3E%3Crect x='40' width='20' height='30' fill='%23ef4135'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
           },
           {
-            id: "union-jack",
-            name: "Union Jack",
+            id: "united-kingdom",
+            name: "United Kingdom",
             price: 75,
             base: "#00247d",
             trim: "#cf142b",
@@ -3004,13 +3009,148 @@
               "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%2300247d'/%3E%3Cg stroke='%23ffffff' stroke-width='7'%3E%3Cline x1='0' y1='0' x2='60' y2='30'/%3E%3Cline x1='60' y1='0' x2='0' y2='30'/%3E%3C/g%3E%3Cg stroke='%23cf142b' stroke-width='3'%3E%3Cline x1='0' y1='0' x2='60' y2='30'/%3E%3Cline x1='60' y1='0' x2='0' y2='30'/%3E%3C/g%3E%3Crect x='0' y='11' width='60' height='8' fill='%23ffffff'/%3E%3Crect x='26' y='0' width='8' height='30' fill='%23ffffff'/%3E%3Crect x='0' y='13' width='60' height='4' fill='%23cf142b'/%3E%3Crect x='28' y='0' width='4' height='30' fill='%23cf142b'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
           },
           {
-            id: "stars-and-stripes",
-            name: "Stars and Stripes",
+            id: "united-states",
+            name: "United States",
             price: 75,
             base: "#b31942",
             trim: "#0a3161",
             preview:
               "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect y='0.0' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='2.308' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='4.615' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='6.923' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='9.231' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='11.538' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='13.846' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='16.154' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='18.462' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='20.769' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='23.077' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='25.385' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='27.692' width='60' height='2.308' fill='%23b31942'/%3E%3Crect width='24' height='16.154' fill='%230a3161'/%3E%3Ccircle cx='3.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='9.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='15.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='21.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='3.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='9.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='15.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='21.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='3.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='9.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='15.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='21.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "canada",
+            name: "Canada",
+            price: 75,
+            base: "#ff0000",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='15' height='30' fill='%23ff0000'/%3E%3Crect x='15' y='0' width='30' height='30' fill='%23ffffff'/%3E%3Crect x='45' y='0' width='15' height='30' fill='%23ff0000'/%3E%3Cpolygon points='30.0,8.2 31.02,10.92 34.08,9.9 32.72,12.62 35.78,13.3 33.4,15.0 35.78,16.7 32.72,17.38 34.08,20.1 31.02,19.08 31.7,21.8 30.0,20.44 28.3,21.8 28.98,19.08 25.92,20.1 27.28,17.38 24.22,16.7 26.6,15.0 24.22,13.3 27.28,12.62 25.92,9.9 28.98,10.92' fill='%23ff0000'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "australia",
+            name: "Australia",
+            price: 75,
+            base: "#00247d",
+            trim: "#cf142b",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%2300247d'/%3E%3Crect width='24' height='15' fill='%2300247d'/%3E%3Cg stroke='%23ffffff' stroke-width='2.6'%3E%3Cline x1='0' y1='0' x2='24' y2='15'/%3E%3Cline x1='24' y1='0' x2='0' y2='15'/%3E%3C/g%3E%3Cg stroke='%23cf142b' stroke-width='1.1'%3E%3Cline x1='0' y1='0' x2='24' y2='15'/%3E%3Cline x1='24' y1='0' x2='0' y2='15'/%3E%3C/g%3E%3Crect x='0' y='5.7' width='24' height='3.6' fill='%23ffffff'/%3E%3Crect x='10.2' y='0' width='3.6' height='15' fill='%23ffffff'/%3E%3Crect x='0' y='6.6' width='24' height='1.8' fill='%23cf142b'/%3E%3Crect x='11.1' y='0' width='1.8' height='15' fill='%23cf142b'/%3E%3Cpolygon points='50.0,4.4 50.61,6.16 52.47,6.2 50.99,7.32 51.53,9.1 50.0,8.04 48.47,9.1 49.01,7.32 47.53,6.2 49.39,6.16' fill='%23ffffff'/%3E%3Cpolygon points='44.0,13.3 44.4,14.45 45.62,14.47 44.65,15.21 45.0,16.38 44.0,15.68 43.0,16.38 43.35,15.21 42.38,14.47 43.6,14.45' fill='%23ffffff'/%3E%3Cpolygon points='50.0,16.1 50.45,17.39 51.81,17.41 50.72,18.23 51.12,19.54 50.0,18.76 48.88,19.54 49.28,18.23 48.19,17.41 49.55,17.39' fill='%23ffffff'/%3E%3Cpolygon points='54.0,10.5 54.35,11.51 55.43,11.54 54.57,12.19 54.88,13.21 54.0,12.6 53.12,13.21 53.43,12.19 52.57,11.54 53.65,11.51' fill='%23ffffff'/%3E%3Cpolygon points='47.0,21.5 47.35,22.51 48.43,22.54 47.57,23.19 47.88,24.21 47.0,23.6 46.12,24.21 46.43,23.19 45.57,22.54 46.65,22.51' fill='%23ffffff'/%3E%3Cpolygon points='38.0,22.9 38.49,24.32 40.0,24.35 38.8,25.26 39.23,26.7 38.0,25.84 36.77,26.7 37.2,25.26 36.0,24.35 37.51,24.32' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "south-korea",
+            name: "South Korea",
+            price: 75,
+            base: "#ffffff",
+            trim: "#cd2e3a",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%23ffffff'/%3E%3Ccircle cx='30' cy='15' r='7.5' fill='%23cd2e3a'/%3E%3Cpath d='M30 7.5 A3.75 3.75 0 0 1 30 15 A3.75 3.75 0 0 0 30 22.5 A7.5 7.5 0 0 1 30 7.5 Z' fill='%230047a0'/%3E%3Ccircle cx='30' cy='11.25' r='1.6' fill='%230047a0'/%3E%3Ccircle cx='30' cy='18.75' r='1.6' fill='%23cd2e3a'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "brazil",
+            name: "Brazil",
+            price: 75,
+            base: "#009c3b",
+            trim: "#ffdf00",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%23009c3b'/%3E%3Cpolygon points='30,4 54,15 30,26 6,15' fill='%23ffdf00'/%3E%3Ccircle cx='30' cy='15' r='7' fill='%23002776'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "mexico",
+            name: "Mexico",
+            price: 75,
+            base: "#006847",
+            trim: "#ce1126",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='20' height='30' fill='%23006847'/%3E%3Crect x='20' y='0' width='20' height='30' fill='%23ffffff'/%3E%3Crect x='40' y='0' width='20' height='30' fill='%23ce1126'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "turkey",
+            name: "Turkey",
+            price: 75,
+            base: "#e30a17",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%23e30a17'/%3E%3Ccircle cx='26' cy='15' r='7' fill='%23ffffff'/%3E%3Ccircle cx='28.4' cy='15' r='5.8' fill='%23e30a17'/%3E%3Cpolygon points='35.0,12.4 35.61,14.16 37.47,14.2 35.99,15.32 36.53,17.1 35.0,16.04 33.47,17.1 34.01,15.32 32.53,14.2 34.39,14.16' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "poland",
+            name: "Poland",
+            price: 75,
+            base: "#ffffff",
+            trim: "#dc143c",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='15' fill='%23ffffff'/%3E%3Crect x='0' y='15' width='60' height='15' fill='%23dc143c'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "thailand",
+            name: "Thailand",
+            price: 75,
+            base: "#a51931",
+            trim: "#2d2a4a",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='5' fill='%23a51931'/%3E%3Crect x='0' y='5' width='60' height='5' fill='%23f4f5f8'/%3E%3Crect x='0' y='10' width='60' height='10' fill='%232d2a4a'/%3E%3Crect x='0' y='20' width='60' height='5' fill='%23f4f5f8'/%3E%3Crect x='0' y='25' width='60' height='5' fill='%23a51931'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "vietnam",
+            name: "Vietnam",
+            price: 75,
+            base: "#da251d",
+            trim: "#ffcd00",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%23da251d'/%3E%3Cpolygon points='30.0,8.0 31.65,12.73 36.66,12.84 32.66,15.87 34.11,20.66 30.0,17.8 25.89,20.66 27.34,15.87 23.34,12.84 28.35,12.73' fill='%23ffcd00'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "indonesia",
+            name: "Indonesia",
+            price: 75,
+            base: "#ce1126",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='15' fill='%23ce1126'/%3E%3Crect x='0' y='15' width='60' height='15' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "philippines",
+            name: "Philippines",
+            price: 75,
+            base: "#0038a8",
+            trim: "#ce1126",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='15' fill='%230038a8'/%3E%3Crect x='0' y='15' width='60' height='15' fill='%23ce1126'/%3E%3Cpolygon points='0,0 0,30 20,15' fill='%23ffffff'/%3E%3Ccircle cx='9' cy='15' r='3.2' fill='%23fcd116'/%3E%3Cpolygon points='9.0,3.4 9.38,4.48 10.52,4.51 9.61,5.2 9.94,6.29 9.0,5.64 8.06,6.29 8.39,5.2 7.48,4.51 8.62,4.48' fill='%23fcd116'/%3E%3Cpolygon points='4.0,20.4 4.38,21.48 5.52,21.51 4.61,22.2 4.94,23.29 4.0,22.64 3.06,23.29 3.39,22.2 2.48,21.51 3.62,21.48' fill='%23fcd116'/%3E%3Cpolygon points='14.0,20.4 14.38,21.48 15.52,21.51 14.61,22.2 14.94,23.29 14.0,22.64 13.06,23.29 13.39,22.2 12.48,21.51 13.62,21.48' fill='%23fcd116'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "india",
+            name: "India",
+            price: 75,
+            base: "#ff9933",
+            trim: "#138808",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='10' fill='%23ff9933'/%3E%3Crect x='0' y='10' width='60' height='10' fill='%23ffffff'/%3E%3Crect x='0' y='20' width='60' height='10' fill='%23138808'/%3E%3Ccircle cx='30' cy='15' r='6' fill='none' stroke='%23000080' stroke-width='1'/%3E%3Cline x1='30' y1='15' x2='36.0' y2='15.0' stroke='%23000080' stroke-width='0.6'/%3E%3Cline x1='30' y1='15' x2='34.24' y2='19.24' stroke='%23000080' stroke-width='0.6'/%3E%3Cline x1='30' y1='15' x2='30.0' y2='21.0' stroke='%23000080' stroke-width='0.6'/%3E%3Cline x1='30' y1='15' x2='25.76' y2='19.24' stroke='%23000080' stroke-width='0.6'/%3E%3Cline x1='30' y1='15' x2='24.0' y2='15.0' stroke='%23000080' stroke-width='0.6'/%3E%3Cline x1='30' y1='15' x2='25.76' y2='10.76' stroke='%23000080' stroke-width='0.6'/%3E%3Cline x1='30' y1='15' x2='30.0' y2='9.0' stroke='%23000080' stroke-width='0.6'/%3E%3Cline x1='30' y1='15' x2='34.24' y2='10.76' stroke='%23000080' stroke-width='0.6'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "pakistan",
+            name: "Pakistan",
+            price: 75,
+            base: "#01411c",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%2301411c'/%3E%3Crect width='15' height='30' fill='%23ffffff'/%3E%3Ccircle cx='38' cy='13' r='4.5' fill='%23ffffff'/%3E%3Ccircle cx='39.6' cy='13' r='3.7' fill='%2301411c'/%3E%3Cpolygon points='45.0,8.0 45.47,9.35 46.9,9.38 45.76,10.25 46.18,11.62 45.0,10.8 43.82,11.62 44.24,10.25 43.1,9.38 44.53,9.35' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "egypt",
+            name: "Egypt",
+            price: 75,
+            base: "#ce1126",
+            trim: "#000000",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='10' fill='%23ce1126'/%3E%3Crect x='0' y='10' width='60' height='10' fill='%23ffffff'/%3E%3Crect x='0' y='20' width='60' height='10' fill='%23000000'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "nigeria",
+            name: "Nigeria",
+            price: 75,
+            base: "#008751",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='20' height='30' fill='%23008751'/%3E%3Crect x='20' y='0' width='20' height='30' fill='%23ffffff'/%3E%3Crect x='40' y='0' width='20' height='30' fill='%23008751'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
           },
         ];
 
@@ -6656,69 +6796,75 @@
         refreshRecords();
 
         const skinsEl = document.getElementById("skinsMenu"),
-          skinGridEl = document.getElementById("skinGrid");
-        const ALL_SKINS = DEFAULT_SKINS.concat(
-          CHALLENGE_SKINS,
-          SHOP_SKINS,
-          DIAMOND_SKIN,
-        );
+          skinGridColoursEl = document.getElementById("skinGridColours"),
+          skinGridFlagsEl = document.getElementById("skinGridFlags"),
+          skinGridChallengesEl = document.getElementById("skinGridChallenges");
         const coinBalanceEl = document.getElementById("coinBalance");
+        function skinCard(s) {
+          const unlocked = skinUnlocked(s);
+          const affordable = s.price && progress.coins >= s.price;
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className =
+            "skin-card" +
+            (progress.skin === s.id ? " sel" : "") +
+            (unlocked ? "" : " locked");
+          card.style.setProperty("--skin-preview", s.preview || s.base);
+          card.setAttribute("aria-pressed", progress.skin === s.id);
+          card.setAttribute("aria-disabled", !unlocked);
+          let note = "Always available";
+          if (s.track)
+            note = unlocked
+              ? "Unlocked on " + s.track
+              : s.track + " · 3 laps under " + fmt(s.target);
+          else if (s.id === "diamond")
+            note = unlocked
+              ? "All challenges complete"
+              : "Unlock all 25 challenge skins";
+          else if (s.price)
+            note = unlocked
+              ? "Purchased"
+              : s.price +
+                " coins" +
+                (affordable
+                  ? ""
+                  : " · " + (s.price - progress.coins) + " short");
+          card.innerHTML =
+            '<span class="skin-swatch"><span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span></span></span><b>' +
+            s.name +
+            "</b><small>" +
+            note +
+            "</small>";
+          card.onclick = () => {
+            if (!unlocked && s.price && affordable) {
+              buySkin(s);
+              refreshSkins();
+              return;
+            }
+            if (!unlocked) return;
+            progress.skin = s.id;
+            saveProgress();
+            if (me && !me.ai) {
+              me.skin = s.id;
+              me.col = s.base || s.preview;
+              me.trim = s.trim || "#17313a";
+            }
+            refreshSkins();
+          };
+          return card;
+        }
+        function fillSkinGrid(el, skins) {
+          el.innerHTML = "";
+          skins.forEach((s) => el.appendChild(skinCard(s)));
+        }
         function refreshSkins() {
           coinBalanceEl.textContent = progress.coins;
-          skinGridEl.innerHTML = "";
-          ALL_SKINS.forEach((s) => {
-            const unlocked = skinUnlocked(s);
-            const affordable = s.price && progress.coins >= s.price;
-            const card = document.createElement("button");
-            card.type = "button";
-            card.className =
-              "skin-card" +
-              (progress.skin === s.id ? " sel" : "") +
-              (unlocked ? "" : " locked");
-            card.style.setProperty("--skin-preview", s.preview || s.base);
-            card.setAttribute("aria-pressed", progress.skin === s.id);
-            card.setAttribute("aria-disabled", !unlocked);
-            let note = "Always available";
-            if (s.track)
-              note = unlocked
-                ? "Unlocked on " + s.track
-                : s.track + " · 3 laps under " + fmt(s.target);
-            else if (s.id === "diamond")
-              note = unlocked
-                ? "All challenges complete"
-                : "Unlock all 25 challenge skins";
-            else if (s.price)
-              note = unlocked
-                ? "Purchased"
-                : s.price +
-                  " coins" +
-                  (affordable
-                    ? ""
-                    : " · " + (s.price - progress.coins) + " short");
-            card.innerHTML =
-              '<span class="skin-swatch"><span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span></span></span><b>' +
-              s.name +
-              "</b><small>" +
-              note +
-              "</small>";
-            card.onclick = () => {
-              if (!unlocked && s.price && affordable) {
-                buySkin(s);
-                refreshSkins();
-                return;
-              }
-              if (!unlocked) return;
-              progress.skin = s.id;
-              saveProgress();
-              if (me && !me.ai) {
-                me.skin = s.id;
-                me.col = s.base || s.preview;
-                me.trim = s.trim || "#17313a";
-              }
-              refreshSkins();
-            };
-            skinGridEl.appendChild(card);
-          });
+          fillSkinGrid(skinGridColoursEl, DEFAULT_SKINS);
+          fillSkinGrid(skinGridFlagsEl, SHOP_SKINS);
+          fillSkinGrid(
+            skinGridChallengesEl,
+            CHALLENGE_SKINS.concat(DIAMOND_SKIN),
+          );
         }
         refreshSkins();
 

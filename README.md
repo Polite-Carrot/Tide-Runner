@@ -22,6 +22,7 @@ dependencies beyond a webfont.
   throttle through. At the other, Corryvreckan and Hell's Mouth are 26 and 24 corners of
   more or less continuous helm — the two hardest in the game — with Staithes Twist and
   Monaco Harbour tied for the tightest single corner the hull can still get round.
+
 - **2, 3 or 5 laps** against three rivals (Sea Fret, Bramble and Mad Mackerel) at one of
   four skill tiers — Easy, Normal, Hard and Insane. Up to Hard the tiers are driving skill
   rather than horsepower: they scale how much of the theoretical corner speed a rival will
@@ -44,6 +45,7 @@ dependencies beyond a webfont.
   Insane is narrower than the one from Easy to Normal. Corner-heavy courses squeeze it
   further — on Corryvreckan, Insane is only a second a lap up on Hard, because raw engine
   buys little where you are always turning.
+
 - **The Broadwater is a full-fleet race** — twelve boats rather than four, starting three
   abreast down a channel twice the usual width.
 - **Some courses roll their fleet size.** A course can name a range instead of a number, and
@@ -53,15 +55,16 @@ dependencies beyond a webfont.
   race, so the seventeen above them are untouched and still race exactly as their records
   were set.
 
-  | | what it does |
-  | --- | --- |
+  |               | what it does                                                                                                                                                                                                                                          |
+  | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
   | **Whirlpool** | pulls you toward the eye and turns the helm — the only hazard that takes the boat somewhere you didn't point it. Its inward pull peaks at 165 against 340 of thrust, so you can always drive out; you just won't come out pointing where you went in. |
-  | **Log** | solid, and it drifts with the current, so the line that worked last lap is not the line this lap. |
-  | **Weed bed** | not solid; it just holds on to the hull, and costs you the exit of whatever corner it's sitting in. |
+  | **Log**       | solid, and it drifts with the current, so the line that worked last lap is not the line this lap.                                                                                                                                                     |
+  | **Weed bed**  | not solid; it just holds on to the hull, and costs you the exit of whatever corner it's sitting in.                                                                                                                                                   |
 
   A hazard is never drawn wider than 80% of the channel half-width. A whirlpool broader than
   the river is not a hazard, it's a roadblock — the first cut had a 92px eddy on a 73px
   half-width and the whole field simply ground to a halt.
+
 - **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
   9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
   circuit. Wildlife is scaled by track length so the big water isn't empty.
@@ -81,6 +84,7 @@ dependencies beyond a webfont.
   that the corners never let you back up to speed. Fastest third 224px/s against slowest
   third 190 — a 15% spread, where the widest on any other course is Staithes Twist at 14%
   and most sit under 5%.
+
 - **Momentum-based handling.** The hull carries its speed through a turn, so ease off before
   the mark and let the stern come round. Astern is available but slow.
 - **Slipstream.** Sitting close behind another boat and roughly in line with it pulls you
@@ -120,11 +124,11 @@ target (`CHALLENGE_SKINS`, one per track). Beat all 25 and Diamond Camo unlocks 
 multiplying them: `totalLaps` (the race you chose to run), a placement bonus, and a difficulty
 rank out of 4.
 
-| Term | Values |
-| --- | --- |
-| Laps | 2, 3 or 5 — whatever the race was |
-| Placement | 3 / 2 / 1 / 0 for 1st / 2nd / 3rd / 4th-or-worse |
-| Difficulty | Easy 1, Normal 2, Hard 3, Insane 4 |
+| Term       | Values                                           |
+| ---------- | ------------------------------------------------ |
+| Laps       | 2, 3 or 5 — whatever the race was                |
+| Placement  | 3 / 2 / 1 / 0 for 1st / 2nd / 3rd / 4th-or-worse |
+| Difficulty | Easy 1, Normal 2, Hard 3, Insane 4               |
 
 A 2-lap Insane win is `2 + 3 + 4 = 9`. Last place in that same race is still `2 + 0 + 4 = 6` —
 showing up on a hard difficulty is worth something on its own, even without a placing.
@@ -146,10 +150,15 @@ finish and is skipped under `prefers-reduced-motion`), separate from the plain-E
 sentence rather than folded into it. On the Skins screen it sits beside the running balance.
 
 **Shop skins** are bought with coins rather than earned, for cosmetics that don't fit a
-time-and-course challenge — four flags so far (Rising Sun, Tricolore, Union Jack, Stars and
-Stripes), each an SVG pattern built the same way the existing Monaco/Germany/Amsterdam
-challenge-skin flags are. All four cost the same **75 coins** — a flat price rather than a
-ladder, roughly 6-25 races against `coinsForFinish()`'s 3-12-per-race range.
+time-and-course challenge — national flags, named after the actual country rather than a
+nickname (Japan, France, United Kingdom, United States, Canada, Australia, South Korea, Brazil,
+Mexico, Turkey, Poland, Thailand, Vietnam, Indonesia, Philippines, India, Pakistan, Egypt,
+Nigeria), each an SVG pattern built the same way the existing Monaco/Germany/Amsterdam
+challenge-skin flags are — stylised, not heraldic, since a 60×30 swatch can't render fine
+detail legibly (the US flag's starfield is a simplified 12-dot grid rather than 50 accurate
+stars, same idea as Amsterdam's simplified X's). All of them cost the same **75 coins** — a flat
+price rather than a ladder, roughly 6-25 races against `coinsForFinish()`'s 3-12-per-race range.
+Germany isn't duplicated here since it already exists as a challenge skin.
 
 A locked, affordable shop skin buys and equips itself on tap, no confirmation step, matching
 how every other single-tap choice in this menu already works; short of the price, tapping does
@@ -161,14 +170,19 @@ what lets `skinUnlocked()`, `selectedSkin()` and the Skins grid treat every skin
 regardless of how it was earned. Adding another shop skin is one entry in `SHOP_SKINS`; adding
 another earn path is one more branch in `skinUnlocked()`.
 
+**The Skins screen is split into three labelled categories** — Colours, Flags, then
+Challenges (the 25 challenge skins plus Diamond Camo, which needs all of them) — each its own
+`.skin-grid`, built by the same shared `skinCard()`/`fillSkinGrid()` helpers so a skin's card
+looks and behaves identically regardless of which grid it's in.
+
 ## Controls
 
-| Action | Keyboard | Touch |
-| --- | --- | --- |
-| Throttle | `W` / `↑` | **GO** pad |
-| Astern | `S` / `↓` | **Reverse** pad |
-| Helm | `A` `D` / `←` `→` | Left thumb joystick |
-| Restart | `R` | **Restart race** in the pause menu |
+| Action   | Keyboard          | Touch                              |
+| -------- | ----------------- | ---------------------------------- |
+| Throttle | `W` / `↑`         | **GO** pad                         |
+| Astern   | `S` / `↓`         | **Reverse** pad                    |
+| Helm     | `A` `D` / `←` `→` | Left thumb joystick                |
+| Restart  | `R`               | **Restart race** in the pause menu |
 
 Touch controls appear automatically on coarse-pointer devices.
 
@@ -190,7 +204,7 @@ resolver (`resolveAnalyticsConsent()`) — `undefined` means never asked (the on
 shows the banner), `true`/`false` means it's been answered, however it was answered.
 
 **Web only, deliberately, on top of the opt-in.** The gtag library is appended to the document —
-not just called — only when `window.Capacitor.isNativePlatform()` is absent or false *and* the
+not just called — only when `window.Capacitor.isNativePlatform()` is absent or false _and_ the
 player has explicitly accepted, so inside the iOS and Android apps it is never requested at all,
 regardless of what a player would have chosen. Neither native shell has its own analytics yet;
 that gate is where it will branch when they do. `docs/privacy.html` discloses this and is the
@@ -227,7 +241,7 @@ Skins exist now (course completion unlocks the next course and challenge skins),
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 ```
 
-With `black-translucent`, iOS slides the web view *up* under the status bar but leaves its
+With `black-translucent`, iOS slides the web view _up_ under the status bar but leaves its
 height at screen minus status bar. On an installed iPad app that is a 788px-tall window pinned
 to the top of an 820px screen, with 32px along the bottom that belongs to no one — the page is
 painting behind the status bar at the top and running out of window at the bottom. Its
@@ -246,7 +260,7 @@ The full-screen layers still size to `--app-h`, which `resize()` sets from `#vpP
 `position: fixed; inset: 0` div with no height, which the engine stretches to the fixed viewport.
 That is belt and braces rather than the fix: it agrees with `innerHeight` everywhere measured so
 far, but it is measured rather than reported, so it tracks the window even where the two would
-diverge. The canvas cannot do it for itself, being a *replaced* element: at `height: auto` it
+diverge. The canvas cannot do it for itself, being a _replaced_ element: at `height: auto` it
 takes its intrinsic size instead of stretching to `bottom: 0`, and collapses to a few hundred
 pixels.
 
