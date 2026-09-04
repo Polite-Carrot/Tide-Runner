@@ -1564,6 +1564,55 @@
         color: rgba(234, 247, 244, 0.4);
         cursor: not-allowed;
       }
+      /* Rewarded-ad bonus spin: a distinct outline treatment (teal, a play
+         triangle) rather than the solid amber primary button, so it reads as
+         the secondary/optional path even before you read the label. */
+      .ad-spin-btn {
+        display: none;
+        position: relative;
+        align-items: center;
+        gap: 7px;
+        width: auto;
+        margin-top: 8px;
+        padding: 9px 16px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--chart);
+        background: rgba(127, 233, 216, 0.06);
+        border: 1px solid var(--chart);
+        border-radius: 3px;
+        cursor: pointer;
+        overflow: hidden;
+      }
+      .ad-spin-btn.show {
+        display: inline-flex;
+      }
+      .ad-spin-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.8;
+      }
+      .ad-play-ico {
+        flex: 0 0 auto;
+        width: 0;
+        height: 0;
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+        border-left: 8px solid var(--chart);
+      }
+      .ad-progress {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 2px;
+        width: 0;
+        background: var(--chart);
+        transition: width 2.2s linear;
+      }
+      .ad-spin-btn.loading .ad-progress {
+        width: 100%;
+      }
       .spin-result {
         margin: 8px 0 0;
         color: var(--stbd);
@@ -2153,6 +2202,15 @@
               </p>
               <button class="go-btn spin-btn" type="button" id="spinBtn">
                 Spin
+              </button>
+              <button class="ad-spin-btn" type="button" id="adSpinBtn">
+                <span class="ad-play-ico" aria-hidden="true"></span>
+                <span id="adSpinBtnLabel">Watch an ad for another spin</span>
+                <span
+                  class="ad-progress"
+                  id="adProgress"
+                  aria-hidden="true"
+                ></span>
               </button>
               <p class="spin-result" id="spinResult" aria-live="polite"></p>
             </div>
@@ -3196,6 +3254,7 @@
           gear: {},
           carriedGear: null,
           lastSpin: 0,
+          lastAdSpin: 0,
         };
         try {
           const raw = localStorage.getItem(PROG_KEY);
@@ -7750,12 +7809,19 @@
           { label: "10", sub: "coins", type: "coins", amount: 10, weight: 20 },
           { label: "75", sub: "coins", type: "coins", amount: 75, weight: 2 },
         ];
+        /* The spin "day" turns over at 9am, not midnight — shift the clock
+   back 9 hours before reading the date, so 8:59am still keys to yesterday
+   and 9:00am on the dot keys to today. */
+        const SPIN_RESET_HOUR = 9;
         function todayKey() {
-          const d = new Date();
+          const d = new Date(Date.now() - SPIN_RESET_HOUR * 3600000);
           return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
         }
         function spinAvailable() {
           return progress.lastSpin !== todayKey();
+        }
+        function adSpinAvailable() {
+          return !spinAvailable() && progress.lastAdSpin !== todayKey();
         }
         (function buildSpinWheel() {
           const svg = document.getElementById("wheelSvg");
@@ -7849,24 +7915,65 @@
         }
         let wheelRotation = 0;
         let spinning = false;
+        // Armed for one turn once a rewarded ad finishes; never persisted —
+        // closing the Boathouse before spinning it just means watching
+        // another ad, which is a fine, simple edge case for now.
+        let bonusSpinArmed = false;
         const wheelEl = document.getElementById("wheelSvg"),
           spinBtnEl = document.getElementById("spinBtn"),
           spinStatusEl = document.getElementById("spinStatus"),
-          spinResultEl = document.getElementById("spinResult");
+          spinResultEl = document.getElementById("spinResult"),
+          adSpinBtnEl = document.getElementById("adSpinBtn"),
+          adSpinBtnLabelEl = document.getElementById("adSpinBtnLabel");
+        /* Stand-in for a real rewarded-ad SDK call, so the flow and its
+   visuals can be built and tried before an ad network is wired in. Swap
+   the body for the SDK's "show rewarded ad" call — call onComplete()
+   only once the viewer has actually earned the reward (watched through),
+   and leave the button in its normal state without arming a bonus spin
+   if they skipped or it failed to load. */
+        function playRewardedAd(onComplete) {
+          adSpinBtnEl.disabled = true;
+          adSpinBtnEl.classList.add("loading");
+          adSpinBtnLabelEl.textContent = "Loading ad…";
+          setTimeout(() => {
+            adSpinBtnEl.classList.remove("loading");
+            onComplete();
+          }, 2200);
+        }
         function refreshSpinStatus() {
           if (spinning) return;
-          if (spinAvailable()) {
-            spinStatusEl.textContent = "Free spin ready";
+          if (spinAvailable() || bonusSpinArmed) {
+            spinBtnEl.style.display = "";
             spinBtnEl.disabled = false;
-            spinBtnEl.textContent = "Spin";
+            spinBtnEl.textContent = bonusSpinArmed ? "Bonus spin" : "Spin";
+            adSpinBtnEl.classList.remove("show");
+            spinStatusEl.textContent = bonusSpinArmed
+              ? "Bonus spin ready"
+              : "Free spin ready";
+          } else if (adSpinAvailable()) {
+            spinBtnEl.style.display = "none";
+            adSpinBtnEl.classList.add("show");
+            adSpinBtnEl.disabled = false;
+            adSpinBtnLabelEl.textContent = "Watch an ad for another spin";
+            spinStatusEl.textContent = "Free spin used today";
           } else {
-            spinStatusEl.textContent = "Come back tomorrow";
+            spinBtnEl.style.display = "";
             spinBtnEl.disabled = true;
             spinBtnEl.textContent = "Spun today";
+            adSpinBtnEl.classList.remove("show");
+            spinStatusEl.textContent = "Come back at 9am";
           }
         }
+        adSpinBtnEl.onclick = () => {
+          if (adSpinBtnEl.disabled) return;
+          playRewardedAd(() => {
+            bonusSpinArmed = true;
+            refreshSpinStatus();
+          });
+        };
         spinBtnEl.onclick = () => {
-          if (spinning || !spinAvailable()) return;
+          if (spinning || !(spinAvailable() || bonusSpinArmed)) return;
+          const isBonus = !spinAvailable() && bonusSpinArmed;
           spinning = true;
           spinBtnEl.disabled = true;
           spinResultEl.textContent = "";
@@ -7877,7 +7984,12 @@
           wheelEl.style.transform = "rotate(" + wheelRotation + "deg)";
           setTimeout(() => {
             const reward = SPIN_REWARDS[idx];
-            progress.lastSpin = todayKey();
+            if (isBonus) {
+              progress.lastAdSpin = todayKey();
+              bonusSpinArmed = false;
+            } else {
+              progress.lastSpin = todayKey();
+            }
             if (reward.type === "coins") {
               progress.coins += reward.amount;
               spinResultEl.textContent = "+" + reward.amount + " coins!";

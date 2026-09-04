@@ -245,7 +245,17 @@ day, not a rolling 24 hours), weighted toward small coin amounts with two of the
 items as the rarer outcome and a 75-coin jackpot at the bottom of the odds. The wheel is drawn
 from the same `SPIN_REWARDS` list the payout logic reads, so it can't show a wedge spinning
 couldn't actually land on. Winning gear calls the exact same "increment `progress.gear[id]`"
-line buying it would.
+line buying it would. The day turns over at 9am rather than midnight (`SPIN_RESET_HOUR`,
+subtracted from `Date.now()` before `todayKey()` reads the date), on the theory that most
+players open the app before bed rather than right after waking up.
+
+Once the free spin is used, a second "watch an ad for another spin" button appears in its
+place (`adSpinAvailable()`, its own `progress.lastAdSpin` date stamp so it resets on the same
+9am boundary). `playRewardedAd()` is currently a stand-in — a couple of seconds of simulated
+"loading" — that arms one bonus spin (`bonusSpinArmed`, held in memory only, not persisted:
+closing the Boathouse before spinning the armed bonus just means watching another ad next
+time) and needs swapping for a real rewarded-ad SDK call before shipping, calling `onComplete()`
+only once the viewer has actually earned the reward.
 
 ## Controls
 
