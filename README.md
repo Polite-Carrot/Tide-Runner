@@ -256,13 +256,14 @@ It shares the net's 4% hit — same "dead stop" weight, different delivery.
 
 **The 4% hit alone still recovered too fast to feel like it landed.** Zeroing velocity for one
 frame didn't stop the engine from pushing straight back up to speed on the next one — cutting
-speed is not the same as taking speed away for a while. Both hits now also set `b.stunned = 0.5`,
+speed is not the same as taking speed away for a while. Both hits now also set `b.stunned = 1`,
 a new boat field `stepBoat()` checks right after computing thrust (throttle and any active boost
 alike): while it's above zero, `push` is forced to `0` before it's applied to velocity, so there's
-no acceleration at all for half a second — the river current still nudges a stunned boat along
+no acceleration at all for a full second — the river current still nudges a stunned boat along
 and it can still be steered, just not driven, before thrust comes back on its own. Net's older
-`b.netted` (2s of extra drag) still runs underneath it: 0–0.5s is a dead stop, 0.5–2s is sluggish
-recovery, rather than the hit being fully over in one frame.
+`b.netted` (2s of extra drag) still runs underneath it: 0–1s is a dead stop, 1–2s is sluggish
+recovery, rather than the hit being fully over in one frame. (Started at 0.5s; a second full
+second read better on replay.)
 
 **Tracer Torpedo is a torpedo with `homing: true` and a locked-on `target`, not a new system.**
 `boatAhead(b)` — next to `ranked()`, since it's just "one place better in that same order" — is

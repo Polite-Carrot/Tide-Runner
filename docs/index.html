@@ -6057,12 +6057,12 @@
             } else if (h.type === "net" && b !== h.owner && !h.spent) {
               // one catch per net, and never the boat that dropped it — a
               // near-total stop, same weight as a buoy strike, not just a
-              // slowdown, and it sticks: no thrust at all for the first
-              // 0.5s (b.stunned), then extra drag through the rest of the
-              // 2s (b.netted) so it doesn't just snap back up to speed
+              // slowdown, and it sticks: no thrust at all for the first 1s
+              // (b.stunned), then extra drag through the rest of the 2s
+              // (b.netted) so it doesn't just snap back up to speed
               h.spent = true;
               b.netted = 2;
-              b.stunned = 0.5;
+              b.stunned = 1;
               b.vx *= 0.04;
               b.vy *= 0.04;
               if (b === me) sfxBump(0.7);
@@ -6178,11 +6178,11 @@
                 dy = b.y - t.y;
               if (dx * dx + dy * dy > 20 * 20) continue;
               // a near-total stop, same weight as a buoy strike, and no
-              // thrust at all for 0.5s so it doesn't just accelerate right
+              // thrust at all for 1s so it doesn't just accelerate right
               // back up next frame
               b.vx *= 0.04;
               b.vy *= 0.04;
-              b.stunned = 0.5;
+              b.stunned = 1;
               b.h += (Math.random() < 0.5 ? -1 : 1) * 0.55;
               b.bump = 0.4;
               if (b === me && b.bumpSfxT <= 0) {
