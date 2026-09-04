@@ -116,19 +116,27 @@ unlocked when you started it.
 **Each course has a challenge skin**, earned by lapping it 3 laps under a per-course time
 target (`CHALLENGE_SKINS`, one per track). Beat all 25 and Diamond Camo unlocks on top.
 
-**Coins are earned on every finish**, not just a win — laps × a per-tier multiplier, so
-attempting a harder difficulty is never a worse bet than playing it safe on Easy:
+**Coins are earned on every finish**, not just a win, adding three things rather than
+multiplying them: `totalLaps` (the race you chose to run), a placement bonus, and a difficulty
+rank out of 4.
 
-| Difficulty | Multiplier | Example |
-| --- | --- | --- |
-| Easy | 1× | 2 laps → 16 coins |
-| Normal | 1.5× | 3 laps → 36 coins |
-| Hard | 2× | 5 laps → 80 coins |
-| Insane | 3× | 5 laps → 120 coins |
+| Term | Values |
+| --- | --- |
+| Laps | 2, 3 or 5 — whatever the race was |
+| Placement | 3 / 2 / 1 / 0 for 1st / 2nd / 3rd / 4th-or-worse |
+| Difficulty | Easy 1, Normal 2, Hard 3, Insane 4 |
 
-`COINS_PER_LAP` (8) and the multiplier table are the only numbers involved — both are
-top-level constants in `docs/index.html`, next to `finish()`, and trivial to retune; nothing
-downstream depends on the exact figures. Placement is never a factor — a race is a race.
+A 2-lap Insane win is `2 + 3 + 4 = 9`. Last place in that same race is still `2 + 0 + 4 = 6` —
+showing up on a hard difficulty is worth something on its own, even without a placing.
+Everything from a 2-lap Easy 4th (3, the floor) to a 5-lap Insane win (12, the ceiling) sits in
+that range. `DIFF_RANK` and `placeBonus()` are the only two things involved, both right next
+to `coinsForFinish()` in `docs/index.html`, and trivial to retune.
+
+**That's a much smaller economy than shop prices were set against.** Under the previous
+laps-×-multiplier formula a normal race paid tens of coins; this one pays single digits, so
+**Union Jack at 200 coins is now on the order of 20-65 races** rather than a handful. Worth
+revisiting the price (or adding a cheaper first item) once this has actually been played
+against — not changed pre-emptively without seeing how it feels.
 
 **The coin itself is a drawn `.coin-icon`**, not an image or an icon font: a small
 `radial-gradient` circle with an inset rim, the same technique the toggle switches already use
