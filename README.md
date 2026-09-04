@@ -210,6 +210,16 @@ name and category) with a **Browse** button; the three tabs and grids didn't go 
 just moved into `#skinsBrowsePop`, a full-screen popup that mirrors `#coursePop` — same overlay
 CSS, same open/close/Escape pattern — rather than inventing a second kind of popup.
 
+**Done stays put while the rest of the sheet scrolls.** The Boathouse's content — name, daily
+spin, boat summary, gear list — got long enough that Done used to need scrolling past the gear
+list to reach. `#skinsMenu .sheet` is now a flex column with the scrollable content wrapped in
+its own `.bh-scroll` (`flex:1 1 auto; min-height:0; overflow-y:auto`, the same pattern
+`#popGrid` already used for a scrolling middle under a fixed header) and `.btnstack` sitting
+after it as a fixed footer. `fitSheets()` still measures `.sheet` generically across every
+screen and may toggle its `scrolls` class, but that class no longer does anything here — the
+sheet itself doesn't overflow any more, only `.bh-scroll` does — so `#skinsMenu .sheet.scrolls`
+is overridden back to `overflow: hidden` regardless of which way that toggle lands.
+
 **Gear is a consumable, not a skin.** A flag is bought once and stays bought;
 `progress.skins[id]` only ever needs to be a boolean. Gear gets bought, used, and bought again,
 so it needed an actual count: `progress.gear[id]`, incremented by `buyGear()` and decremented

@@ -1442,6 +1442,32 @@
       }
 
       /* ---------- boathouse: name, daily spin, boat summary, gear ---------- */
+      /* Everything above Done scrolls in its own box; Done sits outside it as
+         a fixed footer, so it's always reachable without scrolling all the
+         way down past the gear list. fitSheets() still measures #skinsMenu's
+         own .sheet and may toggle "scrolls" on it, but that no longer means
+         anything here — the sheet itself doesn't overflow any more, only
+         .bh-scroll does, so the override below keeps it non-scrolling
+         regardless of what that toggle lands on. */
+      #skinsMenu .sheet {
+        display: flex;
+        flex-direction: column;
+      }
+      #skinsMenu .sheet.scrolls {
+        overflow: hidden;
+      }
+      .bh-scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      #skinsMenu .btnstack {
+        flex: 0 0 auto;
+        margin-top: 0;
+        padding-top: 14px;
+        border-top: 1px solid var(--hair);
+      }
       .boathouse-name {
         margin-bottom: 20px;
       }
@@ -2215,78 +2241,82 @@
 
     <!-- boathouse: name, skins, gear, daily spin -->
     <div class="screen hidden" id="skinsMenu">
-      <div class="sheet panel scrolls" style="max-width: 760px">
-        <div class="brand">
-          <h1 style="font-size: clamp(30px, 7vw, 48px)">Boathouse</h1>
-          <p class="tag">Kit out your boat, your name and your gear locker.</p>
-          <span class="coin-balance"
-            ><span class="coin-icon small" aria-hidden="true"></span
-            ><b id="coinBalance">0</b> coins</span
-          >
-        </div>
-
-        <div class="name-field boathouse-name">
-          <p class="label">Your name <span class="opt">(optional)</span></p>
-          <input
-            class="name-input"
-            id="playerName"
-            type="text"
-            placeholder="You"
-            maxlength="18"
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Your name"
-          />
-        </div>
-
-        <div class="bh-section">
-          <div class="bh-section-head">
-            <p class="label" style="margin: 0">Daily spin</p>
-            <span class="bh-sub">Free, once a day</span>
+      <div class="sheet panel" style="max-width: 760px">
+        <div class="bh-scroll">
+          <div class="brand">
+            <h1 style="font-size: clamp(30px, 7vw, 48px)">Boathouse</h1>
+            <p class="tag">
+              Kit out your boat, your name and your gear locker.
+            </p>
+            <span class="coin-balance"
+              ><span class="coin-icon small" aria-hidden="true"></span
+              ><b id="coinBalance">0</b> coins</span
+            >
           </div>
-          <button class="boat-summary" type="button" id="spinLaunchBtn">
-            <span class="spin-launch-icon" aria-hidden="true">
-              <span class="coin-icon" aria-hidden="true"></span>
-            </span>
-            <span class="meta">
-              <b>Spin the wheel</b>
-              <span class="cat" id="spinStatus">Free spin ready</span>
-            </span>
-            <span class="browse-cta" aria-hidden="true">Spin ›</span>
-          </button>
-        </div>
 
-        <div class="bh-section">
-          <div class="bh-section-head">
-            <p class="label" style="margin: 0">Your boat</p>
-            <span class="bh-sub">Colours · Flags · Challenges</span>
+          <div class="name-field boathouse-name">
+            <p class="label">Your name <span class="opt">(optional)</span></p>
+            <input
+              class="name-input"
+              id="playerName"
+              type="text"
+              placeholder="You"
+              maxlength="18"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Your name"
+            />
           </div>
-          <button class="boat-summary" type="button" id="boatSummary">
-            <canvas
-              class="boat-summary-canvas"
-              id="boatSummaryCanvas"
-              width="300"
-              height="150"
-            ></canvas>
-            <span class="meta">
-              <span class="cat" id="boatSummaryCat">Colour · equipped</span>
-              <b id="boatSummaryName">Harbour Gold</b>
-            </span>
-            <span class="browse-cta" aria-hidden="true">Browse ›</span>
-          </button>
-        </div>
 
-        <div class="bh-section">
-          <div class="bh-section-head">
-            <p class="label" style="margin: 0">Gear</p>
-            <span class="bh-sub">Buy with coins · used up in the race</span>
+          <div class="bh-section">
+            <div class="bh-section-head">
+              <p class="label" style="margin: 0">Daily spin</p>
+              <span class="bh-sub">Free, once a day</span>
+            </div>
+            <button class="boat-summary" type="button" id="spinLaunchBtn">
+              <span class="spin-launch-icon" aria-hidden="true">
+                <span class="coin-icon" aria-hidden="true"></span>
+              </span>
+              <span class="meta">
+                <b>Spin the wheel</b>
+                <span class="cat" id="spinStatus">Free spin ready</span>
+              </span>
+              <span class="browse-cta" aria-hidden="true">Spin ›</span>
+            </button>
           </div>
-          <p class="tag" style="margin: 0 0 10px">
-            One runs out and you buy another — not something you unlock once.
-            Everything you own comes with you into the race; racing without any
-            is free.
-          </p>
-          <div class="gear-list" id="gearList"></div>
+
+          <div class="bh-section">
+            <div class="bh-section-head">
+              <p class="label" style="margin: 0">Your boat</p>
+              <span class="bh-sub">Colours · Flags · Challenges</span>
+            </div>
+            <button class="boat-summary" type="button" id="boatSummary">
+              <canvas
+                class="boat-summary-canvas"
+                id="boatSummaryCanvas"
+                width="300"
+                height="150"
+              ></canvas>
+              <span class="meta">
+                <span class="cat" id="boatSummaryCat">Colour · equipped</span>
+                <b id="boatSummaryName">Harbour Gold</b>
+              </span>
+              <span class="browse-cta" aria-hidden="true">Browse ›</span>
+            </button>
+          </div>
+
+          <div class="bh-section">
+            <div class="bh-section-head">
+              <p class="label" style="margin: 0">Gear</p>
+              <span class="bh-sub">Buy with coins · used up in the race</span>
+            </div>
+            <p class="tag" style="margin: 0 0 10px">
+              One runs out and you buy another — not something you unlock once.
+              Everything you own comes with you into the race; racing without
+              any is free.
+            </p>
+            <div class="gear-list" id="gearList"></div>
+          </div>
         </div>
 
         <div class="btnstack">
