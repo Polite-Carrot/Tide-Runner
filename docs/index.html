@@ -8106,6 +8106,18 @@
         // closing the Boathouse before spinning it just means watching
         // another ad, which is a fine, simple edge case for now.
         let bonusSpinArmed = false;
+        // True for the ~2s a rewarded ad is "loading". Closing the popup and
+        // reopening it used to re-enable the watch-ad button while the first
+        // request was still in flight (refreshSpinStatus() had no way to
+        // know one was pending), letting a second one fire alongside it —
+        // this keeps the loading state honest across a close/reopen instead.
+        let adLoading = false;
+        // Bumped every time the popup opens. A landed spin's auto-close
+        // timer captures the session it belongs to, so if the player closes
+        // and reopens the popup before it fires — say, to watch the bonus
+        // ad — that stale timer no longer matches and won't slam the new
+        // session shut out from under them.
+        let spinPopSession = 0;
         const wheelEl = document.getElementById("wheelSvg"),
           spinBtnEl = document.getElementById("spinBtn"),
           spinStatusEl = document.getElementById("spinStatus"),
@@ -8119,10 +8131,12 @@
    and leave the button in its normal state without arming a bonus spin
    if they skipped or it failed to load. */
         function playRewardedAd(onComplete) {
+          adLoading = true;
           adSpinBtnEl.disabled = true;
           adSpinBtnEl.classList.add("loading");
           adSpinBtnLabelEl.textContent = "Loading ad…";
           setTimeout(() => {
+            adLoading = false;
             adSpinBtnEl.classList.remove("loading");
             onComplete();
           }, 2200);
@@ -8140,8 +8154,11 @@
           } else if (adSpinAvailable()) {
             spinBtnEl.style.display = "none";
             adSpinBtnEl.classList.add("show");
-            adSpinBtnEl.disabled = false;
-            adSpinBtnLabelEl.textContent = "Watch an ad for another spin";
+            adSpinBtnEl.disabled = adLoading;
+            adSpinBtnEl.classList.toggle("loading", adLoading);
+            adSpinBtnLabelEl.textContent = adLoading
+              ? "Loading ad…"
+              : "Watch an ad for another spin";
             spinStatusEl.textContent = "Free spin used today";
           } else {
             spinBtnEl.style.display = "";
@@ -8152,7 +8169,7 @@
           }
         }
         adSpinBtnEl.onclick = () => {
-          if (adSpinBtnEl.disabled) return;
+          if (adSpinBtnEl.disabled || adLoading) return;
           playRewardedAd(() => {
             bonusSpinArmed = true;
             refreshSpinStatus();
@@ -8171,6 +8188,7 @@
           const segMid = idx * segAngle + segAngle / 2;
           wheelRotation += 360 * 5 + (360 - segMid);
           wheelEl.style.transform = "rotate(" + wheelRotation + "deg)";
+          const session = spinPopSession;
           setTimeout(() => {
             const reward = SPIN_REWARDS[idx];
             if (isBonus) {
@@ -8200,7 +8218,11 @@
             void spinResultEl.offsetWidth; // restart the pop-in animation
             spinResultEl.classList.add("show");
             setTimeout(() => {
-              if (!spinPopEl.classList.contains("hidden")) closeSpinPop();
+              if (
+                session === spinPopSession &&
+                !spinPopEl.classList.contains("hidden")
+              )
+                closeSpinPop();
             }, 2000);
           }, 4300);
         };
@@ -8208,6 +8230,7 @@
 
         const spinPopEl = document.getElementById("spinPop");
         function openSpinPop() {
+          spinPopSession++;
           spinPopEl.classList.remove("hidden");
           refreshSpinStatus();
           requestAnimationFrame(fitSheets);

@@ -274,11 +274,23 @@ players open the app before bed rather than right after waking up.
 
 Once the free spin is used, a second "watch an ad for another spin" button appears in its
 place (`adSpinAvailable()`, its own `progress.lastAdSpin` date stamp so it resets on the same
-9am boundary). `playRewardedAd()` is currently a stand-in — a couple of seconds of simulated
-"loading" — that arms one bonus spin (`bonusSpinArmed`, held in memory only, not persisted:
-closing the Boathouse before spinning the armed bonus just means watching another ad next
-time) and needs swapping for a real rewarded-ad SDK call before shipping, calling `onComplete()`
-only once the viewer has actually earned the reward.
+9am boundary — one bonus spin per day, same as the free one). `playRewardedAd()` is currently a
+stand-in — a couple of seconds of simulated "loading" — that arms one bonus spin
+(`bonusSpinArmed`, held in memory only, not persisted: closing the Boathouse before spinning the
+armed bonus just means watching another ad next time) and needs swapping for a real
+rewarded-ad SDK call before shipping, calling `onComplete()` only once the viewer has actually
+earned the reward.
+
+Two close/reopen edge cases around that flow are guarded explicitly rather than left as bugs:
+`adLoading` tracks whether a `playRewardedAd()` call is still in flight, independently of the
+button's own `disabled` state, because closing the popup and reopening it mid-load used to
+reset the watch-ad button back to clickable — `refreshSpinStatus()` had no way to know a request
+was already pending — which could fire a second one alongside the first. And `spinPopSession`,
+bumped every time `openSpinPop()` runs, is what the auto-close timer scheduled after a landed
+spin checks against before closing: without it, reopening the popup — say, to watch the bonus
+ad — inside that timer's 2s window let it fire anyway and slam the new session shut, since its
+only check was "is the popup currently open," which reopening had made true again for an
+unrelated reason.
 
 **The wheel itself lives in its own full-screen popup (`#spinPop`), not inline in the
 Boathouse.** The Daily Spin section there is just a launcher — reusing the `.boat-summary`
