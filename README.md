@@ -213,11 +213,11 @@ CSS, same open/close/Escape pattern — rather than inventing a second kind of p
 **Gear is a consumable, not a skin.** A flag is bought once and stays bought;
 `progress.skins[id]` only ever needs to be a boolean. Gear gets bought, used, and bought again,
 so it needed an actual count: `progress.gear[id]`, incremented by `buyGear()` and decremented
-both by buying and by spending a charge in a race. `progress.carriedGear` says which one loads
-into the next race — picked independently of how many you own, so you can queue up "buy more
-Nets" before you've bought your first one. Three items so far, all defined in one place
-(`GEAR_ITEMS`, right next to the shop skins) with a small hand-drawn canvas icon apiece, reused
-unmodified for the shop row, the in-race HUD button and the "+1 X" spin-wheel wedge:
+both by buying and by spending a charge in a race. Every item you own comes with you into the
+next race — there's no single "carried" slot to pick between them, so buying a second kind of
+gear doesn't cost you the first. Three items so far, all defined in one place (`GEAR_ITEMS`,
+right next to the shop skins) with a small hand-drawn canvas icon apiece, reused unmodified for
+the shop row, the in-race HUD stack and the "+1 X" spin-wheel wedge:
 
 | Item         | Price | Effect                                                                     |
 | ------------ | ----- | -------------------------------------------------------------------------- |
@@ -230,14 +230,27 @@ just sets `b.boost` — the same field a boost pickup sets, so the flame trail a
 free. Net pushes a `{ type: "net", owner, ttl, spent }` object into the same `hazards` array a
 course's weed beds live in; `hazardForces()` gets one more `else if` branch that skips the
 boat that dropped it, cuts velocity hard on the first rival to touch it, and marks it `spent` so
-one net only ever catches one boat, then `stepHazards()` sweeps it out. Torpedo is the one
-genuinely new moving thing — a straight-line shot in its own `torpedoes` array, stepped and
-collision-checked in `stepTorpedoes()`, called from `update()` right after `stepHazards()`.
-Gear is player-only for this first pass: rivals never carry or trigger it, so there's no AI
-decision-making to get right yet, only the mechanics themselves. Trigger it with `Space` on
-desktop or the amber circular button that appears bottom-left during a race (mirroring the
-pause button's own corner and styling) whenever `carriedGear` has a charge left; it disappears
-the moment you're out, same as the boost/HUD elements it borrows from.
+one net only ever catches one boat, then `stepHazards()` sweeps it out. `drawHazards()` gets its
+own `net` case too — a cross-hatched lattice inside an ellipse outline — rather than falling
+through to the log drawing, which is what it did at first (invisible in practice, since a net
+has no `h.a`/`h.wob` for the log branch to rotate and bob by, so the transform went to `NaN` and
+nothing painted). Torpedo is the one genuinely new moving thing — a straight-line shot in its
+own `torpedoes` array, stepped and collision-checked in `stepTorpedoes()`, called from `update()`
+right after `stepHazards()`; `drawTorpedoes()` is its equivalent of `drawHazards()`, added
+alongside it — the first version had the physics and hit detection working but nothing drawing
+the torpedo itself, so firing one looked and felt like nothing had happened even when it landed.
+
+`me.gear` (an id → count map, seeded from `progress.gear` at `startRace()`) tracks what the
+player is carrying for the race, separately from `progress.gear`, which `useGear(type)` also
+decrements immediately so a mid-race quit doesn't hand back an unspent charge. Gear is
+player-only for this first pass: rivals never carry or trigger it, so there's no AI
+decision-making to get right yet, only the mechanics themselves. The HUD shows one circle per
+gear type you're still carrying, stacked bottom-left above the pause button (mirroring its
+corner and styling) rather than a single button for one selected item, since you can carry all
+three kinds at once now; each circle's count badge reads `9+` once it passes nine so it never
+grows past what the circle can hold. Tap a circle to fire that item, or press `Space` on desktop
+to fire whichever owned item comes first in `GEAR_ITEMS` order; a circle disappears the moment
+that item's count hits zero.
 
 **A daily spin gives away a taste of the gear economy for free.** One spin per calendar day
 (`progress.lastSpin`, a plain `YYYY-M-D` string compared against `todayKey()` — a played-out
@@ -265,7 +278,7 @@ only once the viewer has actually earned the reward.
 | Astern   | `S` / `↓`         | **Reverse** pad                                             |
 | Helm     | `A` `D` / `←` `→` | Left thumb joystick                                         |
 | Restart  | `R`               | **Restart race** in the pause menu                          |
-| Use gear | `Space`           | Amber circular button, bottom-left, while carrying a charge |
+| Use gear | `Space`           | Amber circular buttons, stacked bottom-left, one per item carried |
 
 Touch controls appear automatically on coarse-pointer devices.
 

@@ -1251,15 +1251,26 @@
       body.racing .pause-btn {
         display: inline-flex;
       }
-      /* ---------- use-gear button: same treatment as pause, other corner ---------- */
-      .gear-use-btn {
+      /* ---------- gear stack: one circle per item you own, same treatment as
+         pause, other corner, stacked bottom-up so a full loadout reads as a
+         short tower rather than one button that hides what else you're carrying ---------- */
+      .gear-stack {
         position: fixed;
         bottom: calc(22px + env(safe-area-inset-bottom));
         left: calc(20px + env(safe-area-inset-left));
         z-index: 6;
+        display: none;
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 10px;
+      }
+      body.racing .gear-stack.show {
+        display: flex;
+      }
+      .gear-use-btn {
         pointer-events: auto;
         cursor: pointer;
-        display: none;
+        display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -1272,9 +1283,6 @@
         background: var(--panel);
         border: 1px solid rgba(255, 216, 74, 0.5);
         font: inherit;
-      }
-      body.racing .gear-use-btn.show {
-        display: flex;
       }
       .gear-use-btn canvas {
         width: 24px;
@@ -1635,10 +1643,6 @@
         border-radius: 2px;
         padding: 10px;
       }
-      .gear-row.picked {
-        border-color: var(--amber);
-        background: rgba(255, 216, 74, 0.07);
-      }
       .gear-icon-box {
         width: 44px;
         height: 44px;
@@ -1703,22 +1707,6 @@
         background: rgba(255, 216, 74, 0.25);
         color: rgba(234, 247, 244, 0.4);
         cursor: not-allowed;
-      }
-      .pick-btn {
-        font: inherit;
-        font-size: 10px;
-        letter-spacing: 0.03em;
-        color: rgba(234, 247, 244, 0.55);
-        background: transparent;
-        border: 1px solid var(--hair);
-        border-radius: 3px;
-        padding: 4px 8px;
-        cursor: pointer;
-        white-space: nowrap;
-      }
-      .gear-row.picked .pick-btn {
-        color: var(--amber);
-        border-color: var(--amber);
       }
       @media (max-width: 480px) {
         .boat-summary {
@@ -2039,10 +2027,7 @@
     </div>
 
     <button class="pause-btn" id="pauseBtn" aria-label="Pause"></button>
-    <button class="gear-use-btn" id="useGearBtn" aria-label="Use gear">
-      <canvas id="useGearIcon" width="40" height="40"></canvas>
-      <b id="useGearCount">0</b>
-    </button>
+    <div class="gear-stack" id="gearStack"></div>
 
     <!-- usage-data consent banner: shown once, before analytics is ever
          requested. Send usage data in Settings is the same choice, editable
@@ -2244,7 +2229,8 @@
           </div>
           <p class="tag" style="margin: 0 0 10px">
             One runs out and you buy another — not something you unlock once.
-            Pick which one you're carrying; racing without any is free.
+            Everything you own comes with you into the race; racing without any
+            is free.
           </p>
           <div class="gear-list" id="gearList"></div>
         </div>
@@ -3252,7 +3238,6 @@
           skin: "harbour",
           coins: 0,
           gear: {},
-          carriedGear: null,
           lastSpin: 0,
           lastAdSpin: 0,
         };
@@ -3795,14 +3780,12 @@
           if (progress.coins < item.price) return false;
           progress.coins -= item.price;
           progress.gear[item.id] = gearOwned(item.id) + 1;
-          if (!progress.carriedGear) progress.carriedGear = item.id;
           saveProgress();
           return true;
         }
         function gearRow(item) {
           const row = document.createElement("div");
-          row.className =
-            "gear-row" + (progress.carriedGear === item.id ? " picked" : "");
+          row.className = "gear-row";
           row.dataset.id = item.id;
           const affordable = progress.coins >= item.price;
           row.innerHTML =
@@ -3818,20 +3801,12 @@
             '<span class="gear-owned">Owned <b class="ownedAmt">' +
             gearOwned(item.id) +
             "</b></span>" +
-            '<button class="pick-btn" type="button">' +
-            (progress.carriedGear === item.id ? "Carrying" : "Carry this") +
-            "</button>" +
             '<button class="buy-btn" type="button"' +
             (affordable ? "" : " disabled") +
             ">Buy · " +
             item.price +
             "</button></div>";
           drawGearIcon(row.querySelector(".gear-icon"), item);
-          row.querySelector(".pick-btn").onclick = () => {
-            progress.carriedGear = item.id;
-            saveProgress();
-            refreshGear();
-          };
           row.querySelector(".buy-btn").onclick = () => {
             if (buyGear(item)) {
               coinBalanceEl.textContent = progress.coins;
@@ -4181,8 +4156,7 @@
               spawnT: 0,
               bumpSfxT: 0,
               netted: 0,
-              carriedGear: null,
-              gearCharges: 0,
+              gear: {},
             },
             o,
           );
@@ -4263,8 +4237,8 @@
             boats.push(b);
           });
           me = boats[boats.length - 1]; // you are the last one off the grid
-          me.carriedGear = progress.carriedGear;
-          me.gearCharges = me.carriedGear ? gearOwned(me.carriedGear) : 0;
+          me.gear = {};
+          for (const item of GEAR_ITEMS) me.gear[item.id] = gearOwned(item.id);
           torpedoes.length = 0;
           refreshGearHud();
           wake.length = 0;
@@ -4307,7 +4281,10 @@
             if (state === S.race || state === S.count) pauseGame();
             else if (state === S.pause) resumeGame();
           }
-          if (e.key === " " && state === S.race) useGear();
+          if (e.key === " " && state === S.race && me) {
+            const g = GEAR_ITEMS.find((it) => (me.gear[it.id] || 0) > 0);
+            if (g) useGear(g.id);
+          }
         });
         addEventListener("keyup", (e) => {
           keys[e.key.toLowerCase()] = false;
@@ -5911,11 +5888,10 @@
    course hazard or a boost pickup already drive; Torpedo is the one
    genuinely new moving thing, a straight-line shot resolved in
    stepTorpedoes(). */
-        function useGear() {
+        function useGear(type) {
           if (state !== S.race || !me || me.done) return;
-          if (!me.carriedGear || me.gearCharges <= 0) return;
-          const type = me.carriedGear;
-          me.gearCharges--;
+          if (!type || (me.gear[type] || 0) <= 0) return;
+          me.gear[type]--;
           progress.gear[type] = Math.max(0, gearOwned(type) - 1);
           saveProgress();
           if (type === "nitro") {
@@ -6068,6 +6044,33 @@
               ctx.beginPath();
               ctx.arc(0, 0, 7, 0, 7);
               ctx.fill();
+            } else if (h.type === "net") {
+              // a net laid across the channel: a diamond lattice inside an
+              // ellipse outline (spent nets are swept out of `hazards` the
+              // same tick they catch a boat, so this only ever draws live ones)
+              ctx.beginPath();
+              ctx.ellipse(0, 0, h.r, h.r * 0.55, 0, 0, 7);
+              ctx.save();
+              ctx.clip();
+              ctx.strokeStyle = "rgba(201,165,104,.55)";
+              ctx.lineWidth = 1.4;
+              const step = h.r / 2.6;
+              for (let k = -8; k <= 8; k++) {
+                ctx.beginPath();
+                ctx.moveTo(-h.r * 1.4 + k * step, -h.r);
+                ctx.lineTo(-h.r * 1.4 + k * step + h.r * 2.8, h.r);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(h.r * 1.4 - k * step, -h.r);
+                ctx.lineTo(h.r * 1.4 - k * step - h.r * 2.8, h.r);
+                ctx.stroke();
+              }
+              ctx.restore();
+              ctx.strokeStyle = "rgba(234,247,244,.28)";
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.ellipse(0, 0, h.r, h.r * 0.55, 0, 0, 7);
+              ctx.stroke();
             } else {
               // a log: timber lying across the stream, riding the swell
               ctx.rotate(h.a);
@@ -6096,6 +6099,33 @@
                 ctx.fill();
               }
             }
+            ctx.restore();
+          }
+        }
+
+        function drawTorpedoes() {
+          for (const t of torpedoes) {
+            ctx.save();
+            ctx.translate(t.x, t.y);
+            ctx.rotate(Math.atan2(t.vy, t.vx));
+            ctx.strokeStyle = "rgba(234,247,244,.35)";
+            ctx.lineWidth = 1.6;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(-9, 0);
+            ctx.lineTo(-17, 0);
+            ctx.stroke();
+            ctx.fillStyle = "#e8402a";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 9, 3.2, 0, 0, 7);
+            ctx.fill();
+            ctx.fillStyle = "#ff8a6b";
+            ctx.beginPath();
+            ctx.moveTo(9, 0);
+            ctx.lineTo(5, -2.6);
+            ctx.lineTo(5, 2.6);
+            ctx.closePath();
+            ctx.fill();
             ctx.restore();
           }
         }
@@ -6669,6 +6699,7 @@
 
           drawHazards();
           drawBoosts();
+          drawTorpedoes();
 
           // wake under the hulls
           for (const p of wake) {
@@ -7995,7 +8026,6 @@
               spinResultEl.textContent = "+" + reward.amount + " coins!";
             } else {
               progress.gear[reward.id] = gearOwned(reward.id) + 1;
-              if (!progress.carriedGear) progress.carriedGear = reward.id;
               spinResultEl.textContent =
                 "+1 " + GEAR_ITEMS.find((g) => g.id === reward.id).name + "!";
             }
@@ -8237,22 +8267,31 @@
           settingsReturn = null;
         }
 
-        const useGearBtnEl = document.getElementById("useGearBtn"),
-          useGearIconEl = document.getElementById("useGearIcon"),
-          useGearCountEl = document.getElementById("useGearCount");
+        const gearStackEl = document.getElementById("gearStack");
         function refreshGearHud() {
-          const item =
-            me && me.carriedGear && me.gearCharges > 0
-              ? GEAR_ITEMS.find((g) => g.id === me.carriedGear)
-              : null;
-          useGearBtnEl.classList.toggle("show", !!item);
-          if (!item) return;
-          drawGearIcon(useGearIconEl, item);
-          useGearCountEl.textContent = me.gearCharges;
+          const owned = me
+            ? GEAR_ITEMS.filter((g) => (me.gear[g.id] || 0) > 0)
+            : [];
+          gearStackEl.classList.toggle("show", owned.length > 0);
+          gearStackEl.innerHTML = "";
+          for (const item of owned) {
+            const btn = document.createElement("button");
+            btn.className = "gear-use-btn";
+            btn.type = "button";
+            btn.setAttribute("aria-label", "Use " + item.name);
+            const canvas = document.createElement("canvas");
+            canvas.width = 40;
+            canvas.height = 40;
+            btn.appendChild(canvas);
+            const count = me.gear[item.id];
+            const b = document.createElement("b");
+            b.textContent = count > 9 ? "9+" : count;
+            btn.appendChild(b);
+            btn.onclick = () => useGear(item.id);
+            gearStackEl.appendChild(btn);
+            drawGearIcon(canvas, item);
+          }
         }
-        useGearBtnEl.onclick = () => {
-          useGear();
-        };
 
         pauseBtn.onclick = pauseGame;
         document.getElementById("resumeBtn").onclick = resumeGame;
