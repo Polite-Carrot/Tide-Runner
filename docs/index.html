@@ -3827,11 +3827,14 @@
         /* Gear: consumables rather than unlocks, so progress.gear[id] is a
    count rather than the boolean progress.skins[id] every skin shares.
    Buying increments it; using one in a race decrements it. */
+        // TESTING ONLY — every price below is 1 coin so the buy/carry/use
+        // loop is cheap to exercise. Restore the real prices (net 25,
+        // torpedo 45, nitro 30) before shipping.
         const GEAR_ITEMS = [
           {
             id: "net",
             name: "Net",
-            price: 25,
+            price: 1,
             desc: "Lay it across the channel — the next boat through loses way for 2s.",
             box: "#0c4257",
             draw(c) {
@@ -3856,7 +3859,7 @@
           {
             id: "torpedo",
             name: "Torpedo",
-            price: 45,
+            price: 1,
             desc: "Straight down your wake — a clean hit knocks their bow off-line.",
             box: "#1c1420",
             draw(c) {
@@ -3894,7 +3897,7 @@
           {
             id: "nitro",
             name: "Nitro Charge",
-            price: 30,
+            price: 1,
             desc: "A few seconds of raw thrust, once, whenever you trigger it.",
             box: "#241405",
             draw(c) {
