@@ -5944,6 +5944,17 @@
           ctx.closePath();
         }
 
+        const shopFlagImages = {};
+        function shopFlagImage(id) {
+          if (id in shopFlagImages) return shopFlagImages[id];
+          const skin = SHOP_SKINS.find((s) => s.id === id);
+          const m =
+            skin && /url\("(data:image\/svg\+xml,[^"]+)"\)/.exec(skin.preview);
+          const img = m ? new Image() : null;
+          if (img) img.src = m[1];
+          shopFlagImages[id] = img;
+          return img;
+        }
         function paintPlayerSkin(id, base) {
           ctx.fillStyle = base || "#ffd84a";
           ctx.fillRect(-16, -9, 36, 18);
@@ -6243,6 +6254,10 @@
               ctx.arc(sx, sy, 0.75, 0, 7);
               ctx.fill();
             });
+          } else {
+            const img = shopFlagImage(id);
+            if (img && img.complete && img.naturalWidth)
+              ctx.drawImage(img, -16, -9, 36, 18);
           }
         }
 

@@ -160,6 +160,13 @@ stars, same idea as Amsterdam's simplified X's). All of them cost the same **75 
 price rather than a ladder, roughly 6-25 races against `coinsForFinish()`'s 3-12-per-race range.
 Germany isn't duplicated here since it already exists as a challenge skin.
 
+**The flag actually shows on the boat**, not just the shop card. Challenge skins already had
+hand-drawn canvas patterns for the hull in `paintPlayerSkin()`; shop flags fell through to a
+flat `base`-colour fill with only the small trim-coloured cabin accent hinting at a second
+colour. `paintPlayerSkin()` now falls back to drawing the flag's own SVG (the same one used for
+the shop card preview) onto the hull with `drawImage`, cached per flag id in `shopFlagImages`
+the first time it's needed and redrawn from that cache every frame after.
+
 A locked, affordable shop skin buys and equips itself on tap, no confirmation step, matching
 how every other single-tap choice in this menu already works; short of the price, tapping does
 nothing and the card's note says by how much.
