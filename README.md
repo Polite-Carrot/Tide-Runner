@@ -124,23 +124,23 @@ target (`CHALLENGE_SKINS`, one per track). Beat all 25 and Diamond Camo unlocks 
 multiplying them: `totalLaps` (the race you chose to run), a placement bonus, and a difficulty
 rank out of 4.
 
-| Term       | Values                                           |
-| ---------- | ------------------------------------------------ |
-| Laps       | 2, 3 or 5 — whatever the race was                |
-| Placement  | 3 / 2 / 1 / 0 for 1st / 2nd / 3rd / 4th-or-worse |
-| Difficulty | Easy 1, Normal 2, Hard 3, Insane 4               |
+| Term       | Values                                            |
+| ---------- | ------------------------------------------------- |
+| Laps       | 2, 3 or 5 — whatever the race was, doubled        |
+| Placement  | 12 / 6 / 3 / 0 for 1st / 2nd / 3rd / 4th-or-worse |
+| Difficulty | Easy 2, Normal 4, Hard 6, Insane 8                |
 
-A 2-lap Insane win is `2 + 3 + 4 = 9`. Last place in that same race is still `2 + 0 + 4 = 6` —
-showing up on a hard difficulty is worth something on its own, even without a placing.
-Everything from a 2-lap Easy 4th (3, the floor) to a 5-lap Insane win (12, the ceiling) sits in
-that range. `DIFF_RANK` and `placeBonus()` are the only two things involved, both right next
-to `coinsForFinish()` in `docs/index.html`, and trivial to retune.
+A 5-lap Insane win is `10 + 12 + 8 = 30`, the ceiling. A 2-lap Easy 4th-or-worse is `4 + 0 + 2 =
+6`, the floor — showing up is still worth something even without a placing, just not much.
+`DIFF_RANK` and `placeBonus()` are the only two things involved, both right next to
+`coinsForFinish()` in `docs/index.html`, and trivial to retune.
 
-**That's a much smaller economy than shop prices were set against.** Under the previous
-laps-×-multiplier formula a normal race paid tens of coins; this one pays single digits, so
-**Union Jack at 200 coins is now on the order of 20-65 races** rather than a handful. Worth
-revisiting the price (or adding a cheaper first item) once this has actually been played
-against — not changed pre-emptively without seeing how it feels.
+**Winning is meant to visibly outpace merely finishing, not just edge it out.** The original
+formula (`laps + placeBonus`, `placeBonus` topping out at 3) put a 3-lap Normal win at 6 coins
+against 4 for last place — barely a difference, so there was little reason to race for position
+rather than just survive to the finish. `placeBonus()` going from 3/2/1/0 to 12/6/3/0, on top of
+the base and difficulty both doubling, makes that same win worth 22 against last place's 10 —
+more than double, not "a bit more."
 
 **The coin itself is a drawn `.coin-icon`**, not an image or an icon font: a small
 `radial-gradient` circle with an inset rim, the same technique the toggle switches already use
@@ -156,9 +156,12 @@ Mexico, Turkey, Poland, Thailand, Vietnam, Indonesia, Philippines, India, Pakist
 Nigeria), each an SVG pattern built the same way the existing Monaco/Germany/Amsterdam
 challenge-skin flags are — stylised, not heraldic, since a 60×30 swatch can't render fine
 detail legibly (the US flag's starfield is a simplified 12-dot grid rather than 50 accurate
-stars, same idea as Amsterdam's simplified X's). All of them cost the same **75 coins** — a flat
-price rather than a ladder, roughly 6-25 races against `coinsForFinish()`'s 3-12-per-race range.
-Germany isn't duplicated here since it already exists as a challenge skin.
+stars, same idea as Amsterdam's simplified X's). All of them cost the same **150 coins** — a flat
+price rather than a ladder, still roughly 5-25 races against `coinsForFinish()`'s 6-30-per-race
+range, same pacing as the original 75 coins against the original 3-12 range. Doubled deliberately
+alongside `coinsForFinish()` rather than left at 75 once income doubled too, so flags stay a
+genuine grind instead of suddenly going cheap. Germany isn't duplicated here since it already
+exists as a challenge skin.
 
 **The flag actually shows on the boat**, not just the shop card. Challenge skins already had
 hand-drawn canvas patterns for the hull in `paintPlayerSkin()`; shop flags fell through to a
@@ -231,10 +234,14 @@ the shop row, the in-race HUD stack and the "+1 X" spin-wheel wedge:
 
 | Item           | Price | Effect                                                                     |
 | -------------- | ----- | -------------------------------------------------------------------------- |
-| Net            | 25    | Drops behind the boat; the next rival to cross it loses way to a near-stop |
-| Nitro Charge   | 30    | An extra 3.4s of boost, triggered on demand instead of found on the course |
-| Torpedo        | 45    | Fires from the bow; a hit brings the rival to a near-stop, same as a net   |
-| Tracer Torpedo | 60    | Locks onto the boat ahead of you at launch and curves to chase them down   |
+| Net            | 12    | Drops behind the boat; the next rival to cross it loses way to a near-stop |
+| Nitro Charge   | 15    | An extra 3.4s of boost, triggered on demand instead of found on the course |
+| Torpedo        | 20    | Fires from the bow; a hit brings the rival to a near-stop, same as a net   |
+| Tracer Torpedo | 30    | Locks onto the boat ahead of you at launch and curves to chase them down   |
+
+Dropped from 25/45/30/60 (a single item briefly cost _more_ than a flag) once
+`coinsForFinish()` and the flag price both doubled — a consumable needs to be cheap enough to
+buy every race or two, or "buy it, use it, buy another" doesn't actually happen.
 
 **In the race, gear reuses physics that already exist rather than inventing new ones.** Nitro
 just sets `b.boost` — the same field a boost pickup sets, so the flame trail and HUD glow are
@@ -334,12 +341,12 @@ fire, so there's nothing to lose by closing early.
 
 ## Controls
 
-| Action   | Keyboard          | Touch                                                       |
-| -------- | ----------------- | ----------------------------------------------------------- |
-| Throttle | `W` / `↑`         | **GO** pad                                                  |
-| Astern   | `S` / `↓`         | **Reverse** pad                                             |
-| Helm     | `A` `D` / `←` `→` | Left thumb joystick                                         |
-| Restart  | `R`               | **Restart race** in the pause menu                          |
+| Action   | Keyboard          | Touch                                                             |
+| -------- | ----------------- | ----------------------------------------------------------------- |
+| Throttle | `W` / `↑`         | **GO** pad                                                        |
+| Astern   | `S` / `↓`         | **Reverse** pad                                                   |
+| Helm     | `A` `D` / `←` `→` | Left thumb joystick                                               |
+| Restart  | `R`               | **Restart race** in the pause menu                                |
 | Use gear | `Space`           | Amber circular buttons, stacked bottom-left, one per item carried |
 
 Touch controls appear automatically on coarse-pointer devices.

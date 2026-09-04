@@ -3628,18 +3628,22 @@
         };
 
         /* Coins are earned on every finish, not just a win, and reward three
-   separate things by adding them rather than multiplying: totalLaps (the
-   race you chose to run), a placement bonus (3/2/1/0 for 1st/2nd/3rd/
-   4th-or-worse), and a difficulty rank out of 4 (Easy 1 through Insane 4,
-   TIERS above). A 2-lap Insane win is 2 + 3 + 4 = 9; last place in the
-   same race is still 2 + 0 + 4 = 6 — showing up and racing hard difficulty
-   is worth something even without a placing. */
-        const DIFF_RANK = [1, 2, 3, 4]; // Easy, Normal, Hard, Insane
+   separate things by adding them rather than multiplying: totalLaps doubled
+   (the race you chose to run), a placement bonus (12/6/3/0 for 1st/2nd/3rd/
+   4th-or-worse), and a difficulty rank (Easy 2 through Insane 8, TIERS
+   above). A 5-lap Insane win is 10 + 12 + 8 = 30, the ceiling; a 2-lap Easy
+   4th-or-worse is 4 + 0 + 2 = 6, the floor — showing up and racing hard
+   difficulty is worth something even without a placing, but winning is
+   worth visibly more than just finishing. */
+        const DIFF_RANK = [2, 4, 6, 8]; // Easy, Normal, Hard, Insane
+        // 1st pays 4x what it used to (was 3) against 2nd/3rd's roughly 2-3x —
+        // winning is meant to visibly outpace merely finishing now, not just
+        // edge it out.
         function placeBonus(place) {
-          return place === 1 ? 3 : place === 2 ? 2 : place === 3 ? 1 : 0;
+          return place === 1 ? 12 : place === 2 ? 6 : place === 3 ? 3 : 0;
         }
         function coinsForFinish(laps, tierIdx, place) {
-          return laps + placeBonus(place) + DIFF_RANK[tierIdx];
+          return laps * 2 + placeBonus(place) + DIFF_RANK[tierIdx];
         }
 
         /* Shop skins: bought with coins rather than earned by a time or a
@@ -3647,14 +3651,16 @@
    is the same progress.skins map challenge skins already use, which is
    what lets skinUnlocked/selectedSkin/refreshSkins treat every skin
    uniformly regardless of how it was earned. */
-        /* Every flag costs the same 75 coins — a flat price rather than a
-   ladder, against coinsForFinish()'s actual 3-12-per-race range (roughly
-   6-25 races). */
+        /* Every flag costs the same 150 coins — a flat price rather than a
+   ladder, against coinsForFinish()'s 6-30-per-race range (roughly 5-25
+   races, same pacing as the old 75-coin price against the old 3-12 range —
+   deliberately kept a genuine grind rather than let flags go cheap when
+   coinsForFinish() doubled). */
         const SHOP_SKINS = [
           {
             id: "japan",
             name: "Japan",
-            price: 75,
+            price: 150,
             base: "#ffffff",
             trim: "#bc002d",
             preview:
@@ -3663,7 +3669,7 @@
           {
             id: "france",
             name: "France",
-            price: 75,
+            price: 150,
             base: "#0055a4",
             trim: "#ef4135",
             preview:
@@ -3672,7 +3678,7 @@
           {
             id: "united-kingdom",
             name: "United Kingdom",
-            price: 75,
+            price: 150,
             base: "#00247d",
             trim: "#cf142b",
             preview:
@@ -3681,7 +3687,7 @@
           {
             id: "united-states",
             name: "United States",
-            price: 75,
+            price: 150,
             base: "#b31942",
             trim: "#0a3161",
             preview:
@@ -3690,7 +3696,7 @@
           {
             id: "canada",
             name: "Canada",
-            price: 75,
+            price: 150,
             base: "#ff0000",
             trim: "#ffffff",
             preview:
@@ -3699,7 +3705,7 @@
           {
             id: "australia",
             name: "Australia",
-            price: 75,
+            price: 150,
             base: "#00247d",
             trim: "#cf142b",
             preview:
@@ -3708,7 +3714,7 @@
           {
             id: "south-korea",
             name: "South Korea",
-            price: 75,
+            price: 150,
             base: "#ffffff",
             trim: "#cd2e3a",
             preview:
@@ -3717,7 +3723,7 @@
           {
             id: "brazil",
             name: "Brazil",
-            price: 75,
+            price: 150,
             base: "#009c3b",
             trim: "#ffdf00",
             preview:
@@ -3726,7 +3732,7 @@
           {
             id: "mexico",
             name: "Mexico",
-            price: 75,
+            price: 150,
             base: "#006847",
             trim: "#ce1126",
             preview:
@@ -3735,7 +3741,7 @@
           {
             id: "turkey",
             name: "Turkey",
-            price: 75,
+            price: 150,
             base: "#e30a17",
             trim: "#ffffff",
             preview:
@@ -3744,7 +3750,7 @@
           {
             id: "poland",
             name: "Poland",
-            price: 75,
+            price: 150,
             base: "#ffffff",
             trim: "#dc143c",
             preview:
@@ -3753,7 +3759,7 @@
           {
             id: "thailand",
             name: "Thailand",
-            price: 75,
+            price: 150,
             base: "#a51931",
             trim: "#2d2a4a",
             preview:
@@ -3762,7 +3768,7 @@
           {
             id: "vietnam",
             name: "Vietnam",
-            price: 75,
+            price: 150,
             base: "#da251d",
             trim: "#ffcd00",
             preview:
@@ -3771,7 +3777,7 @@
           {
             id: "indonesia",
             name: "Indonesia",
-            price: 75,
+            price: 150,
             base: "#ce1126",
             trim: "#ffffff",
             preview:
@@ -3780,7 +3786,7 @@
           {
             id: "philippines",
             name: "Philippines",
-            price: 75,
+            price: 150,
             base: "#0038a8",
             trim: "#ce1126",
             preview:
@@ -3789,7 +3795,7 @@
           {
             id: "india",
             name: "India",
-            price: 75,
+            price: 150,
             base: "#ff9933",
             trim: "#138808",
             preview:
@@ -3798,7 +3804,7 @@
           {
             id: "pakistan",
             name: "Pakistan",
-            price: 75,
+            price: 150,
             base: "#01411c",
             trim: "#ffffff",
             preview:
@@ -3807,7 +3813,7 @@
           {
             id: "egypt",
             name: "Egypt",
-            price: 75,
+            price: 150,
             base: "#ce1126",
             trim: "#000000",
             preview:
@@ -3816,7 +3822,7 @@
           {
             id: "nigeria",
             name: "Nigeria",
-            price: 75,
+            price: 150,
             base: "#008751",
             trim: "#ffffff",
             preview:
@@ -3828,8 +3834,10 @@
    count rather than the boolean progress.skins[id] every skin shares.
    Buying increments it; using one in a race decrements it. */
         // TESTING ONLY — every price below is 1 coin so the buy/carry/use
-        // loop is cheap to exercise. Restore the real prices (net 25,
-        // torpedo 45, nitro 30, tracer 60) before shipping.
+        // loop is cheap to exercise. Restore the real prices (net 12,
+        // torpedo 20, nitro 15, tracer 30 — dropped from 25/45/30/60 so a
+        // single item costs less than a flag, supporting the "buy it, use
+        // it, buy another" loop instead of fighting it) before shipping.
         const GEAR_ITEMS = [
           {
             id: "net",
