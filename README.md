@@ -170,10 +170,12 @@ what lets `skinUnlocked()`, `selectedSkin()` and the Skins grid treat every skin
 regardless of how it was earned. Adding another shop skin is one entry in `SHOP_SKINS`; adding
 another earn path is one more branch in `skinUnlocked()`.
 
-**The Skins screen is split into three labelled categories** — Colours, Flags, then
-Challenges (the 25 challenge skins plus Diamond Camo, which needs all of them) — each its own
-`.skin-grid`, built by the same shared `skinCard()`/`fillSkinGrid()` helpers so a skin's card
-looks and behaves identically regardless of which grid it's in.
+**The Skins screen is split into three tabbed categories** — Colours, Flags, then Challenges
+(the 25 challenge skins plus Diamond Camo, which needs all of them) — each its own `.skin-grid`,
+built by the same shared `skinCard()`/`fillSkinGrid()` helpers so a skin's card looks and
+behaves identically regardless of which grid it's in. Only one grid is shown at a time, switched
+via a `.seg` tab bar (the same segmented-control style as the Laps/Rivals pickers); opening the
+menu defaults to whichever tab holds the currently equipped skin, via `skinCategoryFor()`.
 
 ## Controls
 

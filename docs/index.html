@@ -1259,6 +1259,15 @@
         grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
         gap: 8px;
       }
+      .skin-grid.tab-hidden {
+        display: none;
+      }
+      .skin-tabs {
+        margin-bottom: 12px;
+      }
+      .skin-tabs button {
+        flex: 1;
+      }
       .skin-card {
         min-width: 0;
         padding: 9px;
@@ -1773,11 +1782,15 @@
             ><b id="coinBalance">0</b> coins</span
           >
         </div>
-        <p class="label">Colours</p>
+        <div class="seg skin-tabs" id="skinTabs" role="tablist">
+          <button type="button" data-cat="colours" role="tab">Colours</button
+          ><button type="button" data-cat="flags" role="tab">Flags</button
+          ><button type="button" data-cat="challenges" role="tab">
+            Challenges
+          </button>
+        </div>
         <div class="skin-grid" id="skinGridColours"></div>
-        <p class="label">Flags</p>
         <div class="skin-grid" id="skinGridFlags"></div>
-        <p class="label">Challenges</p>
         <div class="skin-grid" id="skinGridChallenges"></div>
         <div class="btnstack">
           <button class="go-btn" id="skinsDone">Done</button>
@@ -6800,6 +6813,32 @@
           skinGridFlagsEl = document.getElementById("skinGridFlags"),
           skinGridChallengesEl = document.getElementById("skinGridChallenges");
         const coinBalanceEl = document.getElementById("coinBalance");
+        const SKIN_CATEGORY_GRIDS = {
+          colours: skinGridColoursEl,
+          flags: skinGridFlagsEl,
+          challenges: skinGridChallengesEl,
+        };
+        const skinTabsEl = document.getElementById("skinTabs");
+        function skinCategoryFor(id) {
+          if (DEFAULT_SKINS.some((s) => s.id === id)) return "colours";
+          if (SHOP_SKINS.some((s) => s.id === id)) return "flags";
+          return "challenges";
+        }
+        let activeSkinCategory = "colours";
+        function showSkinCategory(cat) {
+          activeSkinCategory = cat;
+          Object.entries(SKIN_CATEGORY_GRIDS).forEach(([c, el]) => {
+            el.classList.toggle("tab-hidden", c !== cat);
+          });
+          skinTabsEl.querySelectorAll("button").forEach((b) => {
+            const sel = b.dataset.cat === cat;
+            b.classList.toggle("sel", sel);
+            b.setAttribute("aria-selected", sel);
+          });
+        }
+        skinTabsEl.querySelectorAll("button").forEach((b) => {
+          b.onclick = () => showSkinCategory(b.dataset.cat);
+        });
         function skinCard(s) {
           const unlocked = skinUnlocked(s);
           const affordable = s.price && progress.coins >= s.price;
@@ -6867,11 +6906,13 @@
           );
         }
         refreshSkins();
+        showSkinCategory(skinCategoryFor(progress.skin));
 
         document.getElementById("homeSkins").onclick = () => {
           menuEl.classList.add("hidden");
           skinsEl.classList.remove("hidden");
           refreshSkins();
+          showSkinCategory(skinCategoryFor(progress.skin));
           requestAnimationFrame(fitSheets);
         };
         document.getElementById("skinsDone").onclick = () => {
