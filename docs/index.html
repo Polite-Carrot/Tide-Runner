@@ -3150,6 +3150,112 @@
               [1232, 1455],
             ],
           },
+
+          /* ---------------------------------------------------------------
+     LAVA — a second world rather than five more rivers. Same physics and
+     the same generator; what changes is the palette it's drawn in
+     (THEMES.lava) and that it unlocks on its own chain, so Ember Flow is
+     open from the start rather than sitting behind all 25 river courses.
+     Channels run a touch narrower than their river equivalents — molten
+     rock should feel like it wants to touch the hull.
+     --------------------------------------------------------------- */
+          {
+            name: "Ember Flow",
+            desc: "Wide · molten",
+            theme: "lava",
+            width: 158,
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 570,
+              ax: 1.3,
+              ay: 1.02,
+              k: 4,
+              amp: 0.14,
+              k2: 3,
+              amp2: 0.045,
+              count: 20,
+            },
+          },
+          {
+            name: "Cinder Run",
+            desc: "Narrow · restless",
+            theme: "lava",
+            width: 140,
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 550,
+              ax: 1.26,
+              ay: 1.04,
+              k: 6,
+              amp: 0.155,
+              k2: 4,
+              amp2: 0.05,
+              phase: 0.7,
+              count: 24,
+            },
+          },
+          {
+            name: "Obsidian Narrows",
+            desc: "Tight · glassy",
+            theme: "lava",
+            width: 128,
+            fleet: [4, 8],
+            gen: {
+              cx: 1320,
+              cy: 960,
+              R: 580,
+              ax: 1.2,
+              ay: 1.08,
+              k: 7,
+              amp: 0.165,
+              k2: 5,
+              amp2: 0.055,
+              phase: 1.4,
+              count: 26,
+            },
+          },
+          {
+            name: "Caldera Ring",
+            desc: "Immense · full fleet",
+            theme: "lava",
+            width: 250,
+            fleet: [8, 12],
+            gen: {
+              cx: 2000,
+              cy: 1450,
+              R: 1120,
+              ax: 1.16,
+              ay: 0.98,
+              k: 3,
+              amp: 0.085,
+              k2: 6,
+              amp2: 0.03,
+              count: 30,
+            },
+          },
+          {
+            name: "The Crucible",
+            desc: "Brutal · unrelenting",
+            theme: "lava",
+            width: 132,
+            fleet: [4, 8],
+            hazards: { eddy: 10, log: 8 },
+            gen: {
+              cx: 1400,
+              cy: 1020,
+              R: 640,
+              ax: 1.22,
+              ay: 1.0,
+              k: 8,
+              amp: 0.17,
+              k2: 5,
+              amp2: 0.06,
+              phase: 2.1,
+              count: 30,
+            },
+          },
         ];
 
         const SAMPLES = 15; // centreline points per control segment
@@ -3288,6 +3394,10 @@
           return {
             name: def.name,
             desc: def.desc,
+            // Which world it belongs to: picks the palette it's drawn in and
+            // the category it sits under in the picker, and scopes its unlock
+            // chain. Defaulted rather than written on all 25 river courses.
+            theme: def.theme || "river",
             harbour: !!def.harbour,
             fleet: def.fleet || 0,
             hazards: def.hazards || null,
@@ -3416,10 +3526,29 @@
             localStorage.setItem(PROG_KEY, JSON.stringify(progress));
           } catch (e) {}
         }
+        /* Course indices grouped by theme, in course order — the unlock chain
+   runs per world rather than across the whole list, so the first lava course
+   is open from the start instead of sitting behind all 25 river ones. */
+        const THEME_SEQ = {};
+        TRACKS.forEach((t, i) => (THEME_SEQ[t.theme] ||= []).push(i));
+        const THEME_IDS = Object.keys(THEME_SEQ);
+        /* The course before this one on its own chain, or -1 for the first of
+   a world — what the "complete X to unlock" badge names. */
+        function prevInTheme(i) {
+          const seq = THEME_SEQ[TRACKS[i].theme];
+          const at = seq.indexOf(i);
+          return at > 0 ? seq[at - 1] : -1;
+        }
+        function nextInTheme(i) {
+          const seq = THEME_SEQ[TRACKS[i].theme];
+          const at = seq.indexOf(i);
+          return at >= 0 && at + 1 < seq.length ? seq[at + 1] : -1;
+        }
         function courseUnlocked(i) {
-          if (i <= 0) return true;
-          for (let n = 0; n < i; n++)
+          for (const n of THEME_SEQ[TRACKS[i].theme]) {
+            if (n === i) return true;
             if (!progress.completed[TRACKS[n].name]) return false;
+          }
           return true;
         }
 
@@ -3605,8 +3734,13 @@
           if (id === "hot-pink") return "#ff1493";
           return base;
         }
+        /* One challenge skin per course that has a CHALLENGE_META row — the 25
+   river courses. Lava courses have no target time or skin of their own yet,
+   so they map to undefined here and finish() simply has nothing to award;
+   Diamond Camo stays "beat all 25" rather than quietly moving to 30. */
         const CHALLENGE_SKINS = TRACKS.map((t, i) => {
           const m = CHALLENGE_META[i];
+          if (!m) return null;
           return {
             id: m[1],
             name: m[0],
@@ -3617,6 +3751,10 @@
             preview: challengePreview(m[1], m[3]),
           };
         });
+        /* CHALLENGE_SKINS stays index-aligned with TRACKS so finish() can look
+   up by course; anything listing or counting skins wants this instead —
+   the holes are courses that don't have one, not skins. */
+        const CHALLENGE_SKIN_LIST = CHALLENGE_SKINS.filter(Boolean);
         const DIAMOND_SKIN = {
           id: "diamond",
           name: "Diamond Camo",
@@ -4036,7 +4174,7 @@
         }
 
         function allChallengeSkinsUnlocked() {
-          return CHALLENGE_SKINS.every((s) => progress.skins[s.id]);
+          return CHALLENGE_SKIN_LIST.every((s) => progress.skins[s.id]);
         }
         function skinUnlocked(s) {
           if (s.id === "diamond") return allChallengeSkinsUnlocked();
@@ -4052,7 +4190,7 @@
         }
         function selectedSkin() {
           const all = DEFAULT_SKINS.concat(
-            CHALLENGE_SKINS,
+            CHALLENGE_SKIN_LIST,
             SHOP_SKINS,
             DIAMOND_SKIN,
           );
@@ -4178,12 +4316,63 @@
 
         const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        /* water texture tile for the shallows */
-        function shoalTile() {
+        /* Every colour the world is drawn in, per theme. The river palette is
+   exactly what was hardcoded through the render before lava existed, lifted
+   out unchanged; lava inverts its value structure — a dark basalt plain with
+   the channel as the brightest thing on screen, where the river runs dark
+   water through lighter flats. Everything a course is drawn with resolves
+   through here, so a third world is a palette rather than a render rewrite. */
+        const THEMES = {
+          river: {
+            flats: "#157f86",
+            flatDash: "#2fb0b0",
+            flatFleck: "#c9b48a",
+            bar: "#b8a67e",
+            margin: "#2f8a86",
+            shelf: "#0f5f6d",
+            deep: "#072a3a",
+            flow: "rgba(127,233,216,.13)",
+            edge: "rgba(127,233,216,.09)",
+            thumb: "#0c4257",
+            thumbEdge: "rgba(127,233,216,.35)",
+            plot: "rgba(12,66,87,.95)",
+            plotEdge: "rgba(127,233,216,.16)",
+            fauna: true,
+          },
+          lava: {
+            flats: "#1a1210",
+            flatDash: "#31221c",
+            flatFleck: "#ff8c2b",
+            bar: "#3d2a22",
+            margin: "#6b2f14",
+            // a wide value gap between these two on purpose: at 22px the shelf
+            // ring is thin, and at close values it vanished into the channel
+            // and the whole river read as one flat orange slab
+            shelf: "#a33a08",
+            deep: "#f97316",
+            flow: "rgba(255,214,138,.16)",
+            edge: "rgba(255,190,90,.12)",
+            thumb: "#c9500e",
+            thumbEdge: "rgba(255,170,90,.4)",
+            plot: "rgba(150,62,12,.95)",
+            plotEdge: "rgba(255,170,90,.2)",
+            // no idle whales, rays or shoals on basalt — the hunting shark
+            // stepFauna() summons when you run aground still comes, until
+            // there's a lava creature to send instead
+            fauna: false,
+          },
+        };
+        const THEME_LABEL = { river: "Rivers", lava: "Lava" };
+        function themeOf(t) {
+          return THEMES[t && t.theme] || THEMES.river;
+        }
+
+        /* ground texture tile for the flats either side of the channel */
+        function shoalTile(pal) {
           const c = document.createElement("canvas");
           c.width = c.height = 200;
           const g = c.getContext("2d");
-          g.fillStyle = "#157f86";
+          g.fillStyle = pal.flats;
           g.fillRect(0, 0, 200, 200);
           const dash = (x, y, w, col, a) => {
             g.strokeStyle = col;
@@ -4208,7 +4397,7 @@
               Math.random() * 200,
               Math.random() * 200,
               6 + Math.random() * 16,
-              "#2fb0b0",
+              pal.flatDash,
               0.16 + Math.random() * 0.2,
             );
           for (let i = 0; i < 45; i++)
@@ -4216,13 +4405,22 @@
               Math.random() * 200,
               Math.random() * 200,
               4 + Math.random() * 10,
-              "#c9b48a",
+              pal.flatFleck,
               0.06 + Math.random() * 0.08,
             );
           g.globalAlpha = 1;
           return c;
         }
-        const shoalPat = ctx.createPattern(shoalTile(), "repeat");
+        /* One pattern per theme, built the first time that theme is raced and
+   kept — the tile is randomised, so rebuilding it per course would reshuffle
+   the ground under the player on every restart. */
+        const shoalPats = {};
+        function shoalPatFor(name) {
+          return (shoalPats[name] ||= ctx.createPattern(
+            shoalTile(THEMES[name] || THEMES.river),
+            "repeat",
+          ));
+        }
 
         /* ============================================================
    STATE
@@ -5421,6 +5619,7 @@
               made++;
             }
           };
+          if (!themeOf(track).fauna) return;
           // scaled by how much water there is, so the big courses aren't empty
           const sc = Math.max(1, Math.min(2.6, track.len / 4200));
           add("whale", Math.round(4 * sc));
@@ -6865,6 +7064,8 @@
 
           ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
+          const pal = themeOf(track);
+
           // --- shallows (screen-space pattern, drifting like a tide) ---
           ctx.save();
           const dxp = REDUCED ? 0 : (waveT * 7) % 200,
@@ -6873,7 +7074,7 @@
             ((-cam.x * cam.s) % 200) + dxp,
             ((-cam.y * cam.s) % 200) + dyp,
           );
-          ctx.fillStyle = shoalPat;
+          ctx.fillStyle = shoalPatFor(track.theme);
           ctx.fillRect(-400, -400, W + 800, H + 800);
           ctx.restore();
 
@@ -6919,30 +7120,30 @@
 
           ctx.lineJoin = "round";
           ctx.lineCap = "round";
-          ctx.strokeStyle = "#b8a67e";
+          ctx.strokeStyle = pal.bar;
           ctx.lineWidth = track.width + 74;
           ctx.stroke(path); // sand bar
-          ctx.strokeStyle = "#2f8a86";
+          ctx.strokeStyle = pal.margin;
           ctx.lineWidth = track.width + 46;
           ctx.stroke(path); // margin
-          ctx.strokeStyle = "#0f5f6d";
+          ctx.strokeStyle = pal.shelf;
           ctx.lineWidth = track.width + 22;
           ctx.stroke(path); // shelf
-          ctx.strokeStyle = "#072a3a";
+          ctx.strokeStyle = pal.deep;
           ctx.lineWidth = track.width;
           ctx.stroke(path); // deep water
 
           // current: dashes sliding downstream
           if (!REDUCED) {
             ctx.save();
-            ctx.strokeStyle = "rgba(127,233,216,.13)";
+            ctx.strokeStyle = pal.flow;
             ctx.lineWidth = 2;
             ctx.setLineDash([22, 64]);
             ctx.lineDashOffset = -waveT * 110;
             for (const f of track._flow) ctx.stroke(f);
             ctx.restore();
           }
-          ctx.strokeStyle = "rgba(127,233,216,.09)";
+          ctx.strokeStyle = pal.edge;
           ctx.lineWidth = 2;
           ctx.setLineDash([16, 22]);
           ctx.stroke(path);
@@ -7472,10 +7673,11 @@
           for (let i = 1; i < track.n; i++)
             g.lineTo(X(track.pts[i]), Y(track.pts[i]));
           g.closePath();
-          g.strokeStyle = "rgba(12,66,87,.95)";
+          const pal = themeOf(track);
+          g.strokeStyle = pal.plot;
           g.lineWidth = track.width * f.s;
           g.stroke();
-          g.strokeStyle = "rgba(127,233,216,.16)";
+          g.strokeStyle = pal.plotEdge;
           g.lineWidth = 1.4;
           g.stroke();
           const sp = track.pts[0],
@@ -7613,13 +7815,19 @@
           state = S.done;
           const r = frameRanked,
             place = r.indexOf(me) + 1;
-          const nextCourse = TRACKS[courseIdx + 1];
+          // the course this one unlocks is the next on its own chain, not the
+          // next in the whole list — those differ at a world boundary
+          const nextIdx = nextInTheme(courseIdx);
+          const nextCourse = nextIdx >= 0 ? TRACKS[nextIdx] : null;
           const unlocksNext =
             nextCourse &&
-            !courseUnlocked(courseIdx + 1) &&
+            !courseUnlocked(nextIdx) &&
             !progress.completed[track.name];
+          // challenge skins are one per river course; lava courses don't carry
+          // one yet, so there's simply nothing to award on them
           const challenge = CHALLENGE_SKINS[courseIdx];
           const unlockedSkin =
+            challenge &&
             totalLaps === 3 &&
             me.total <= challenge.target &&
             !progress.skins[challenge.id];
@@ -7639,7 +7847,7 @@
           const bits = ["your best lap " + fmt(me.bestLap)];
           if (newLapRecord) bits.push("new lap record");
           if (newTotalRecord) bits.push("new " + totalLaps + "-lap record");
-          if (unlocksNext && courseUnlocked(courseIdx + 1))
+          if (unlocksNext && courseUnlocked(nextIdx))
             bits.push("unlocked " + nextCourse.name);
           if (unlockedSkin) bits.push("unlocked " + challenge.name + " skin");
           if (unlockedDiamond) bits.push("unlocked Diamond Camo");
@@ -7754,10 +7962,11 @@
           for (let k = 1; k < t.n; k++)
             g.lineTo(t.pts[k].x * s + ox, t.pts[k].y * s + oy);
           g.closePath();
-          g.strokeStyle = "#0c4257";
+          const pal = themeOf(t);
+          g.strokeStyle = pal.thumb;
           g.lineWidth = t.width * s;
           g.stroke();
-          g.strokeStyle = "rgba(127,233,216,.35)";
+          g.strokeStyle = pal.thumbEdge;
           g.lineWidth = 1;
           g.stroke();
           for (const by of t.buoys) {
@@ -7833,9 +8042,10 @@
               el.classList.toggle("locked", locked);
               el.setAttribute("aria-selected", on);
               el.setAttribute("aria-disabled", locked);
+              const prev = locked ? prevInTheme(i) : -1;
               const msg =
-                locked && i > 0
-                  ? "Complete a race of " + TRACKS[i - 1].name + " to unlock"
+                prev >= 0
+                  ? "Complete a race of " + TRACKS[prev].name + " to unlock"
                   : "";
               el.title = msg;
               const em = el.querySelector(".lockbadge em");
@@ -8053,7 +8263,7 @@
           fillSkinGrid(skinGridFlagsEl, SHOP_SKINS);
           fillSkinGrid(
             skinGridChallengesEl,
-            CHALLENGE_SKINS.concat(DIAMOND_SKIN),
+            CHALLENGE_SKIN_LIST.concat(DIAMOND_SKIN),
           );
           refreshBoatSummary();
           refreshGear();
@@ -8489,7 +8699,11 @@
           // fauna, boosts, moored boats; syncs the menu tiles for whenever the
           // player does go back) — the same path a manual pick from the rail
           // or the popup goes through, just advanced by one instead of chosen.
-          pickCourse((courseIdx + 1) % TRACKS.length, false);
+          // Advancing within the world rather than down the whole list, so
+          // finishing the last river doesn't drop you into lava unannounced.
+          const seq = THEME_SEQ[track.theme];
+          const at = seq.indexOf(courseIdx);
+          pickCourse(seq[(at + 1) % seq.length], false);
           startRace();
         };
         document.getElementById("back").onclick = () => {
