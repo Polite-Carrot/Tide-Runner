@@ -21,6 +21,11 @@ dependencies beyond a webfont.
   **Start race** has always been the thing fighting for that space. Verified on an iPhone SE,
   an iPhone 14, a phone in landscape and an iPad.
 
+  **On a phone the menu runs down the middle.** Below 560px the laps/rivals/start row wraps
+  into a stack, and a stack of left-aligned groups of different widths reads as ragged — so
+  they centre, and the eye has one line to follow down to Start race. The desktop layout, where
+  the three sit side by side on one line, is untouched.
+
   **Each world unlocks on its own chain**: its first course is open from the start and every
   one after that wants the previous finished. So Ember Flow is raceable immediately rather
   than sitting behind all twenty-five rivers — otherwise the Lava tab would be five padlocks
@@ -154,7 +159,14 @@ stop persisting beyond the session rather than breaking the game.
 (wrapping from Skerryvore Sound back to Ouse Bends, or The Crucible back to Ember Flow) and
 starts it — for a "just keep playing" session rather than a deliberate pick each time. Within
 the world rather than down the whole list, so finishing the last river doesn't drop you into
-lava unannounced. **Race again** and **Change course** are still there alongside it.
+lava unannounced. **Race again**, **Change course** — which opens the picker straight away
+rather than dropping you on the menu to find it — and **Main menu** sit alongside it.
+
+All four are the same box: same size, same outline, transparent. The primary is picked out by
+colour alone, amber against the others' teal, rather than by being a solid slab twice the size
+of everything near it. `.go-btn` is outlined app-wide now, so Start race, Done, Resume and Spin
+all read as the same kind of thing — a half-migrated mix of solid and outlined primaries would
+look worse than either.
 
 ## The Boathouse, coins and gear
 

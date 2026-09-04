@@ -950,6 +950,9 @@
         color: rgba(234, 247, 244, 0.35);
       }
 
+      /* Outlined rather than a solid amber slab: the box and the label are the
+         same colour, so the primary sits in the same family as the .ghost
+         buttons beside it and is told apart by colour alone. */
       .go-btn {
         margin-left: auto;
         font-family: var(--display);
@@ -959,15 +962,15 @@
         text-transform: uppercase;
         padding: 11px 30px 10px;
         cursor: pointer;
-        background: var(--amber);
-        color: #04141c;
-        border: 0;
+        background: transparent;
+        color: var(--amber);
+        border: 1px solid var(--amber);
         transition:
           transform 0.12s,
-          filter 0.15s;
+          background 0.15s;
       }
       .go-btn:hover {
-        filter: brightness(1.09);
+        background: rgba(255, 216, 74, 0.12);
       }
       .go-btn:active {
         transform: translateY(1px);
@@ -1045,6 +1048,15 @@
         gap: 9px;
         margin-top: 18px;
         flex-wrap: wrap;
+      }
+      /* Four choices sitting together, so the primary matches the rest box for
+         box and is picked out by its colour rather than by being bigger. */
+      .btnrow .go-btn {
+        margin-left: 0;
+        font-weight: 600;
+        font-size: 17px;
+        letter-spacing: 0.08em;
+        padding: 9px 18px;
       }
       .ghost {
         font-family: var(--display);
@@ -1653,7 +1665,8 @@
         font-size: 13px;
       }
       .spin-btn:disabled {
-        background: rgba(255, 216, 74, 0.25);
+        background: transparent;
+        border-color: rgba(255, 216, 74, 0.3);
         color: rgba(234, 247, 244, 0.4);
         cursor: not-allowed;
       }
@@ -2041,6 +2054,34 @@
         #menu .row {
           gap: 10px;
           margin-top: 10px;
+        }
+        /* Everything down the middle on a phone. The row wraps into a stack at
+           this width, and a stack of left-aligned groups of different widths
+           reads as ragged — centred, the eye has one line to follow down to
+           Start race. */
+        #menu .row {
+          justify-content: center;
+          text-align: center;
+        }
+        #menu .row > div {
+          width: 100%;
+        }
+        #menu .row .seg {
+          justify-content: center;
+        }
+        #menu .go-btn {
+          margin-inline: auto;
+        }
+        /* centred, the label and the world sit close enough to read as one
+           phrase — a middot puts them back to being two things */
+        #menu .bh-section-head {
+          justify-content: center;
+          gap: 9px;
+        }
+        #menu .bh-section-head #courseWorld::before {
+          content: "·";
+          margin-right: 9px;
+          opacity: 0.45;
         }
       }
 
@@ -2583,11 +2624,10 @@
           <tbody id="rBody"></tbody>
         </table>
         <div class="btnrow">
-          <button class="go-btn" id="nextRace" style="margin-left: 0">
-            Next race
-          </button>
+          <button class="go-btn" id="nextRace">Next race</button>
           <button class="ghost" id="again">Race again</button>
           <button class="ghost" id="back">Change course</button>
+          <button class="ghost" id="toMenu">Main menu</button>
         </div>
       </div>
     </div>
@@ -8926,7 +8966,7 @@
           pickCourse(seq[(at + 1) % seq.length], false);
           startRace();
         };
-        document.getElementById("back").onclick = () => {
+        function leaveResults() {
           state = S.menu;
           syncConsentBanner();
           resultsEl.classList.add("hidden");
@@ -8935,7 +8975,14 @@
           hud.classList.remove("on");
           document.body.classList.remove("racing");
           touch.classList.remove("on");
+        }
+        // Change course goes straight to the picker rather than dropping you on
+        // the menu to find it yourself; Main menu is the plain way back.
+        document.getElementById("back").onclick = () => {
+          leaveResults();
+          openCoursePop();
         };
+        document.getElementById("toMenu").onclick = leaveResults;
 
         /* ============================================================
    PAUSE + SETTINGS
