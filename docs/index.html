@@ -577,40 +577,46 @@
          pushes Start race off the bottom of a phone. Cards are narrow enough
          that the next one is always part-visible, which — with the dots — is
          what says there is more to the side. */
-      .courses {
-        display: flex;
+      /* The selected course, as one card — the rail of every course plus its
+         dots row plus the "all courses" button was three rows of the menu for
+         a job the popup already does better, and Start race has always been
+         the thing fighting for that space. */
+      .course-summary-canvas {
+        display: block;
+        width: 100px;
+        height: 62px;
+        flex: 0 0 auto;
+        border: 1px solid rgba(234, 247, 244, 0.18);
+        background: rgba(4, 20, 28, 0.4);
+      }
+      .course-stats {
+        display: block;
+        margin-top: 3px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.02em;
+        color: rgba(234, 247, 244, 0.55);
+      }
+      .course-tabs {
+        margin-top: 11px;
+        flex: 0 0 auto;
+      }
+      #popGrids {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding-top: 12px;
+      }
+      .course-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+        /* start, not the default stretch: otherwise the rows share out the
+           leftover height and every card grows a tail of empty space */
+        align-content: start;
         gap: 8px;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-        margin-inline: calc(var(--sheet-pad) * -1);
-        padding-inline: var(--sheet-pad);
-        padding-bottom: 2px;
       }
-      .courses::-webkit-scrollbar {
+      .course-grid.tab-hidden {
         display: none;
-      }
-      .dots {
-        display: flex;
-        gap: 5px;
-        justify-content: center;
-        align-items: center;
-        height: 6px;
-        margin-top: 8px;
-      }
-      .dots i {
-        width: 5px;
-        height: 5px;
-        background: rgba(127, 233, 216, 0.22);
-        transition:
-          background 0.2s,
-          width 0.2s;
-      }
-      .dots i.on {
-        background: var(--amber);
-        width: 14px;
       }
       .course {
         scroll-snap-align: start;
@@ -703,23 +709,6 @@
         opacity: 0.85;
         min-height: 12px;
       }
-      .more {
-        width: 100%;
-        margin-top: 8px;
-        padding: 9px;
-        font: inherit;
-        font-size: 9.5px;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: rgba(127, 233, 216, 0.72);
-        background: rgba(127, 233, 216, 0.04);
-        border: 1px solid var(--hair);
-        cursor: pointer;
-        transition: background 0.15s;
-      }
-      .more:hover {
-        background: rgba(127, 233, 216, 0.1);
-      }
       /* ---------- all-courses popup ---------- */
       #coursePop {
         position: fixed;
@@ -784,20 +773,8 @@
       .pop-close:hover {
         background: rgba(127, 233, 216, 0.1);
       }
-      #popGrid {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
-        /* start, not the default stretch: otherwise the rows share out the
-           leftover height and every card grows a tail of empty space */
-        align-content: start;
-        gap: 8px;
-        padding-top: 12px;
-      }
-      /* the rail sizes its cards; in the grid the cell does */
-      #popGrid .course {
+      /* the cell sizes the card now that there's no rail to do it */
+      .course-grid .course {
         flex: none;
       }
 
@@ -837,11 +814,6 @@
       }
       #skinsBrowseGrids .skin-grid {
         margin-bottom: 4px;
-      }
-
-      .more:focus-visible {
-        outline: 1px solid var(--chart);
-        outline-offset: 2px;
       }
 
       .row {
@@ -1949,15 +1921,6 @@
           gap: 12px;
           margin-top: 11px;
         }
-        .course {
-          flex-basis: 118px;
-        }
-        .dots {
-          margin-top: 6px;
-        }
-        .more {
-          margin-top: 6px;
-        }
       }
 
       /* Standalone tagline reads better under the title than jammed next to it. */
@@ -1999,16 +1962,9 @@
         #menu .sheet > .brand {
           grid-column: 1 / -1;
         }
-        #menu .sheet > .label,
-        #menu .sheet > .courses,
-        #menu .sheet > .dots,
-        #menu .sheet > .more {
+        #menu .sheet > .bh-section-head,
+        #menu .sheet > .boat-summary {
           grid-column: 1;
-        }
-        #menu .sheet > .courses {
-          /* no bleed to the sheet edge here — the right-hand column is there */
-          margin-inline: 0;
-          padding-inline: 0;
         }
         #menu .sheet > .row {
           grid-column: 2;
@@ -2022,17 +1978,6 @@
           margin-left: 0;
           width: 100%;
         }
-        /* the cards keep their plotter and their name; the strapline and the
-           record line are what go, since both repeat elsewhere */
-        #menu .course p {
-          display: none;
-        }
-        #menu .course {
-          padding: 8px 8px 7px;
-        }
-        #menu .course h3 {
-          font-size: 17px;
-        }
         #menu .brand h1 {
           font-size: clamp(26px, 5vw, 34px);
         }
@@ -2042,10 +1987,6 @@
         #menu .go-btn {
           padding: 9px 20px 8px;
           font-size: 19px;
-        }
-        #menu .more {
-          padding: 6px;
-          margin-top: 5px;
         }
       }
 
@@ -2089,8 +2030,7 @@
           animation: none;
         }
         .go-btn,
-        .course,
-        .more {
+        .course {
           transition: none;
         }
         .boot-mark,
@@ -2220,16 +2160,24 @@
           the sharks.
         </p>
 
-        <p class="label">Course</p>
-        <div
-          class="courses"
-          id="courses"
-          role="listbox"
-          aria-label="Course, scroll for more"
-          tabindex="0"
-        ></div>
-        <div class="dots" id="courseDots" aria-hidden="true"></div>
-        <button class="more" id="more"></button>
+        <div class="bh-section-head">
+          <p class="label" style="margin: 0">Course</p>
+          <span class="bh-sub" id="courseWorld">Rivers</span>
+        </div>
+        <button class="boat-summary" type="button" id="courseSummary">
+          <canvas
+            class="course-summary-canvas"
+            id="courseSummaryCanvas"
+            width="200"
+            height="124"
+          ></canvas>
+          <span class="meta">
+            <b id="courseSummaryName">Ouse Bends</b>
+            <span class="cat" id="courseSummaryDesc">Wide · meandering</span>
+            <span class="course-stats" id="courseSummaryStats"></span>
+          </span>
+          <span class="browse-cta" aria-hidden="true">Change ›</span>
+        </button>
 
         <div class="row">
           <div>
@@ -2265,7 +2213,8 @@
           <span class="count" id="popCount"></span>
           <button class="pop-close" id="popClose" aria-label="Close">✕</button>
         </div>
-        <div id="popGrid"></div>
+        <div class="seg course-tabs" id="courseTabs" role="tablist"></div>
+        <div id="popGrids"></div>
       </div>
     </div>
 
@@ -7937,15 +7886,19 @@
    MENU
    ============================================================ */
         const menuEl = document.getElementById("menu"),
-          coursesEl = document.getElementById("courses"),
           popEl = document.getElementById("coursePop"),
-          popGridEl = document.getElementById("popGrid"),
-          dotsEl = document.getElementById("courseDots"),
-          moreEl = document.getElementById("more");
+          popGridsEl = document.getElementById("popGrids"),
+          courseTabsEl = document.getElementById("courseTabs"),
+          courseSummaryEl = document.getElementById("courseSummary"),
+          courseSummaryCanvas = document.getElementById("courseSummaryCanvas"),
+          courseSummaryName = document.getElementById("courseSummaryName"),
+          courseSummaryDesc = document.getElementById("courseSummaryDesc"),
+          courseSummaryStats = document.getElementById("courseSummaryStats"),
+          courseWorldEl = document.getElementById("courseWorld");
 
         /* The plotter trace on a course tile. Pulled out of the tile builder so
-   the rail and the popup grid can each have their own canvas for the same
-   course — a canvas carries no pixels through cloneNode. */
+   the summary card and the popup grid can each have their own canvas for the
+   same course — a canvas carries no pixels through cloneNode. */
         function drawCourseThumb(c, t) {
           const g = c.getContext("2d");
           const bd = t.bounds,
@@ -7982,8 +7935,9 @@
           el.type = "button";
           el.className = "course" + (i === courseIdx ? " sel" : "");
           el.dataset.i = i;
-          el.setAttribute("role", "option");
-          el.setAttribute("aria-selected", i === courseIdx);
+          // was role=option inside the rail's listbox; the rail is gone and an
+          // option outside a listbox is invalid, so these are just buttons now
+          el.setAttribute("aria-pressed", i === courseIdx);
           el.innerHTML =
             '<canvas width="220" height="150"></canvas><div><h3>' +
             t.name +
@@ -8000,14 +7954,63 @@
           return el;
         }
 
-        TRACKS.forEach((t, i) => {
-          coursesEl.appendChild(buildTile(t, i));
-          popGridEl.appendChild(buildTile(t, i));
-          const d = document.createElement("i");
-          dotsEl.appendChild(d);
+        /* One grid and one tab per world, built from THEME_SEQ rather than
+   written out — a third world is course data, not markup. */
+        const COURSE_GRIDS = {};
+        THEME_IDS.forEach((id) => {
+          const grid = document.createElement("div");
+          grid.className = "course-grid";
+          grid.dataset.cat = id;
+          THEME_SEQ[id].forEach((i) =>
+            grid.appendChild(buildTile(TRACKS[i], i)),
+          );
+          popGridsEl.appendChild(grid);
+          COURSE_GRIDS[id] = grid;
+
+          const tab = document.createElement("button");
+          tab.type = "button";
+          tab.setAttribute("role", "tab");
+          tab.dataset.cat = id;
+          tab.textContent = THEME_LABEL[id] || id;
+          tab.onclick = () => showCourseCategory(id);
+          courseTabsEl.appendChild(tab);
         });
-        moreEl.textContent = "All " + TRACKS.length + " courses";
-        document.getElementById("popCount").textContent = TRACKS.length;
+
+        function showCourseCategory(cat) {
+          Object.entries(COURSE_GRIDS).forEach(([c, el]) => {
+            el.classList.toggle("tab-hidden", c !== cat);
+          });
+          courseTabsEl.querySelectorAll("button").forEach((b) => {
+            const sel = b.dataset.cat === cat;
+            b.classList.toggle("sel", sel);
+            b.setAttribute("aria-selected", sel);
+          });
+          document.getElementById("popCount").textContent =
+            THEME_SEQ[cat].length;
+        }
+        showCourseCategory(TRACKS[courseIdx].theme);
+
+        function fleetLabel(t) {
+          if (Array.isArray(t.fleet)) return t.fleet[0] + "–" + t.fleet[1];
+          return t.fleet || 4;
+        }
+
+        /* The selected course, on the menu: what it is, and what you've done on
+   it. Records are read live rather than cached, same as the tiles. */
+        function refreshCourseSummary() {
+          const t = TRACKS[courseIdx];
+          drawCourseThumb(courseSummaryCanvas, t);
+          courseSummaryName.textContent = t.name;
+          courseSummaryDesc.textContent = t.desc;
+          courseWorldEl.textContent = THEME_LABEL[t.theme] || t.theme;
+          const lap = bestLapFor(t.name);
+          const total = bestTotalFor(t.name, totalLaps);
+          const parts = [fleetLabel(t) + " boats"];
+          if (lap) parts.push("best lap " + fmt(lap));
+          if (total) parts.push("best " + totalLaps + "-lap " + fmt(total));
+          else if (!lap) parts.push("no times yet");
+          courseSummaryStats.textContent = parts.join(" · ");
+        }
 
         function pickCourse(i, fromPop) {
           if (!courseUnlocked(i)) return;
@@ -8020,68 +8023,46 @@
           spawnHazards();
           spawnMoored();
           syncCourses();
-          // the rail always shows what you picked, however deep in the list it was
-          const railTile = coursesEl.children[i];
-          if (railTile)
-            railTile.scrollIntoView({
-              behavior: REDUCED ? "auto" : "smooth",
-              inline: "start",
-              block: "nearest",
-            });
+          refreshCourseSummary();
           if (fromPop) closeCoursePop();
         }
 
         function syncCourses() {
-          document
-            .querySelectorAll("#courses .course, #popGrid .course")
-            .forEach((el) => {
-              const i = +el.dataset.i;
-              const on = i === courseIdx;
-              const locked = !courseUnlocked(i);
-              el.classList.toggle("sel", on);
-              el.classList.toggle("locked", locked);
-              el.setAttribute("aria-selected", on);
-              el.setAttribute("aria-disabled", locked);
-              const prev = locked ? prevInTheme(i) : -1;
-              const msg =
-                prev >= 0
-                  ? "Complete a race of " + TRACKS[prev].name + " to unlock"
-                  : "";
-              el.title = msg;
-              const em = el.querySelector(".lockbadge em");
-              if (em) em.textContent = msg;
-            });
-          syncDots();
-        }
-
-        function syncDots() {
-          const dots = dotsEl.querySelectorAll("i");
-          if (!dots.length) return;
-          dots.forEach((d, n) => {
-            d.classList.toggle("on", n === courseIdx);
+          popGridsEl.querySelectorAll(".course").forEach((el) => {
+            const i = +el.dataset.i;
+            const on = i === courseIdx;
+            const locked = !courseUnlocked(i);
+            el.classList.toggle("sel", on);
+            el.classList.toggle("locked", locked);
+            el.setAttribute("aria-pressed", on);
+            el.setAttribute("aria-disabled", locked);
+            const prev = locked ? prevInTheme(i) : -1;
+            const msg =
+              prev >= 0
+                ? "Complete a race of " + TRACKS[prev].name + " to unlock"
+                : "";
+            el.title = msg;
+            const em = el.querySelector(".lockbadge em");
+            if (em) em.textContent = msg;
           });
         }
-        coursesEl.addEventListener("scroll", syncDots, { passive: true });
-        coursesEl.addEventListener("keydown", (e) => {
-          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-          e.preventDefault();
-          const next = courseIdx + (e.key === "ArrowRight" ? 1 : -1);
-          if (next >= 0 && next < TRACKS.length) pickCourse(next, false);
-        });
 
         function openCoursePop() {
           popEl.classList.add("on");
           popEl.setAttribute("aria-hidden", "false");
-          const sel = popGridEl.children[courseIdx];
+          // open on the world the current course belongs to, not whichever tab
+          // was left showing last time
+          showCourseCategory(TRACKS[courseIdx].theme);
+          const sel = popGridsEl.querySelector(".course.sel");
           if (sel) sel.scrollIntoView({ block: "center" });
           document.getElementById("popClose").focus();
         }
         function closeCoursePop() {
           popEl.classList.remove("on");
           popEl.setAttribute("aria-hidden", "true");
-          moreEl.focus();
+          courseSummaryEl.focus();
         }
-        moreEl.onclick = openCoursePop;
+        courseSummaryEl.onclick = openCoursePop;
         document.getElementById("popClose").onclick = closeCoursePop;
         addEventListener("keydown", (e) => {
           if (e.key === "Escape" && popEl.classList.contains("on")) {
@@ -8094,18 +8075,17 @@
         /* records can change between visits to the menu, so the tiles are refreshed
    rather than baked in when they're built */
         function refreshRecords() {
-          // the rail and the popup grid each hold a tile per course
-          document
-            .querySelectorAll("#courses .course, #popGrid .course")
-            .forEach((el) => {
-              const name = TRACKS[+el.dataset.i].name;
-              const lap = bestLapFor(name);
-              const total = bestTotalFor(name, totalLaps);
-              const parts = [];
-              if (lap) parts.push("Lap " + fmt(lap));
-              if (total) parts.push(totalLaps + "-lap " + fmt(total));
-              el.querySelector(".tilerec").textContent = parts.join(" · ");
-            });
+          popGridsEl.querySelectorAll(".course").forEach((el) => {
+            const name = TRACKS[+el.dataset.i].name;
+            const lap = bestLapFor(name);
+            const total = bestTotalFor(name, totalLaps);
+            const parts = [];
+            if (lap) parts.push("Lap " + fmt(lap));
+            if (total) parts.push(totalLaps + "-lap " + fmt(total));
+            el.querySelector(".tilerec").textContent = parts.join(" · ");
+          });
+          // the summary card carries the same records for the selected course
+          refreshCourseSummary();
         }
         refreshRecords();
 

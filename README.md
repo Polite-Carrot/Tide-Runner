@@ -11,12 +11,19 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Twenty-five courses**, each with its own channel width and character. The menu shows them
-  on a rail that scrolls sideways, one card per snap, with dots tracking where you are;
-  **All 17 courses** opens the full list as a popup grid. Picking one there selects it,
-  closes the popup and scrolls the rail to it, so the rail always shows what you chose.
-  Costing one row rather than three is what keeps **Start race** on screen without scrolling
-  — verified on an iPhone SE, an iPhone 14, a phone in landscape and an iPad.
+- **Thirty courses across two worlds** — twenty-five rivers and five lava channels — each with
+  its own width and character. The menu shows only the one you've got selected, as a card
+  carrying its plotter trace, its name, how many boats it fields and your best lap and best
+  total on it; **Change** opens the full list as a popup grid with a tab per world. That card
+  replaced a sideways-scrolling rail of every course, its dots row and an "all courses"
+  button — three rows for a job the popup already did better, and **Start race** has always
+  been the thing fighting for that space. Verified on an iPhone SE, an iPhone 14, a phone in
+  landscape and an iPad.
+
+  **Each world unlocks on its own chain**: its first course is open from the start and every
+  one after that wants the previous finished. So Ember Flow is raceable immediately rather
+  than sitting behind all twenty-five rivers — otherwise the Lava tab would be five padlocks
+  for most of a play session, which is a poor advert for a new world.
 
   At the gentle end, Fjord Run and Atlantic Leg are four long sweeps you can hold the
   throttle through. At the other, Corryvreckan and Hell's Mouth are 26 and 24 corners of
@@ -65,6 +72,25 @@ dependencies beyond a webfont.
   the river is not a hazard, it's a roadblock — the first cut had a 92px eddy on a 73px
   half-width and the whole field simply ground to a halt.
 
+- **The lava world is a palette, not a second renderer.** Ember Flow, Cinder Run, Obsidian
+  Narrows, Caldera Ring and The Crucible run the same physics and the same meander generator
+  as the rivers; a course carries a `theme`, and every colour the world is drawn in resolves
+  through `THEMES[theme]` — flats, the four channel bands, the flow dashes, the course
+  thumbnail and the chartplotter. Those were hardcoded literals scattered through the render
+  before, lifted out unchanged as the river palette, so a third world is a palette entry and
+  some `gen` configs rather than a render rewrite.
+
+  Lava **inverts the river's value structure**: dark basalt flats with the channel as the
+  brightest thing on screen, where a river runs dark water through lighter shallows. The two
+  inner bands are deliberately far apart in value — at 22px the shelf ring is thin, and at
+  close values it vanished into the channel and the whole river read as one flat orange slab.
+  The ground tile is randomised and used to be built once globally, so it's cached per theme
+  rather than per course; rebuilding it on every pick would reshuffle the ground underfoot.
+
+  It's cosmetic for now — the molten channel doesn't hurt you any more than water does. Idle
+  wildlife doesn't spawn on basalt, though the shark that comes for you when you run aground
+  still does, until there's a lava creature to send instead.
+
 - **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
   9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
   circuit. Wildlife is scaled by track length so the big water isn't empty.
@@ -105,20 +131,25 @@ the HUD while you race. They live in `localStorage` under `tiderunner.records.v1
 that refuses to answer (private windows, sandboxed frames) is handled, and records simply
 stop persisting beyond the session rather than breaking the game.
 
-**Next race**, on the results screen, moves straight to the next course in the list (wrapping
-from Skerryvore Sound back to Ouse Bends) and starts it — for a "just keep playing" session
-rather than a deliberate pick each time. **Race again** and **Change course** are still there
-alongside it.
+**Next race**, on the results screen, moves straight to the next course in the same world
+(wrapping from Skerryvore Sound back to Ouse Bends, or The Crucible back to Ember Flow) and
+starts it — for a "just keep playing" session rather than a deliberate pick each time. Within
+the world rather than down the whole list, so finishing the last river doesn't drop you into
+lava unannounced. **Race again** and **Change course** are still there alongside it.
 
 ## The Boathouse, coins and gear
 
-**Courses unlock in order** — finishing one (any place, any difficulty) unlocks the next.
-`courseUnlocked(i)` checks every course before `i`; picking a locked one, from the rail, the
-popup or a stale Next race target, is a no-op — a course you're actually racing was already
-unlocked when you started it.
+**Courses unlock in order within their world** — finishing one (any place, any difficulty)
+unlocks the next on that chain. `courseUnlocked(i)` walks `THEME_SEQ[theme]` rather than the
+whole list, so each world's first course is open from the start; picking a locked one, from
+the popup or a stale Next race target, is a no-op — a course you're actually racing was
+already unlocked when you started it.
 
-**Each course has a challenge skin**, earned by lapping it 3 laps under a per-course time
-target (`CHALLENGE_SKINS`, one per track). Beat all 25 and Diamond Camo unlocks on top.
+**Each river course has a challenge skin**, earned by lapping it 3 laps under a per-course
+time target (`CHALLENGE_SKINS`, index-aligned to `TRACKS`). Beat all 25 and Diamond Camo
+unlocks on top. Lava courses have no target time or skin of their own yet, so they map to
+`null` and there's simply nothing to award — Diamond stays "beat all 25" rather than quietly
+moving to 30 when the lava world landed.
 
 **Coins are earned on every finish**, not just a win, adding three things rather than
 multiplying them: `totalLaps` (the race you chose to run), a placement bonus, and a difficulty
