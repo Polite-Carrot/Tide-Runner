@@ -146,11 +146,20 @@ finish and is skipped under `prefers-reduced-motion`), separate from the plain-E
 sentence rather than folded into it. On the Skins screen it sits beside the running balance.
 
 **Shop skins** are bought with coins rather than earned, for cosmetics that don't fit a
-time-and-course challenge — **Union Jack** (200 coins) is the first, an SVG flag pattern
-built the same way the existing Monaco/Germany/Amsterdam challenge-skin flags are. A locked,
-affordable shop skin buys and equips itself on tap, no confirmation step, matching how every
-other single-tap choice in this menu already works; short of the price, tapping does nothing
-and the card's note says by how much.
+time-and-course challenge — four flags so far, each an SVG pattern built the same way the
+existing Monaco/Germany/Amsterdam challenge-skin flags are, priced as a graduated ladder
+against `coinsForFinish()`'s actual 3-12-per-race range:
+
+| Skin | Price |
+| --- | --- |
+| Rising Sun | 25 |
+| Tricolore | 40 |
+| Union Jack | 55 (was 200, set against the old formula — repriced along with the rest) |
+| Stars and Stripes | 70 |
+
+A locked, affordable shop skin buys and equips itself on tap, no confirmation step, matching
+how every other single-tap choice in this menu already works; short of the price, tapping does
+nothing and the card's note says by how much.
 
 All three unlock paths — challenge, Diamond, shop — write into the same
 `progress.skins[id] = true` map under `tiderunner.progress.v1` in `localStorage`, which is

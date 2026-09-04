@@ -2972,15 +2972,47 @@
    is the same progress.skins map challenge skins already use, which is
    what lets skinUnlocked/selectedSkin/refreshSkins treat every skin
    uniformly regardless of how it was earned. */
+        /* Prices are a graduated ladder against coinsForFinish()'s actual 3-12
+   per-race range, not the old laps x multiplier economy this shop was
+   first priced against — Union Jack's 200 (a 20-65 race grind under the
+   new formula) has been brought down in line with the others rather than
+   left stranded above them. */
         const SHOP_SKINS = [
+          {
+            id: "rising-sun",
+            name: "Rising Sun",
+            price: 25,
+            base: "#ffffff",
+            trim: "#bc002d",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%23ffffff'/%3E%3Ccircle cx='30' cy='15' r='9' fill='%23bc002d'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "tricolore",
+            name: "Tricolore",
+            price: 40,
+            base: "#0055a4",
+            trim: "#ef4135",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='20' height='30' fill='%230055a4'/%3E%3Crect x='20' width='20' height='30' fill='%23ffffff'/%3E%3Crect x='40' width='20' height='30' fill='%23ef4135'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
           {
             id: "union-jack",
             name: "Union Jack",
-            price: 200,
+            price: 55,
             base: "#00247d",
             trim: "#cf142b",
             preview:
               "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='60' height='30' fill='%2300247d'/%3E%3Cg stroke='%23ffffff' stroke-width='7'%3E%3Cline x1='0' y1='0' x2='60' y2='30'/%3E%3Cline x1='60' y1='0' x2='0' y2='30'/%3E%3C/g%3E%3Cg stroke='%23cf142b' stroke-width='3'%3E%3Cline x1='0' y1='0' x2='60' y2='30'/%3E%3Cline x1='60' y1='0' x2='0' y2='30'/%3E%3C/g%3E%3Crect x='0' y='11' width='60' height='8' fill='%23ffffff'/%3E%3Crect x='26' y='0' width='8' height='30' fill='%23ffffff'/%3E%3Crect x='0' y='13' width='60' height='4' fill='%23cf142b'/%3E%3Crect x='28' y='0' width='4' height='30' fill='%23cf142b'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "stars-and-stripes",
+            name: "Stars and Stripes",
+            price: 70,
+            base: "#b31942",
+            trim: "#0a3161",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect y='0.0' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='2.308' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='4.615' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='6.923' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='9.231' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='11.538' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='13.846' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='16.154' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='18.462' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='20.769' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='23.077' width='60' height='2.308' fill='%23b31942'/%3E%3Crect y='25.385' width='60' height='2.308' fill='%23ffffff'/%3E%3Crect y='27.692' width='60' height='2.308' fill='%23b31942'/%3E%3Crect width='24' height='16.154' fill='%230a3161'/%3E%3Ccircle cx='3.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='9.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='15.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='21.0' cy='2.69' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='3.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='9.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='15.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='21.0' cy='8.08' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='3.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='9.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='15.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3Ccircle cx='21.0' cy='13.46' r='0.9' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
           },
         ];
 
