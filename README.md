@@ -11,8 +11,8 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Forty courses across four worlds** — twenty-five rivers, and five each of lava, ice and
-  space — each with
+- **Forty-six courses across four worlds** — twenty-five rivers, and seven each of lava, ice
+  and space — each with
   its own width and character. The menu shows only the one you've got selected: its plotter
   trace on the left, and on the right its name, its character and a row per stat — how many
   boats it fields, your best lap, your best total, an em dash where you haven't set one yet
@@ -70,7 +70,7 @@ dependencies beyond a webfont.
 - **Some courses roll their fleet size.** A course can name a range instead of a number, and
   it is rolled fresh at the start of every race — Kraken Deep fields anywhere from six boats
   to twelve, so the same course is a procession one race and a scrap the next.
-- **Sixteen courses have things in the water**, and what's in it depends on the world.
+- **Twenty-two courses have things in the water**, and what's in it depends on the world.
   Hazards are declared per course and spawned per race, so a course with none is untouched
   and still races exactly as its records were set.
 
@@ -106,10 +106,19 @@ dependencies beyond a webfont.
   through `THEMES[theme]` — flats, the four channel bands, the flow dashes, the course
   thumbnail and the chartplotter. Those were hardcoded literals scattered through the render
   before, lifted out unchanged as the river palette, so a further world is a palette entry and
-  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, five
+  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, seven
   courses each, and each world's set is drawn to be a different shape of race rather than the
-  same meander five times: an open sweep, a narrow buckled one, a twisting one full of drift,
+  same meander seven times: an open sweep, a narrow buckled one, a twisting one full of drift,
   a flattened ring, and one tight enough to be unforgiving.
+
+  Every world now carries an **open, flat-out course drawn by hand** — Basalt Plain's rounded
+  triangle, The Polynya's long lead down one side and a bay round the other, The Ecliptic's
+  stadium canted eighteen degrees off the horizontal. The meander generator is a sinusoid, so
+  a straight is one of the few shapes it cannot draw at all; those three are the only courses
+  outside the rivers with real straights in them, and The Ecliptic is the only course in the
+  game whose long axis isn't square to the world. Each also carries a **surging** course, where
+  an eighth harmonic over a fourfold meander makes the channel swell and pinch rather than
+  hold one width.
 
   Lava **inverts the river's value structure**: dark basalt flats with the channel as the
   brightest thing on screen, where a river runs dark water through lighter shallows. The two
