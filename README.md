@@ -556,6 +556,10 @@ buttons, which sit at a higher z-index) without taking the pointer hostage; and 
 `detail === 0`. Regression-tested with two real touch points through CDP: the helm stays held
 and still steers while the second finger fires.
 
+**Pause is wired the same way**, so you can call for it without letting go of the helm. Both go
+through one `onTap(el, fn)` helper rather than two copies of the same trick — anything you might
+reach for mid-race belongs on the press, not on the click.
+
 **The gear sits in a box of its own**, and the box is the point. The overlay that reads the
 stick covers the whole screen, so a thumb landing _beside_ a gear button rather than on it
 planted a fresh joystick right under the gear — measured before the change: 12px outside the

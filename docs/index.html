@@ -11282,6 +11282,22 @@
           settingsReturn = null;
         }
 
+        /* Fire on the press, not on the click. A click is synthesised from a
+   whole touch sequence, and one landing while the helm is already held does
+   not reliably produce one — so anything you might reach for without letting
+   go of the stick has to be wired this way. The click handler stays for
+   keyboard activation, which arrives with detail 0. */
+        function onTap(el, fn) {
+          el.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fn();
+          });
+          el.addEventListener("click", (e) => {
+            if (e.detail === 0) fn();
+          });
+        }
+
         const gearStackEl = document.getElementById("gearStack");
         function refreshGearHud() {
           const owned = me
@@ -11302,28 +11318,14 @@
             const b = document.createElement("b");
             b.textContent = count > 9 ? "9+" : count;
             btn.appendChild(b);
-            /* Fired on pointerdown, not click. A click is synthesised from a
-               whole touch sequence, and a second finger landing while the
-               helm is already held does not reliably produce one — which is
-               exactly the case this button exists for. Firing on the press
-               also makes it feel like a trigger rather than a link. The click
-               handler is kept for keyboard activation only, which arrives
-               with detail 0. */
-            const fire = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              useGear(item.id);
-            };
-            btn.addEventListener("pointerdown", fire);
-            btn.addEventListener("click", (e) => {
-              if (e.detail === 0) useGear(item.id);
-            });
+            onTap(btn, () => useGear(item.id));
             gearStackEl.appendChild(btn);
             drawGearIcon(canvas, item);
           }
         }
 
-        pauseBtn.onclick = pauseGame;
+        // reachable with the helm still held, same as the gear
+        onTap(pauseBtn, pauseGame);
         document.getElementById("resumeBtn").onclick = resumeGame;
         document.getElementById("exitBtn").onclick = exitToMenu;
         document.getElementById("restartBtn").onclick = restartRace;
