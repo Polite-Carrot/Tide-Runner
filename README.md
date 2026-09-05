@@ -11,8 +11,8 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Sixty courses across four worlds** — twenty-five rivers, eleven lava and twelve each of
-  ice and space — each with
+- **Seventy courses across four worlds** — twenty-five rivers and fifteen each of lava, ice and
+  space — each with
   its own width and character. The menu shows only the one you've got selected: its plotter
   trace on the left, and on the right its name, its character and a row per stat — how many
   boats it fields, your best lap, your best total, an em dash where you haven't set one yet
@@ -70,7 +70,7 @@ dependencies beyond a webfont.
 - **Some courses roll their fleet size.** A course can name a range instead of a number, and
   it is rolled fresh at the start of every race — Kraken Deep fields anywhere from six boats
   to twelve, so the same course is a procession one race and a scrap the next.
-- **Thirty-two courses have things in the water**, and what's in it depends on the world.
+- **Thirty-five courses have things in the water**, and what's in it depends on the world.
   Hazards are declared per course and spawned per race, so a course with none is untouched
   and still races exactly as its records were set.
 
@@ -113,9 +113,9 @@ dependencies beyond a webfont.
   through `THEMES[theme]` — flats, the four channel bands, the flow dashes, the course
   thumbnail and the chartplotter. Those were hardcoded literals scattered through the render
   before, lifted out unchanged as the river palette, so a further world is a palette entry and
-  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, a dozen
+  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, fifteen
   courses each, and each world's set is drawn to be a different shape of race rather than the
-  same meander a dozen times: an open sweep, a narrow buckled one, a twisting one full of drift,
+  same meander fifteen times: an open sweep, a narrow buckled one, a twisting one full of drift,
   a flattened ring, and one tight enough to be unforgiving.
 
   Every world now carries an **open, flat-out course drawn by hand** — Basalt Plain's rounded
@@ -127,7 +127,20 @@ dependencies beyond a webfont.
   round; uneven spacing and a course with two different halves are things it structurally
   cannot produce, which is what those six slots are for.
 
-  Each world also has its **built environment** now, and the three are deliberately different
+  Each world also has a **technical course of hairpins** and an **angular one of straight lines**.
+  The hairpins are a notch doubling back into the loop — a row of vents, a whaling inlet, a
+  docking berth — and the angular ones are pure right angles: The Dykes is a plus sign of twelve
+  of them, Station Cuts a staircase of treads and risers.
+
+  All five of those, and the harbour below, taught the same lesson the hard way, and it is worth
+  writing down because it is not obvious: **a hairpin fails on the spacing of its control points,
+  not on its width.** Three of the five first measured as self-intersecting or cornering at a
+  radius of 5–20px, and in every case the cause was two control points left within ~50px of each
+  other where the notch met the outer loop — the smoothing cannot round a kink that tight. The
+  fix each time was to delete the crowding point and let the notch descend straight from coast
+  points 300px apart, not to widen the notch.
+
+  Each world also has its **built environment**, and the three are deliberately different
   kinds of built: Foundry Quays is an L of right angles, Erebus Quay a harbour basin with a
   jetty you go up one side of and back down the other, Relay Quays a regular hexagonal station
   ring. Erebus Quay took four passes to land — the first was 5,685px against a 4,000–5,000
