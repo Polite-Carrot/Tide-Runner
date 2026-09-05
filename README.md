@@ -11,7 +11,8 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Thirty courses across two worlds** — twenty-five rivers and five lava channels — each with
+- **Thirty-two courses across four worlds** — twenty-five rivers, five lava channels, and one
+  each of ice and space — each with
   its own width and character. The menu shows only the one you've got selected: its plotter
   trace on the left, and on the right its name, its character and a row per stat — how many
   boats it fields, your best lap, your best total, an em dash where you haven't set one yet
@@ -88,8 +89,9 @@ dependencies beyond a webfont.
   as the rivers; a course carries a `theme`, and every colour the world is drawn in resolves
   through `THEMES[theme]` — flats, the four channel bands, the flow dashes, the course
   thumbnail and the chartplotter. Those were hardcoded literals scattered through the render
-  before, lifted out unchanged as the river palette, so a third world is a palette entry and
-  some `gen` configs rather than a render rewrite.
+  before, lifted out unchanged as the river palette, so a further world is a palette entry and
+  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, one
+  course each — enough to race a world and decide whether it earns five.
 
   Lava **inverts the river's value structure**: dark basalt flats with the channel as the
   brightest thing on screen, where a river runs dark water through lighter shallows. The two
@@ -126,10 +128,45 @@ dependencies beyond a webfont.
   a body that long can't promise a clean bezier at every wag, and overlapping circles never
   show a join; at wider spacing the tail broke into a row of beads and read as a string of
   embers instead of an animal. What it throws up when it takes a boat is lava, not blood:
-  `THEMES[world].gore` supplies the two colours, and `molten` routes that spatter through
+  `THEMES[world].gore` supplies the two colours, and `goreHot` routes that spatter through
   `drawEmbers()` — over the hulls, additive, scaled up and back down across its life so it
   reads as something thrown in the air rather than the flat wake slick that spreads on the
   ground underneath.
+
+- **Ice is the river frozen in.** Glacier Run keeps water in the channel — it's still the
+  darkest thing on screen, the way a river is — and turns the plain it runs through into a
+  white sheet you can read the cracks in. The ground texture is its own generator rather than
+  the flats' short dashes: `iceTile()` lays down drifts of snow glare first, then cuts
+  branching cracks through them, each crack a short run of wandering legs with every third one
+  forked. A single polyline reads as a drawn line; a forked one reads as something that broke.
+  Every crack is drawn at all four wrap offsets so one running off an edge comes back on the
+  other, which is what stops a 200px repeating tile looking like a repeating tile.
+
+  **Seals and polar bears** wander the sheet, and the bear is also what comes for you — the
+  way the river's shark is both scenery and threat. A white bear on white ice is a smudge
+  without an edge, so its silhouette is drawn twice: once scaled up in a cold grey, then again
+  at size in white. That gives a clean outer halo without the seams that stroking each
+  overlapping part would leave criss-crossing the body.
+
+- **Space runs the same ribbon as a river of stars.** Nebula Drift inverts again — the plain
+  is the darkest thing here and the channel glows. `starTile()` scatters faint dust, then
+  stars, then a handful bright enough to carry a diffraction cross. Over the channel the four
+  flow lanes get a second, far sparser dash pass at their own speed: at `[2, 46]` the dashes
+  are dots, and dots drifting downstream are what makes it a river of stars rather than a
+  violet ribbon.
+
+  **Freighters and drifting green aliens** are the scenery, and the hunter is a saucer that
+  shoots rather than bites. It's the one hunter with a `hunterReach` (105px against everything
+  else's 30) and a `jawFar`, so the beam charges across the whole approach instead of flashing
+  on for the last few metres — the point is that you see it coming. The beam draws from the
+  rim out to whatever it's pointed at, additive, with the glow wider than the core. What it
+  leaves is green plasma through the same `goreHot` path lava's spatter uses, and the banner
+  says **Vaporised** rather than Eaten (`THEMES[world].hunterKill`).
+
+  Space is the one world whose own colour can't be the interface tint: black text on a black
+  panel is no interface at all. The black is the ground — panels and backdrop go to it — and
+  the accent is the green everything alive out there is lit in, from the drifting aliens to
+  the beam that gets you. Ice takes its white straight, since the panels stay dark.
 
 - **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
   9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
@@ -157,11 +194,15 @@ dependencies beyond a webfont.
   along.
 - **Boost pickups** — surges of current placed off the ideal line, so taking one always
   costs a little cornering.
-- **Run aground** and you lose way; stay stuck too long and something takes an interest — a
-  shark on the rivers, a lava worm on the basalt — with a hard backstop a few seconds later.
-  Getting eaten respawns you on the centreline.
-- **Wildlife and scenery** — whales, rays, sharks and shoals of fish move through the
-  channel, and moored yachts with cheering crews line the banks.
+- **Run aground** and you lose way; stay stuck too long and something takes an interest, with
+  a hard backstop a few seconds later. Which something depends on the world —
+  `THEMES[world].hunter` names the species `stepFauna()` summons, so each world brings its own
+  predator rather than every world borrowing the river's shark. Getting caught respawns you on
+  the centreline.
+- **Wildlife and scenery** — whales, rays, sharks and shoals of fish on the rivers, seals and
+  polar bears out on the ice, freighters and drifting green aliens in space, and moored yachts
+  with cheering crews along the banks. `THEMES[world].idle` is the roster and the count of
+  each on a course of ordinary length; lava's is `null`, because nothing lives out on basalt.
 
 The HUD keeps the instruments in one row along the top — lap, position, speed in knots and
 elapsed time with last lap, session best and course record — leaving the chartplotter the

@@ -122,6 +122,21 @@
         --panel: rgba(24, 10, 6, 0.78);
         --abyss: #170a06;
       }
+      body[data-world="ice"] {
+        --tint: 226, 240, 252;
+        --panel: rgba(10, 26, 38, 0.78);
+        --abyss: #08131f;
+      }
+      /* Space is the one world whose own colour can't be the tint: black text
+         on a black panel is no interface at all. The black is the ground —
+         panels and backdrop go to it — and the accent is the green everything
+         alive out there is lit in, from the drifting aliens to the beam that
+         gets you. */
+      body[data-world="space"] {
+        --tint: 122, 240, 150;
+        --panel: rgba(0, 0, 0, 0.82);
+        --abyss: #000206;
+      }
 
       * {
         box-sizing: border-box;
@@ -3391,6 +3406,53 @@
               count: 30,
             },
           },
+
+          /* ---------------------------------------------------------------
+     ICE and SPACE — one course each for now, enough to race a world and
+     see whether it's worth five. Both are the same generator and the same
+     physics as everything above; a world is a palette, a ground texture
+     and a creature roster, not a second engine.
+     --------------------------------------------------------------- */
+          {
+            name: "Glacier Run",
+            desc: "Wide · frozen",
+            theme: "ice",
+            width: 168,
+            fleet: [4, 8],
+            gen: {
+              cx: 1320,
+              cy: 980,
+              R: 590,
+              ax: 1.28,
+              ay: 1.0,
+              k: 5,
+              amp: 0.15,
+              k2: 3,
+              amp2: 0.05,
+              phase: 0.7,
+              count: 22,
+            },
+          },
+          {
+            name: "Nebula Drift",
+            desc: "Wide · weightless",
+            theme: "space",
+            width: 172,
+            fleet: [4, 8],
+            gen: {
+              cx: 1340,
+              cy: 990,
+              R: 600,
+              ax: 1.24,
+              ay: 1.06,
+              k: 3,
+              amp: 0.18,
+              k2: 6,
+              amp2: 0.04,
+              phase: 1.4,
+              count: 24,
+            },
+          },
         ];
 
         const SAMPLES = 15; // centreline points per control segment
@@ -4472,13 +4534,16 @@
             thumbEdge: "rgba(127,233,216,.35)",
             plot: "rgba(12,66,87,.95)",
             plotEdge: "rgba(127,233,216,.16)",
-            fauna: true,
+            // what wanders the flats when nothing is hunting you, and how many
+            // of each on a course of ordinary length
+            idle: { whale: 4, shark: 7, ray: 6, shoal: 13 },
             lakes: false,
             cones: false,
             hunter: "shark",
             hunterWarn: "Shark — get back in the river",
             hunterBlurb: "and watch out for the sharks",
             gore: ["#e8402a", "#eaf7f4"],
+            shadow: "#04262e",
           },
           lava: {
             flats: "#1a1210",
@@ -4506,18 +4571,90 @@
             // no idle whales, rays or shoals on basalt — nothing lives out
             // there to be scenery. The only creature on lava is the one
             // stepFauna() summons when you run aground.
-            fauna: false,
+            idle: null,
             hunter: "worm",
             hunterWarn: "Lava worm — get back in the flow",
             hunterBlurb: "and watch out for the lava worms",
             // molten rather than red-and-white: what it throws up when it takes
-            // a boat is lava, and `molten` sends that spatter through the
+            // a boat is lava, and goreHot sends that spatter through the
             // additive ember pass instead of the flat wake pass
             gore: ["#ffd07a", "#ff6a10"],
-            molten: true,
+            goreHot: true,
+            shadow: "#0d0503",
+          },
+          /* ICE — the river again, frozen in. The channel is still water and
+     still the darkest thing on screen; what changed is the plain it runs
+     through, which is now a white sheet you can read the cracks in. */
+          ice: {
+            flats: "#e9f1f7",
+            // crack ink and snow glare: the ice tile draws branching cracks
+            // with the first and dusts drift with the second
+            flatDash: "#8fa8bd",
+            flatFleck: "#ffffff",
+            bar: "#cbdae7",
+            margin: "#93b6c8",
+            shelf: "#2f6f88",
+            deep: "#0b3d55",
+            flow: "rgba(214,240,255,.2)",
+            edge: "rgba(214,240,255,.16)",
+            thumb: "#0b3d55",
+            thumbEdge: "rgba(214,240,255,.45)",
+            plot: "rgba(11,61,85,.95)",
+            plotEdge: "rgba(214,240,255,.22)",
+            tile: "ice",
+            idle: { seal: 10, bear: 3 },
+            lakes: false,
+            cones: false,
+            hunter: "bear",
+            hunterWarn: "Polar bear — get back in the water",
+            hunterBlurb: "and watch out for the polar bears",
+            gore: ["#e8402a", "#f4fbff"],
+            shadow: "#7f97ab",
+          },
+          /* SPACE — the same ribbon, run as a river of stars. Inverted again:
+     the plain is the darkest thing here and the channel glows, with the
+     flow dashes reading as streaks of star rather than current. */
+          space: {
+            flats: "#04030a",
+            flatDash: "#22264a",
+            flatFleck: "#ffffff",
+            bar: "#0a0818",
+            margin: "#150e34",
+            shelf: "#241a52",
+            deep: "#2a1c6e",
+            flow: "rgba(198,220,255,.5)",
+            edge: "rgba(150,130,255,.3)",
+            thumb: "#2a1c6e",
+            thumbEdge: "rgba(150,130,255,.5)",
+            plot: "rgba(18,10,48,.95)",
+            plotEdge: "rgba(150,130,255,.24)",
+            tile: "star",
+            // a second, sparser dash pass over the channel at a different
+            // speed, so the star river drifts rather than flows
+            sparkle: "rgba(255,255,255,.75)",
+            idle: { ship: 5, alien: 8 },
+            lakes: false,
+            cones: false,
+            hunter: "saucer",
+            // it shoots from range rather than swimming into you, and charges
+            // the beam over the whole approach
+            hunterReach: 105,
+            jawFar: 330,
+            hunterKill: "Vaporised",
+            hunterWarn: "Alien ship — get back in the stream",
+            hunterBlurb: "and watch out for the alien ships",
+            gore: ["#d9ffe6", "#37e07a"],
+            goreHot: true,
+            // nothing to cast a shadow onto out here
+            shadow: null,
           },
         };
-        const THEME_LABEL = { river: "Rivers", lava: "Lava" };
+        const THEME_LABEL = {
+          river: "Rivers",
+          lava: "Lava",
+          ice: "Ice",
+          space: "Space",
+        };
         function themeOf(t) {
           return THEMES[t && t.theme] || THEMES.river;
         }
@@ -4566,13 +4703,169 @@
           g.globalAlpha = 1;
           return c;
         }
+        /* The ice sheet: branching cracks rather than the flats' short dashes,
+   with drifts of snow glare between them. Each crack is drawn at all four
+   wrap offsets so one running off an edge comes back on the other. */
+        function iceTile(pal) {
+          const c = document.createElement("canvas");
+          c.width = c.height = 200;
+          const g = c.getContext("2d");
+          g.fillStyle = pal.flats;
+          g.fillRect(0, 0, 200, 200);
+          // drifts first, so the cracks read as cut through them
+          g.fillStyle = pal.flatFleck;
+          for (let i = 0; i < 26; i++) {
+            g.globalAlpha = 0.14 + Math.random() * 0.2;
+            const x = Math.random() * 200,
+              y = Math.random() * 200;
+            for (const [ox, oy] of [
+              [0, 0],
+              [-200, 0],
+              [0, -200],
+              [-200, -200],
+            ]) {
+              g.beginPath();
+              g.ellipse(
+                x + ox,
+                y + oy,
+                14 + Math.random() * 22,
+                7 + Math.random() * 12,
+                Math.random() * 3,
+                0,
+                7,
+              );
+              g.fill();
+            }
+          }
+          g.strokeStyle = pal.flatDash;
+          g.lineCap = "round";
+          g.lineJoin = "round";
+          for (let i = 0; i < 22; i++) {
+            // a crack is a short run of straight legs that wander, and every
+            // third one forks — a single polyline reads as a drawn line, a
+            // forked one reads as something that broke
+            const legs = 3 + Math.floor(Math.random() * 3);
+            let x = Math.random() * 200,
+              y = Math.random() * 200,
+              a = Math.random() * 7;
+            const pts = [[x, y]];
+            for (let k = 0; k < legs; k++) {
+              a += (Math.random() - 0.5) * 1.5;
+              x += Math.cos(a) * (12 + Math.random() * 26);
+              y += Math.sin(a) * (12 + Math.random() * 26);
+              pts.push([x, y]);
+            }
+            const fork =
+              i % 3 === 0
+                ? (() => {
+                    const [fx, fy] = pts[1];
+                    let b =
+                      a +
+                      (Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random());
+                    return [
+                      [fx, fy],
+                      [
+                        fx + Math.cos(b) * (10 + Math.random() * 20),
+                        fy + Math.sin(b) * (10 + Math.random() * 20),
+                      ],
+                    ];
+                  })()
+                : null;
+            g.globalAlpha = 0.2 + Math.random() * 0.35;
+            g.lineWidth = 0.8 + Math.random() * 1.5;
+            for (const [ox, oy] of [
+              [0, 0],
+              [-200, 0],
+              [0, -200],
+              [-200, -200],
+            ]) {
+              const run = (list) => {
+                g.beginPath();
+                list.forEach(([px, py], k) =>
+                  k ? g.lineTo(px + ox, py + oy) : g.moveTo(px + ox, py + oy),
+                );
+                g.stroke();
+              };
+              run(pts);
+              if (fork) run(fork);
+            }
+          }
+          g.globalAlpha = 1;
+          return c;
+        }
+
+        /* Deep space: a black ground with stars on it, most of them faint and
+   a handful bright enough to have a cross of light on them. */
+        function starTile(pal) {
+          const c = document.createElement("canvas");
+          c.width = c.height = 200;
+          const g = c.getContext("2d");
+          g.fillStyle = pal.flats;
+          g.fillRect(0, 0, 200, 200);
+          const at = (x, y, draw) => {
+            for (const [ox, oy] of [
+              [0, 0],
+              [-200, 0],
+              [0, -200],
+              [-200, -200],
+            ])
+              draw(x + ox, y + oy);
+          };
+          // faint dust
+          g.fillStyle = pal.flatDash;
+          for (let i = 0; i < 70; i++) {
+            g.globalAlpha = 0.25 + Math.random() * 0.4;
+            const r = 0.6 + Math.random() * 1.1;
+            at(Math.random() * 200, Math.random() * 200, (x, y) => {
+              g.beginPath();
+              g.arc(x, y, r, 0, 7);
+              g.fill();
+            });
+          }
+          // stars
+          g.fillStyle = pal.flatFleck;
+          for (let i = 0; i < 46; i++) {
+            g.globalAlpha = 0.3 + Math.random() * 0.55;
+            const r = 0.7 + Math.random() * 1.2;
+            at(Math.random() * 200, Math.random() * 200, (x, y) => {
+              g.beginPath();
+              g.arc(x, y, r, 0, 7);
+              g.fill();
+            });
+          }
+          // the few big ones, with a diffraction cross
+          g.strokeStyle = pal.flatFleck;
+          g.lineWidth = 0.7;
+          g.lineCap = "round";
+          for (let i = 0; i < 7; i++) {
+            g.globalAlpha = 0.5 + Math.random() * 0.35;
+            const arm = 3 + Math.random() * 4;
+            at(Math.random() * 200, Math.random() * 200, (x, y) => {
+              g.beginPath();
+              g.arc(x, y, 1.5, 0, 7);
+              g.fill();
+              g.beginPath();
+              g.moveTo(x - arm, y);
+              g.lineTo(x + arm, y);
+              g.moveTo(x, y - arm);
+              g.lineTo(x, y + arm);
+              g.stroke();
+            });
+          }
+          g.globalAlpha = 1;
+          return c;
+        }
+
+        const TILES = { ice: iceTile, star: starTile };
+
         /* One pattern per theme, built the first time that theme is raced and
    kept — the tile is randomised, so rebuilding it per course would reshuffle
    the ground under the player on every restart. */
         const shoalPats = {};
         function shoalPatFor(name) {
+          const pal = THEMES[name] || THEMES.river;
           return (shoalPats[name] ||= ctx.createPattern(
-            shoalTile(THEMES[name] || THEMES.river),
+            (TILES[pal.tile] || shoalTile)(pal),
             "repeat",
           ));
         }
@@ -5720,6 +6013,52 @@
             col: "#255b63",
             tint: "#59969a",
           },
+          /* Ice. Seals wander the floes and bears wander after them; the bear
+     is also what comes for you, the way the river's shark is both
+     scenery and threat. */
+          seal: {
+            len: 26,
+            spd: 20,
+            turn: 0.85,
+            col: "#54636f",
+            tint: "#9db0bf",
+          },
+          bear: {
+            len: 46,
+            spd: 26,
+            turn: 0.5,
+            col: "#f4f8fb",
+            tint: "#c9d7e2",
+            // it walks on the ice rather than under it, so it doesn't get the
+            // depth fade the swimmers do
+            solid: true,
+          },
+          /* Space. Ships and aliens drift past as scenery; the saucer is the
+     one that turns and comes for you. */
+          ship: {
+            len: 44,
+            spd: 18,
+            turn: 0.3,
+            col: "#39406b",
+            tint: "#98a3e0",
+            solid: true,
+          },
+          alien: {
+            len: 19,
+            spd: 24,
+            turn: 1.05,
+            col: "#2f9e57",
+            tint: "#8bf3a6",
+            solid: true,
+          },
+          saucer: {
+            len: 44,
+            spd: 32,
+            turn: 0.9,
+            col: "#2b3050",
+            tint: "#7af096",
+            solid: true,
+          },
           /* Lava's hunter. Longer and a shade slower than the shark, because
      what sells it is the body: it swims as a running stream of molten
      rock, and a short one would just read as an orange fish. */
@@ -5793,13 +6132,11 @@
               made++;
             }
           };
-          if (!themeOf(track).fauna) return;
+          const idle = themeOf(track).idle;
+          if (!idle) return;
           // scaled by how much water there is, so the big courses aren't empty
           const sc = Math.max(1, Math.min(2.6, track.len / 4200));
-          add("whale", Math.round(4 * sc));
-          add("shark", Math.round(7 * sc));
-          add("ray", Math.round(6 * sc));
-          add("shoal", Math.round(13 * sc));
+          for (const type in idle) add(type, Math.round(idle[type] * sc));
         }
 
         /* Standing lava out on the basalt — what the wildlife is to a river,
@@ -5947,13 +6284,13 @@
                 wake.push({
                   x: c.x + (Math.random() - 0.5) * 30,
                   y: c.y + (Math.random() - 0.5) * 30,
-                  vx: (Math.random() - 0.5) * (th.molten ? 130 : 70),
-                  vy: (Math.random() - 0.5) * (th.molten ? 130 : 70),
+                  vx: (Math.random() - 0.5) * (th.goreHot ? 130 : 70),
+                  vy: (Math.random() - 0.5) * (th.goreHot ? 130 : 70),
                   r: 2 + Math.random() * 5,
                   life: 0,
                   max: 0.5 + Math.random() * 0.5,
                   col: Math.random() < 0.25 ? gore[0] : gore[1],
-                  hot: !!th.molten,
+                  hot: !!th.goreHot,
                 });
               }
               if (c.feed <= 0) {
@@ -5986,8 +6323,20 @@
               c.wag += dt * 16;
               c.depth = 0.12; // right at the surface, fin up
               const gap = Math.hypot(c.x - b.x, c.y - b.y);
-              c.jaw = Math.min(1, Math.max(0, (150 - gap) / 110)); // mouth opens on the run-in
-              if (gap < 30) chomp(b);
+              // mouth opens on the run-in; a hunter that shoots instead of
+              // biting sets jawFar so the beam charges the whole way in
+              // rather than flashing on for the last few metres
+              const jf = themeOf(track).jawFar;
+              c.jaw = jf
+                ? Math.min(
+                    1,
+                    Math.max(
+                      0,
+                      (jf - gap) / (jf - (themeOf(track).hunterReach || 30)),
+                    ),
+                  )
+                : Math.min(1, Math.max(0, (150 - gap) / 110));
+              if (gap < (themeOf(track).hunterReach || 30)) chomp(b);
               continue;
             }
 
@@ -6032,7 +6381,12 @@
             }
 
             // boats spook the small stuff
-            if (c.type === "shoal" || c.type === "ray") {
+            if (
+              c.type === "shoal" ||
+              c.type === "ray" ||
+              c.type === "seal" ||
+              c.type === "alien"
+            ) {
               for (const b of boats) {
                 const dx = c.x - b.x,
                   dy = c.y - b.y,
@@ -6109,6 +6463,319 @@
           ctx.lineTo(-L * 0.26, L * 0.2);
           ctx.closePath();
           ctx.fill();
+          ctx.restore();
+        }
+
+        /* Seals from above: a fat torpedo, a head that doesn't quite separate
+   from it, and rear flippers that beat side to side. Small enough on
+   screen that anything more detailed is wasted. */
+        function drawSeal(c, L, a) {
+          const t = Math.sin(c.wag) * 0.4;
+          ctx.globalAlpha = a;
+          ctx.fillStyle = c.s.col;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, L * 0.5, L * 0.24, 0, 0, 7);
+          ctx.fill();
+          // fore flippers, held out from the body
+          for (const sgn of [-1, 1]) {
+            ctx.save();
+            ctx.rotate(sgn * (0.7 + Math.sin(c.wag) * 0.12));
+            ctx.beginPath();
+            ctx.ellipse(L * 0.1, sgn * L * 0.12, L * 0.17, L * 0.06, 0, 0, 7);
+            ctx.fill();
+            ctx.restore();
+          }
+          // rear flippers
+          ctx.save();
+          ctx.translate(-L * 0.42, 0);
+          ctx.rotate(t);
+          for (const sgn of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(
+              -L * 0.16,
+              sgn * L * 0.08,
+              -L * 0.26,
+              sgn * L * 0.22,
+            );
+            ctx.quadraticCurveTo(-L * 0.1, sgn * L * 0.1, 0, 0);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.restore();
+          // pale belly and muzzle
+          ctx.globalAlpha = a * 0.4;
+          ctx.fillStyle = c.s.tint;
+          ctx.beginPath();
+          ctx.ellipse(L * 0.06, 0, L * 0.26, L * 0.12, 0, 0, 7);
+          ctx.fill();
+          ctx.globalAlpha = a;
+          ctx.fillStyle = "#1b2530";
+          for (const sgn of [-1, 1]) {
+            ctx.beginPath();
+            ctx.arc(L * 0.36, sgn * L * 0.07, L * 0.035, 0, 7);
+            ctx.fill();
+          }
+        }
+
+        /* Polar bear from above: a slab of a body, four legs swinging out of
+   it on alternate diagonals, and a head with the long muzzle that says
+   bear rather than dog. White on white ice, so the shading is what keeps
+   it visible — a grey underside and a soft shadow do the separating. */
+        function drawBear(c, L, a) {
+          const sw = Math.sin(c.wag),
+            hy = sw * L * 0.02;
+          /* The silhouette, drawn twice: once scaled up in a cold grey and
+             once at size in white. A white bear on a white sheet needs an
+             edge or it's a smudge, and an outer halo like this gives it one
+             without the seams that stroking each overlapping part would
+             leave criss-crossing the body. */
+          const body = (col) => {
+            ctx.fillStyle = col;
+            const leg = (fx, sgn, ph) => {
+              ctx.save();
+              ctx.translate(L * fx, sgn * L * 0.2);
+              ctx.rotate(sgn * 0.25 + Math.sin(c.wag + ph) * 0.3);
+              ctx.beginPath();
+              ctx.ellipse(0, sgn * L * 0.07, L * 0.14, L * 0.08, 0, 0, 7);
+              ctx.fill();
+              ctx.restore();
+            };
+            leg(0.2, -1, 0);
+            leg(0.2, 1, Math.PI);
+            leg(-0.2, -1, Math.PI);
+            leg(-0.2, 1, 0);
+            ctx.beginPath();
+            ctx.ellipse(-L * 0.06, 0, L * 0.4, L * 0.25, 0, 0, 7); // barrel
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(L * 0.14, 0, L * 0.22, L * 0.23, 0, 0, 7); // shoulders
+            ctx.fill();
+            for (const sgn of [-1, 1]) {
+              ctx.beginPath();
+              ctx.arc(L * 0.32, sgn * L * 0.15 + hy, L * 0.055, 0, 7); // ears
+              ctx.fill();
+            }
+            ctx.beginPath();
+            ctx.ellipse(L * 0.4, hy, L * 0.2, L * 0.17, 0, 0, 7); // head
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(L * 0.56, hy, L * 0.11, L * 0.085, 0, 0, 7); // muzzle
+            ctx.fill();
+          };
+          ctx.globalAlpha = a;
+          ctx.save();
+          ctx.scale(1.11, 1.11);
+          body("#89a2b7");
+          ctx.restore();
+          body(c.s.col);
+          // fur shading down the flank, so it isn't a flat cutout
+          ctx.globalAlpha = a * 0.4;
+          ctx.fillStyle = c.s.tint;
+          ctx.beginPath();
+          ctx.ellipse(-L * 0.11, L * 0.1, L * 0.32, L * 0.12, 0, 0, 7);
+          ctx.fill();
+          ctx.globalAlpha = a;
+          ctx.fillStyle = "#1b2530";
+          for (const sgn of [-1, 1]) {
+            ctx.beginPath();
+            ctx.arc(L * 0.45, sgn * L * 0.08 + hy, L * 0.03, 0, 7);
+            ctx.fill();
+          }
+          ctx.beginPath();
+          ctx.ellipse(L * 0.63, hy, L * 0.045, L * 0.035, 0, 0, 7); // nose
+          ctx.fill();
+          if (c.jaw > 0.02) {
+            // the muzzle opens and the teeth come out of it
+            const g = c.jaw * L * 0.15;
+            ctx.fillStyle = "#8c2f3a";
+            ctx.beginPath();
+            ctx.moveTo(L * 0.64, hy);
+            ctx.quadraticCurveTo(L * 0.5, hy - g, L * 0.42, hy - g * 0.6);
+            ctx.lineTo(L * 0.42, hy + g * 0.6);
+            ctx.quadraticCurveTo(L * 0.5, hy + g, L * 0.64, hy);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#fbfdff";
+            for (let k = 0; k < 3; k++) {
+              const u = 0.46 + k * 0.055,
+                y = g * 0.72 * (1 - k * 0.18);
+              for (const sgn of [-1, 1]) {
+                ctx.beginPath();
+                ctx.moveTo(L * u, hy + sgn * y);
+                ctx.lineTo(L * (u + 0.045), hy + sgn * y * 0.3);
+                ctx.lineTo(L * (u + 0.008), hy + sgn * y * 0.25);
+                ctx.closePath();
+                ctx.fill();
+              }
+            }
+          }
+        }
+
+        /* A freighter drifting past: a long hull, engine pods either side and
+   a thruster glow that is the only additive thing on it. */
+        function drawShip(c, L, a) {
+          ctx.globalAlpha = a;
+          ctx.fillStyle = c.s.col;
+          ctx.beginPath();
+          ctx.moveTo(L * 0.5, 0);
+          ctx.lineTo(L * 0.1, -L * 0.13);
+          ctx.lineTo(-L * 0.42, -L * 0.11);
+          ctx.lineTo(-L * 0.42, L * 0.11);
+          ctx.lineTo(L * 0.1, L * 0.13);
+          ctx.closePath();
+          ctx.fill();
+          for (const sgn of [-1, 1]) {
+            ctx.beginPath();
+            ctx.roundRect
+              ? ctx.roundRect(
+                  -L * 0.34,
+                  sgn * L * 0.16 - L * 0.05,
+                  L * 0.4,
+                  L * 0.1,
+                  L * 0.04,
+                )
+              : ctx.rect(
+                  -L * 0.34,
+                  sgn * L * 0.16 - L * 0.05,
+                  L * 0.4,
+                  L * 0.1,
+                );
+            ctx.fill();
+          }
+          // bridge
+          ctx.fillStyle = c.s.tint;
+          ctx.globalAlpha = a * 0.85;
+          ctx.beginPath();
+          ctx.ellipse(L * 0.14, 0, L * 0.11, L * 0.07, 0, 0, 7);
+          ctx.fill();
+          // running lights down the spine
+          for (let k = -1; k <= 1; k++) {
+            ctx.beginPath();
+            ctx.arc(L * 0.02 + k * L * 0.14, 0, L * 0.018, 0, 7);
+            ctx.fill();
+          }
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.globalAlpha = a * (0.45 + 0.2 * Math.sin(c.wag * 2));
+          ctx.fillStyle = "#9fd4ff";
+          for (const sgn of [-1, 1]) {
+            ctx.beginPath();
+            ctx.ellipse(-L * 0.4, sgn * L * 0.16, L * 0.12, L * 0.05, 0, 0, 7);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        /* A little green one, drifting. Drawn round rather than facing, since
+   the wander code spins it through every heading and a figure with a
+   front would spend most of its time backwards. */
+        function drawAlien(c, L, a) {
+          const bob = Math.sin(c.wag) * L * 0.05;
+          ctx.globalAlpha = a;
+          // tentacles, trailing and waving
+          ctx.strokeStyle = c.s.col;
+          ctx.lineWidth = L * 0.09;
+          ctx.lineCap = "round";
+          for (let k = -1; k <= 1; k++) {
+            ctx.beginPath();
+            ctx.moveTo(-L * 0.1, k * L * 0.16);
+            ctx.quadraticCurveTo(
+              -L * 0.34,
+              k * L * 0.2 + Math.sin(c.wag + k) * L * 0.1,
+              -L * 0.5,
+              k * L * 0.26 + Math.sin(c.wag * 1.4 + k) * L * 0.14,
+            );
+            ctx.stroke();
+          }
+          ctx.fillStyle = c.s.col;
+          ctx.beginPath();
+          ctx.ellipse(0, bob, L * 0.36, L * 0.32, 0, 0, 7);
+          ctx.fill();
+          ctx.globalAlpha = a * 0.5;
+          ctx.fillStyle = c.s.tint;
+          ctx.beginPath();
+          ctx.ellipse(L * 0.08, bob - L * 0.08, L * 0.18, L * 0.12, 0, 0, 7);
+          ctx.fill();
+          // the eyes, which are the whole character
+          ctx.globalAlpha = a;
+          ctx.fillStyle = "#0a1a10";
+          for (const sgn of [-1, 1]) {
+            ctx.save();
+            ctx.translate(L * 0.1, bob + sgn * L * 0.15);
+            ctx.rotate(sgn * 0.5);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, L * 0.16, L * 0.1, 0, 0, 7);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        /* The saucer, and the beam. It shoots from range rather than closing
+   to touching distance (THEMES.space.hunterReach), so the beam is what
+   the player actually sees coming — drawn from the rim out to whatever
+   it's pointed at, additively, with the glow wider than the core. */
+        function drawSaucer(c, L, a) {
+          const spin = c.wag * 1.6;
+          if (c.jaw > 0.25) {
+            const tgt = c.hunt;
+            const reach = tgt
+              ? Math.max(L * 0.5, Math.hypot(tgt.x - c.x, tgt.y - c.y))
+              : L * 1.1;
+            ctx.save();
+            ctx.globalCompositeOperation = "lighter";
+            const u = (c.jaw - 0.25) / 0.75;
+            ctx.globalAlpha = a * u * 0.5;
+            ctx.fillStyle = c.s.tint;
+            // the glow: a wedge opening out to the target
+            ctx.beginPath();
+            ctx.moveTo(L * 0.1, -L * 0.06);
+            ctx.lineTo(reach, -L * 0.2 * u);
+            ctx.lineTo(reach, L * 0.2 * u);
+            ctx.lineTo(L * 0.1, L * 0.06);
+            ctx.closePath();
+            ctx.fill();
+            // the core, which stays thin all the way down
+            ctx.globalAlpha = a * u;
+            ctx.fillStyle = "#e8ffef";
+            ctx.fillRect(L * 0.1, -L * 0.035, reach - L * 0.1, L * 0.07);
+            ctx.restore();
+          }
+          ctx.globalAlpha = a;
+          // hull
+          ctx.fillStyle = c.s.col;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, L * 0.5, L * 0.26, 0, 0, 7);
+          ctx.fill();
+          // dome
+          ctx.fillStyle = "#4b5480";
+          ctx.beginPath();
+          ctx.ellipse(L * 0.02, 0, L * 0.22, L * 0.15, 0, 0, 7);
+          ctx.fill();
+          ctx.globalAlpha = a * 0.55;
+          ctx.fillStyle = c.s.tint;
+          ctx.beginPath();
+          ctx.ellipse(L * 0.05, -L * 0.02, L * 0.13, L * 0.08, 0, 0, 7);
+          ctx.fill();
+          // the ring of lights, chasing round the rim
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.fillStyle = c.s.tint;
+          for (let k = 0; k < 7; k++) {
+            const th = (k / 7) * Math.PI * 2 + spin;
+            ctx.globalAlpha = a * (0.3 + 0.5 * (0.5 + 0.5 * Math.sin(th * 2)));
+            ctx.beginPath();
+            ctx.ellipse(
+              Math.cos(th) * L * 0.38,
+              Math.sin(th) * L * 0.19,
+              L * 0.045,
+              L * 0.035,
+              0,
+              0,
+              7,
+            );
+            ctx.fill();
+          }
           ctx.restore();
         }
 
@@ -6226,15 +6893,18 @@
 
         function drawCreature(c) {
           const L = c.size,
-            a = 0.26 + (1 - c.depth) * 0.52;
+            // depth is a swimmer's fade — the ones that never submerge (a bear
+            // on the ice, anything in space) stay solid instead
+            a = c.s.solid ? 0.94 : 0.26 + (1 - c.depth) * 0.52;
           ctx.save();
           ctx.translate(c.x, c.y);
           ctx.rotate(c.h);
-          if (c.type !== "worm") {
+          const groundShadow = themeOf(track).shadow;
+          if (c.type !== "worm" && groundShadow) {
             // the worm lays its own, blob by blob — one ellipse can't follow
             // a body this long
             ctx.globalAlpha = a * 0.35; // shadow on the ground below
-            ctx.fillStyle = themeOf(track).molten ? "#0d0503" : "#04262e";
+            ctx.fillStyle = groundShadow;
             ctx.beginPath();
             ctx.ellipse(-L * 0.06, L * 0.13, L * 0.54, L * 0.22, 0, 0, 7);
             ctx.fill();
@@ -6412,6 +7082,16 @@
             }
           } else if (c.type === "worm") {
             drawWorm(c, L, a);
+          } else if (c.type === "seal") {
+            drawSeal(c, L, a);
+          } else if (c.type === "bear") {
+            drawBear(c, L, a);
+          } else if (c.type === "ship") {
+            drawShip(c, L, a);
+          } else if (c.type === "alien") {
+            drawAlien(c, L, a);
+          } else if (c.type === "saucer") {
+            drawSaucer(c, L, a);
           } else {
             // shoal
             for (const f of c.fish) {
@@ -6437,12 +7117,13 @@
           if (!REDUCED) {
             const th = themeOf(track),
               gore = th.gore || ["#e8402a", "#eaf7f4"];
-            // lava throws further, burns longer and goes up rather than out
-            const n = th.molten ? 36 : 26;
+            // lava and plasma throw further, burn longer and go up rather than
+            // out; blood and foam stay flat on the water
+            const n = th.goreHot ? 36 : 26;
             for (let i = 0; i < n; i++) {
               const a = Math.random() * 7,
                 r = 8 + Math.random() * 22;
-              const v = th.molten
+              const v = th.goreHot
                 ? 95 + Math.random() * 175
                 : 50 + Math.random() * 90;
               wake.push({
@@ -6450,15 +7131,15 @@
                 y: b.y + Math.sin(a) * r,
                 vx: Math.cos(a) * v,
                 vy: Math.sin(a) * v,
-                r: th.molten
+                r: th.goreHot
                   ? 2.4 + Math.random() * 4.6
                   : 3 + Math.random() * 6,
                 life: 0,
-                max: th.molten
+                max: th.goreHot
                   ? 0.85 + Math.random() * 0.75
                   : 0.7 + Math.random() * 0.6,
                 col: i % 5 === 0 ? gore[0] : gore[1],
-                hot: !!th.molten,
+                hot: !!th.goreHot,
               });
             }
           }
@@ -7565,6 +8246,20 @@
             for (const f of track._flow) ctx.stroke(f);
             ctx.restore();
           }
+          /* Space runs a second, far sparser pass over the same four lanes at
+             its own speed: at [2, 46] the dashes are dots, and dots drifting
+             down the channel are what makes it a river of stars rather than a
+             violet ribbon. */
+          if (pal.sparkle) {
+            ctx.save();
+            ctx.strokeStyle = pal.sparkle;
+            ctx.lineWidth = 2.4;
+            ctx.lineCap = "round";
+            ctx.setLineDash([2, 46]);
+            ctx.lineDashOffset = REDUCED ? 0 : -waveT * 34;
+            for (const f of track._flow) ctx.stroke(f);
+            ctx.restore();
+          }
           ctx.strokeStyle = pal.edge;
           ctx.lineWidth = 2;
           ctx.setLineDash([16, 22]);
@@ -8241,7 +8936,7 @@
               .querySelector("i")
               .style.setProperty("--w", (me.boost / 2.2) * 100 + "%");
           if (me.chomped > 0) {
-            sharkEl.textContent = "Eaten";
+            sharkEl.textContent = themeOf(track).hunterKill || "Eaten";
             sharkEl.className = "bit";
           } else if (me.hunter) {
             sharkEl.textContent =
@@ -8723,7 +9418,7 @@
           else if (s.id === "diamond")
             note = unlocked
               ? "All challenges complete"
-              : "Unlock all 25 challenge skins";
+              : "Unlock all " + CHALLENGE_SKIN_LIST.length + " challenge skins";
           else if (s.price)
             note = unlocked
               ? "Purchased"
