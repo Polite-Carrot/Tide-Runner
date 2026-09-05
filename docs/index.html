@@ -5863,10 +5863,16 @@
             // body.joy-left / .joy-right in the stylesheet
             document.body.classList.toggle("joy-left", x < W / 2);
             document.body.classList.toggle("joy-right", x >= W / 2);
-            touch.setPointerCapture(e.pointerId);
             joy.classList.add("act");
           });
-          touch.addEventListener("pointermove", (e) => {
+          /* Tracked on the window rather than captured to #touch. Pointer
+             capture was there to stop the stick dropping when the thumb slid
+             over something on top of the overlay — the gear buttons sit at a
+             higher z-index — but capturing a touch pointer is what made the
+             second finger unusable: you could not fire gear without letting
+             go of the helm first. Window listeners keep the stick tracking
+             wherever the thumb goes and leave every other finger free. */
+          addEventListener("pointermove", (e) => {
             if (e.pointerId === active) move(e);
           });
           const release = (e) => {
@@ -5877,8 +5883,8 @@
             thumb.style.transform = "translate(-50%,-50%)";
             joy.classList.remove("act");
           };
-          touch.addEventListener("pointerup", release);
-          touch.addEventListener("pointercancel", release);
+          addEventListener("pointerup", release);
+          addEventListener("pointercancel", release);
         })();
 
         function controls() {
@@ -11278,7 +11284,22 @@
             const b = document.createElement("b");
             b.textContent = count > 9 ? "9+" : count;
             btn.appendChild(b);
-            btn.onclick = () => useGear(item.id);
+            /* Fired on pointerdown, not click. A click is synthesised from a
+               whole touch sequence, and a second finger landing while the
+               helm is already held does not reliably produce one — which is
+               exactly the case this button exists for. Firing on the press
+               also makes it feel like a trigger rather than a link. The click
+               handler is kept for keyboard activation only, which arrives
+               with detail 0. */
+            const fire = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              useGear(item.id);
+            };
+            btn.addEventListener("pointerdown", fire);
+            btn.addEventListener("click", (e) => {
+              if (e.detail === 0) useGear(item.id);
+            });
             gearStackEl.appendChild(btn);
             drawGearIcon(canvas, item);
           }

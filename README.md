@@ -544,6 +544,18 @@ fire, so there's nothing to lose by closing early.
 
 Touch controls appear automatically on coarse-pointer devices.
 
+**Two fingers work at once**, which took fixing. The stick was tracked with
+`setPointerCapture` on the full-screen touch overlay, and the gear buttons fired on `click`.
+Between them a second finger was useless: a click is synthesised from a whole touch sequence,
+and one landing while the helm is already held does not reliably produce one, so firing gear
+meant letting go of the helm first — the one moment you cannot afford to. The stick is now
+tracked with `pointermove` / `pointerup` on the window instead of a captured pointer, which is
+what the capture was really for (keeping the stick alive when the thumb slides over the gear
+buttons, which sit at a higher z-index) without taking the pointer hostage; and gear fires on
+`pointerdown`, with the `click` handler kept only for keyboard activation, which arrives with
+`detail === 0`. Regression-tested with two real touch points through CDP: the helm stays held
+and still steers while the second finger fires.
+
 ## Analytics
 
 The web build can send gameplay events to Google Analytics (GA4, `G-2JK7DZ59VV`) — but nothing
