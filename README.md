@@ -389,8 +389,8 @@ what lets `skinUnlocked()`, `selectedSkin()` and the Skins grid treat every skin
 regardless of how it was earned. Adding another shop skin is one entry in `SHOP_SKINS`; adding
 another earn path is one more branch in `skinUnlocked()`.
 
-**The Skins screen is split into three tabbed categories** — Colours, Flags, then Challenges
-(the 25 challenge skins plus Diamond Camo, which needs all of them) — each its own `.skin-grid`,
+**The Skins screen is split into four tabbed categories** — Colours, Flags, Challenges
+(the 25 challenge skins plus Diamond Camo, which needs all of them), then Other — each its own `.skin-grid`,
 built by the same shared `skinCard()`/`fillSkinGrid()` helpers so a skin's card looks and
 behaves identically regardless of which grid it's in. Only one grid is shown at a time, switched
 via a `.seg` tab bar (the same segmented-control style as the Laps/Rivals pickers); opening the
@@ -398,6 +398,51 @@ menu defaults to whichever tab holds the currently equipped skin, via `skinCateg
 
 **Nine solid colours now**, not five — Harbour Gold, Jet Black, Volt Green, Flare Red and Ion
 Cyan, plus Pearl White, Riptide Purple, Sunset Orange and Coral Pink.
+
+### Animated skins
+
+**The three lime skins in Other are drawn per pixel, not painted.** `ANIMATED_SKINS` holds
+Lime Nebula (fractal gas clouds with twinkling stars), Lime Flux (domain-warped camo
+posterised to four tones so the blob edges stay crisp while the blobs drift) and Lime Pulse
+(hex cells lit by a wave travelling bow to stern). All three cost 300 coins and save through
+the same `progress.skins` map as everything else, so nothing about buying, equipping or
+persisting them is special-cased — `skinCategoryFor()` gained one branch and that is the whole
+of their integration. Each carries an `anim: { speed, intensity }` pair; the values in the file
+are the defaults, not constraints.
+
+There is no shader stage in this game, so the "material" is an `ImageData` buffer filled by
+hand and stretched over the hull. Three things keep that affordable:
+
+- **48×24 per skin.** The hull is about 36px across on screen, so the buffer is drawn very
+  slightly down rather than up, and `imageSmoothing` turns the noise lattice into cloud. The
+  garage previews stretch the same buffer, which is why they read soft — deliberate, since a
+  preview-sized field would cost 16× as much for a picture nobody races on.
+- **A cache keyed by skin _and_ size, holding the time it was last built at.** Asking for the
+  same field twice in a frame builds it once.
+- **`FIELD_FPS = 24`, by quantising the clock rather than counting frames.** The motion is slow
+  enough that the rebuild rate is invisible, and it holds regardless of a skin's `speed`.
+  Measured cost per animated hull: 0.56ms per build, 0.23ms amortised per frame.
+
+**A hex tiling is the Voronoi diagram of a triangular lattice**, so Lime Pulse finds a pixel's
+cell by taking its nearest lattice point out of nine candidates. The gap between the nearest
+and the runner-up is the distance to the cell wall, which gives the emissive edge for free —
+no separate edge pass.
+
+**`skinT` belongs to `render()`**, which runs every frame in every state including the menu.
+The garage's own rAF loop therefore only redraws; when it also advanced the clock, the skins
+ran at double speed anywhere a preview was on screen.
+
+**Deciding whether a preview is on screen needs `checkVisibility()`.** Neither of the obvious
+tests works here: the browse popup is `position: fixed`, so every canvas inside it reports a
+null `offsetParent` whether it is open or not, and it hides itself with `visibility` rather
+than `display`, so it keeps its client rects while shut. The loop shuts itself down when
+nothing it holds is visible, which is the normal state for a grid on an unselected tab, so
+`showSkinCategory()` and `openSkinsBrowse()` re-arm it — those are the two moments that can
+put a hidden preview on screen.
+
+**Reduced motion freezes the field at t=0 rather than dropping it.** The player bought a
+pattern, so they still get the pattern; it just holds still. That is also the static fallback
+for anything that can't keep up.
 
 **Every card previews the actual boat, not a flat swatch.** `traceHull()`, `paintPlayerSkin()`
 and `hull()` used to be closed over the live game's own canvas context; they now take a context
