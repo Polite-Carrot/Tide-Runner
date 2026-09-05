@@ -117,8 +117,19 @@ dependencies beyond a webfont.
   and green to starboard: the game is "keep the reds to port" whatever the marks are made of.
 
   Otherwise it's cosmetic for now — the molten channel doesn't hurt you any more than water
-  does. Idle wildlife doesn't spawn on basalt, though the shark that comes for you when you
-  run aground still does, until there's a lava creature to send instead.
+  does. Nothing lives out on the basalt to be scenery, so the only creature on a lava course
+  is **the lava worm** that comes for you when you run aground: `THEMES[world].hunter` names
+  which species `stepFauna()` summons, so a world brings its own predator rather than every
+  world borrowing the river's shark. It's drawn as a running stream of molten rock — a chain
+  of overlapping blobs down an undulating spine, in three passes (cooled crust, molten body,
+  additive core) with a few crust plates riding on top. Blobs rather than one outline because
+  a body that long can't promise a clean bezier at every wag, and overlapping circles never
+  show a join; at wider spacing the tail broke into a row of beads and read as a string of
+  embers instead of an animal. What it throws up when it takes a boat is lava, not blood:
+  `THEMES[world].gore` supplies the two colours, and `molten` routes that spatter through
+  `drawEmbers()` — over the hulls, additive, scaled up and back down across its life so it
+  reads as something thrown in the air rather than the flat wake slick that spreads on the
+  ground underneath.
 
 - **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
   9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
@@ -146,8 +157,9 @@ dependencies beyond a webfont.
   along.
 - **Boost pickups** — surges of current placed off the ideal line, so taking one always
   costs a little cornering.
-- **Run aground** and you lose way; stay stuck too long and a shark takes an interest, with
-  a hard backstop a few seconds later. Getting eaten respawns you on the centreline.
+- **Run aground** and you lose way; stay stuck too long and something takes an interest — a
+  shark on the rivers, a lava worm on the basalt — with a hard backstop a few seconds later.
+  Getting eaten respawns you on the centreline.
 - **Wildlife and scenery** — whales, rays, sharks and shoals of fish move through the
   channel, and moored yachts with cheering crews line the banks.
 
@@ -395,7 +407,13 @@ armed bonus just means watching another ad next time) and needs swapping for a r
 rewarded-ad SDK call before shipping, calling `onComplete()` only once the viewer has actually
 earned the reward.
 
-Two close/reopen edge cases around that flow are guarded explicitly rather than left as bugs:
+**The wheel lands on the wedge it actually pays out.** The rotation delta is measured from
+where the wheel is currently parked (`wheelRotation` mod 360), not from zero. It accumulates
+across spins, so computing the delta as `1800 + (360 - segMid)` was only right for the first
+spin of a session; every one after that landed the previous spin's offset away from the wedge
+it had just awarded, and the pointer said one thing while the coins said another.
+
+Three close/reopen edge cases around that flow are guarded explicitly rather than left as bugs:
 `adLoading` tracks whether a `playRewardedAd()` call is still in flight, independently of the
 button's own `disabled` state, because closing the popup and reopening it mid-load used to
 reset the watch-ad button back to clickable — `refreshSpinStatus()` had no way to know a request
@@ -404,7 +422,12 @@ bumped every time `openSpinPop()` runs, is what the auto-close timer scheduled a
 spin checks against before closing: without it, reopening the popup — say, to watch the bonus
 ad — inside that timer's 2s window let it fire anyway and slam the new session shut, since its
 only check was "is the popup currently open," which reopening had made true again for an
-unrelated reason.
+unrelated reason. That same auto-close is now held in `spinCloseTimer` and cancelled the
+moment the player taps the ad: the ad offer appears exactly when the free spin lands, which is
+also when the two-second timer starts, so tapping it inside that window used to close the
+popup mid-ad and drop the player back on the Boathouse to go and find their bonus spin. The
+ad's completion handler reopens the popup if it had already closed, so watching an ad always
+ends on the wheel with the bonus spin ready.
 
 **The wheel itself lives in its own full-screen popup (`#spinPop`), not inline in the
 Boathouse.** The Daily Spin section there is just a launcher — reusing the `.boat-summary`

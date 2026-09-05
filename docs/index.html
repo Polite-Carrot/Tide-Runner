@@ -2338,7 +2338,7 @@
             </button>
           </div>
         </div>
-        <p class="tag menu-tag">
+        <p class="tag menu-tag" id="menuTag">
           Race the fleet at a difficulty of your choosing — and watch out for
           the sharks.
         </p>
@@ -4475,6 +4475,10 @@
             fauna: true,
             lakes: false,
             cones: false,
+            hunter: "shark",
+            hunterWarn: "Shark — get back in the river",
+            hunterBlurb: "and watch out for the sharks",
+            gore: ["#e8402a", "#eaf7f4"],
           },
           lava: {
             flats: "#1a1210",
@@ -4499,10 +4503,18 @@
             lakeCore: "#ff9c3a",
             // channel marks are spatter cones rather than floating buoys
             cones: true,
-            // no idle whales, rays or shoals on basalt — the hunting shark
-            // stepFauna() summons when you run aground still comes, until
-            // there's a lava creature to send instead
+            // no idle whales, rays or shoals on basalt — nothing lives out
+            // there to be scenery. The only creature on lava is the one
+            // stepFauna() summons when you run aground.
             fauna: false,
+            hunter: "worm",
+            hunterWarn: "Lava worm — get back in the flow",
+            hunterBlurb: "and watch out for the lava worms",
+            // molten rather than red-and-white: what it throws up when it takes
+            // a boat is lava, and `molten` sends that spatter through the
+            // additive ember pass instead of the flat wake pass
+            gore: ["#ffd07a", "#ff6a10"],
+            molten: true,
           },
         };
         const THEME_LABEL = { river: "Rivers", lava: "Lava" };
@@ -5708,7 +5720,21 @@
             col: "#255b63",
             tint: "#59969a",
           },
+          /* Lava's hunter. Longer and a shade slower than the shark, because
+     what sells it is the body: it swims as a running stream of molten
+     rock, and a short one would just read as an orange fish. */
+          worm: {
+            len: 62,
+            spd: 30,
+            turn: 0.7,
+            col: "#3a1a10",
+            tint: "#ff9c3a",
+          },
         };
+        /* Which creature comes for you when you run aground here. */
+        function hunterType() {
+          return themeOf(track).hunter || "shark";
+        }
 
         function makeCreature(type, x, y) {
           const s = SPECIES[type];
@@ -5867,11 +5893,12 @@
                 continue;
               }
               if (b.offTime > HUNT_AT && !b.hunter) {
-                // nearest shark that isn't already busy
+                // nearest hunter that isn't already busy
+                const ht = hunterType();
                 let best = null,
                   bdst = Infinity;
                 for (const c of FAUNA) {
-                  if (c.type !== "shark" || c.hunt) continue;
+                  if (c.type !== ht || c.hunt) continue;
                   const d = (c.x - b.x) ** 2 + (c.y - b.y) ** 2;
                   if (d < bdst) {
                     bdst = d;
@@ -5882,7 +5909,7 @@
                   // none near — one comes up from deeper water
                   const a = Math.random() * Math.PI * 2;
                   best = makeCreature(
-                    "shark",
+                    ht,
                     b.x + Math.cos(a) * 380,
                     b.y + Math.sin(a) * 380,
                   );
@@ -5897,7 +5924,7 @@
                 b.hunter.hunt = null;
                 b.hunter = null;
               }
-              // backstop: if the shark somehow can't reach you, it still gets you
+              // backstop: if it somehow can't reach you, it still gets you
               if (b.offTime > EAT_AT && b.hunter) chomp(b);
             }
           }
@@ -5914,17 +5941,21 @@
               c.y += Math.sin(c.h) * c.s.spd * 0.5 * dt;
               c.wag += dt * 20;
               c.depth = 0.06;
-              if (!REDUCED && Math.random() < dt * 30)
+              if (!REDUCED && Math.random() < dt * 30) {
+                const th = themeOf(track),
+                  gore = th.gore || ["#e8402a", "#eaf7f4"];
                 wake.push({
                   x: c.x + (Math.random() - 0.5) * 30,
                   y: c.y + (Math.random() - 0.5) * 30,
-                  vx: (Math.random() - 0.5) * 70,
-                  vy: (Math.random() - 0.5) * 70,
+                  vx: (Math.random() - 0.5) * (th.molten ? 130 : 70),
+                  vy: (Math.random() - 0.5) * (th.molten ? 130 : 70),
                   r: 2 + Math.random() * 5,
                   life: 0,
                   max: 0.5 + Math.random() * 0.5,
-                  col: Math.random() < 0.25 ? "#e8402a" : "#eaf7f4",
+                  col: Math.random() < 0.25 ? gore[0] : gore[1],
+                  hot: !!th.molten,
                 });
+              }
               if (c.feed <= 0) {
                 c.flee = 3.2;
                 c.depth = 0.5;
@@ -6081,17 +6112,133 @@
           ctx.restore();
         }
 
+        /* A running stream of molten rock with a head on it. Built as a chain
+   of blobs down an undulating spine rather than one outline: overlapping
+   circles read as something flowing and none of the joins ever show,
+   which a bezier body of this length could not promise. Three passes over
+   the same spine — cooled crust, molten body, additive core — so it
+   glows from the inside like the lakes out on the flats do. */
+        function drawWorm(c, L, a) {
+          // Enough blobs, close enough together, that neighbours always
+          // overlap — at wider spacing the tail broke into a row of beads
+          // and the whole thing read as a string of embers, not a body.
+          const N = 16;
+          const pts = [];
+          for (let i = 0; i < N; i++) {
+            const u = i / (N - 1); // 0 at the head, 1 at the tail tip
+            // the head barely moves and the tail whips: a body dragged along
+            // by its head, not a fish beating from the middle
+            const amp = L * 0.02 + u * u * L * 0.17;
+            pts.push({
+              x: L * 0.5 - u * L * 1.85,
+              y: Math.sin(c.wag * 1.15 - i * 0.55) * amp,
+              r: L * 0.19 * (1 - u * 0.62) * (i === 0 ? 1.08 : 1),
+            });
+          }
+          // its own shadow, following the body rather than the one blunt
+          // ellipse drawCreature lays down for everything else
+          ctx.globalAlpha = a * 0.3;
+          ctx.fillStyle = "#0d0503";
+          for (const p of pts) {
+            ctx.beginPath();
+            ctx.arc(p.x + L * 0.05, p.y + L * 0.09, p.r * 1.15, 0, 7);
+            ctx.fill();
+          }
+          const blob = (k, col) => {
+            ctx.fillStyle = col;
+            for (let i = 0; i < N; i++) {
+              const p = pts[i];
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.r * k, 0, 7);
+              ctx.fill();
+            }
+          };
+          // cooled crust, thicker in patches so the skin looks broken up
+          ctx.globalAlpha = a;
+          ctx.fillStyle = c.s.col;
+          for (let i = 0; i < N; i++) {
+            const p = pts[i];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * (1.24 + Math.sin(i * 2.3) * 0.1), 0, 7);
+            ctx.fill();
+          }
+          blob(1, "#e8500c");
+          ctx.globalAlpha = a * 0.9;
+          blob(0.66, c.s.tint);
+          // cooled plates riding on the flow, every third segment
+          ctx.globalAlpha = a * 0.85;
+          ctx.fillStyle = c.s.col;
+          for (let i = 2; i < N - 1; i += 3) {
+            const p = pts[i];
+            ctx.beginPath();
+            ctx.ellipse(
+              p.x,
+              p.y - p.r * 0.25,
+              p.r * 0.6,
+              p.r * 0.34,
+              Math.sin(i) * 0.5,
+              0,
+              7,
+            );
+            ctx.fill();
+          }
+          // the core is the only additive part: it lights the crust around it
+          // without washing the whole animal out to white
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.globalAlpha = a * (0.5 + 0.14 * Math.sin(c.wag * 2));
+          blob(0.46, "#ffd07a");
+          ctx.restore();
+          // head: two eye pits, and a maw that opens on the run-in
+          ctx.globalAlpha = a;
+          if (c.jaw > 0.02) {
+            const g = c.jaw * L * 0.19;
+            ctx.fillStyle = "#2a0b04";
+            ctx.beginPath();
+            ctx.moveTo(L * 0.6, 0);
+            ctx.quadraticCurveTo(L * 0.34, -g, L * 0.2, -g * 0.8);
+            ctx.lineTo(L * 0.2, g * 0.8);
+            ctx.quadraticCurveTo(L * 0.34, g, L * 0.6, 0);
+            ctx.closePath();
+            ctx.fill();
+            // teeth are cooled rock, not enamel
+            ctx.fillStyle = "#f0d9b8";
+            for (let k = 0; k < 5; k++) {
+              const u = 0.24 + k * 0.07,
+                y = g * 0.82 * (1 - k * 0.13);
+              for (const sgn of [-1, 1]) {
+                ctx.beginPath();
+                ctx.moveTo(L * u, sgn * y);
+                ctx.lineTo(L * (u + 0.05), sgn * y * 0.35);
+                ctx.lineTo(L * (u + 0.01), sgn * y * 0.3);
+                ctx.closePath();
+                ctx.fill();
+              }
+            }
+          }
+          ctx.fillStyle = "#2a0b04";
+          for (const sgn of [-1, 1]) {
+            ctx.beginPath();
+            ctx.arc(L * 0.36, sgn * L * 0.075, L * 0.032, 0, 7);
+            ctx.fill();
+          }
+        }
+
         function drawCreature(c) {
           const L = c.size,
             a = 0.26 + (1 - c.depth) * 0.52;
           ctx.save();
           ctx.translate(c.x, c.y);
           ctx.rotate(c.h);
-          ctx.globalAlpha = a * 0.35; // shadow on the riverbed
-          ctx.fillStyle = "#04262e";
-          ctx.beginPath();
-          ctx.ellipse(-L * 0.06, L * 0.13, L * 0.54, L * 0.22, 0, 0, 7);
-          ctx.fill();
+          if (c.type !== "worm") {
+            // the worm lays its own, blob by blob — one ellipse can't follow
+            // a body this long
+            ctx.globalAlpha = a * 0.35; // shadow on the ground below
+            ctx.fillStyle = themeOf(track).molten ? "#0d0503" : "#04262e";
+            ctx.beginPath();
+            ctx.ellipse(-L * 0.06, L * 0.13, L * 0.54, L * 0.22, 0, 0, 7);
+            ctx.fill();
+          }
           ctx.globalAlpha = a;
 
           if (c.type === "whale") {
@@ -6263,6 +6410,8 @@
                 ctx.fill();
               }
             }
+          } else if (c.type === "worm") {
+            drawWorm(c, L, a);
           } else {
             // shoal
             for (const f of c.fish) {
@@ -6286,18 +6435,30 @@
           b.boost = 0;
           b.offTime = 0;
           if (!REDUCED) {
-            for (let i = 0; i < 26; i++) {
+            const th = themeOf(track),
+              gore = th.gore || ["#e8402a", "#eaf7f4"];
+            // lava throws further, burns longer and goes up rather than out
+            const n = th.molten ? 36 : 26;
+            for (let i = 0; i < n; i++) {
               const a = Math.random() * 7,
                 r = 8 + Math.random() * 22;
+              const v = th.molten
+                ? 95 + Math.random() * 175
+                : 50 + Math.random() * 90;
               wake.push({
                 x: b.x + Math.cos(a) * r,
                 y: b.y + Math.sin(a) * r,
-                vx: Math.cos(a) * (50 + Math.random() * 90),
-                vy: Math.sin(a) * (50 + Math.random() * 90),
-                r: 3 + Math.random() * 6,
+                vx: Math.cos(a) * v,
+                vy: Math.sin(a) * v,
+                r: th.molten
+                  ? 2.4 + Math.random() * 4.6
+                  : 3 + Math.random() * 6,
                 life: 0,
-                max: 0.7 + Math.random() * 0.6,
-                col: i % 5 === 0 ? "#e8402a" : "#eaf7f4",
+                max: th.molten
+                  ? 0.85 + Math.random() * 0.75
+                  : 0.7 + Math.random() * 0.6,
+                col: i % 5 === 0 ? gore[0] : gore[1],
+                hot: !!th.molten,
               });
             }
           }
@@ -7107,6 +7268,33 @@
           ctx.restore();
         }
 
+        /* Lava thrown up when a worm takes a boat: over the hulls and
+   additive, unlike the flat wake underneath them, and scaled up and back
+   down across its life so it reads as spatter in the air rather than a
+   slick spreading on the ground. */
+        function drawEmbers() {
+          let any = false;
+          for (const p of wake)
+            if (p.hot) {
+              any = true;
+              break;
+            }
+          if (!any) return;
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          for (const p of wake) {
+            if (!p.hot) continue;
+            const u = p.life / p.max;
+            const rise = Math.sin(u * Math.PI); // up, then back down
+            ctx.globalAlpha = (1 - u) * 0.9;
+            ctx.fillStyle = p.col;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * (0.55 + rise * 0.85), 0, 7);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
         /* wake + spray particles */
         function spray(x, y, col, sc) {
           wake.push({
@@ -7159,9 +7347,17 @@
             }
             p.x += p.vx * dt;
             p.y += p.vy * dt;
-            p.vx *= 0.965;
-            p.vy *= 0.965;
-            p.r += dt * 7;
+            if (p.hot) {
+              // thrown lava slows and holds its size; the flat wake particles
+              // below spread as they fade, which is the opposite of what a
+              // gob of molten rock in the air should do
+              p.vx *= 0.93;
+              p.vy *= 0.93;
+            } else {
+              p.vx *= 0.965;
+              p.vy *= 0.965;
+              p.r += dt * 7;
+            }
           }
           if (wake.length > 900) wake.splice(0, wake.length - 900);
         }
@@ -7394,6 +7590,7 @@
 
           // wake under the hulls
           for (const p of wake) {
+            if (p.hot) continue; // thrown lava goes over the top, in drawEmbers
             const a = 1 - p.life / p.max;
             ctx.globalAlpha = a * 0.5;
             ctx.fillStyle = p.col;
@@ -7461,8 +7658,9 @@
           for (let i = frameRanked.length - 1; i >= 0; i--)
             drawBoat(frameRanked[i]);
 
-          // a shark mid-attack goes over the top of the hull it's taking
+          // a hunter mid-attack goes over the top of the hull it's taking
           for (const c of FAUNA) if (c.hunt || c.feed > 0) drawCreature(c);
+          drawEmbers();
 
           ctx.restore();
         }
@@ -8046,7 +8244,8 @@
             sharkEl.textContent = "Eaten";
             sharkEl.className = "bit";
           } else if (me.hunter) {
-            sharkEl.textContent = "Shark — get back in the river";
+            sharkEl.textContent =
+              themeOf(track).hunterWarn || "Shark — get back in the river";
             sharkEl.className = "on";
           } else sharkEl.className = "";
           drawPlot();
@@ -8202,7 +8401,8 @@
           courseSummaryName = document.getElementById("courseSummaryName"),
           courseSummaryDesc = document.getElementById("courseSummaryDesc"),
           courseSummaryStats = document.getElementById("courseSummaryStats"),
-          courseWorldEl = document.getElementById("courseWorld");
+          courseWorldEl = document.getElementById("courseWorld"),
+          menuTagEl = document.getElementById("menuTag");
 
         /* The plotter trace on a course tile. Pulled out of the tile builder so
    the summary card and the popup grid can each have their own canvas for the
@@ -8317,6 +8517,12 @@
           courseSummaryName.textContent = t.name;
           courseSummaryDesc.textContent = t.desc;
           courseWorldEl.textContent = THEME_LABEL[t.theme] || t.theme;
+          // what's hunting you differs by world, and the blurb is the only
+          // place on the menu that says so
+          menuTagEl.textContent =
+            "Race the fleet at a difficulty of your choosing — " +
+            (themeOf(t).hunterBlurb || "and watch out for the sharks") +
+            ".";
           const lap = bestLapFor(t.name);
           const total = bestTotalFor(t.name, totalLaps);
           // a row per stat, and an em dash rather than a missing row for a
@@ -8746,6 +8952,9 @@
         // ad — that stale timer no longer matches and won't slam the new
         // session shut out from under them.
         let spinPopSession = 0;
+        // Handle for the post-spin auto-close, so anything that takes over the
+        // popup — watching an ad, closing it by hand — can call it off.
+        let spinCloseTimer = 0;
         const wheelEl = document.getElementById("wheelSvg"),
           spinBtnEl = document.getElementById("spinBtn"),
           spinStatusEl = document.getElementById("spinStatus"),
@@ -8798,9 +9007,17 @@
         }
         adSpinBtnEl.onclick = () => {
           if (adSpinBtnEl.disabled || adLoading) return;
+          /* The ad offer appears the moment the free spin lands — which is
+             also when the two-second auto-close is ticking. Tapping it inside
+             that window used to close the popup mid-ad and drop the player
+             back on the Boathouse to go and find their bonus spin. Engaging
+             with the ad calls the auto-close off, and the reopen below covers
+             the case where it had already fired. */
+          clearTimeout(spinCloseTimer);
           playRewardedAd(() => {
             bonusSpinArmed = true;
-            refreshSpinStatus();
+            if (spinPopEl.classList.contains("hidden")) openSpinPop();
+            else refreshSpinStatus();
           });
         };
         spinBtnEl.onclick = () => {
@@ -8814,7 +9031,16 @@
           const idx = weightedSpinIndex();
           const segAngle = 360 / SPIN_REWARDS.length;
           const segMid = idx * segAngle + segAngle / 2;
-          wheelRotation += 360 * 5 + (360 - segMid);
+          /* The delta has to start from where the wheel is actually sitting.
+             wheelRotation carries over between spins, and the old
+             `+= 1800 + (360 - segMid)` assumed a wheel parked at zero — true
+             only for the first spin of a session. Every one after that landed
+             the previous spin's offset away from the wedge it had just
+             awarded, so the pointer said one thing and the coins said
+             another. */
+          const at = ((wheelRotation % 360) + 360) % 360;
+          const delta = ((((360 - segMid - at) % 360) + 360) % 360) + 360 * 5;
+          wheelRotation += delta;
           wheelEl.style.transform = "rotate(" + wheelRotation + "deg)";
           const session = spinPopSession;
           setTimeout(() => {
@@ -8845,7 +9071,7 @@
             wheelPaths[idx].classList.add("wheel-win");
             void spinResultEl.offsetWidth; // restart the pop-in animation
             spinResultEl.classList.add("show");
-            setTimeout(() => {
+            spinCloseTimer = setTimeout(() => {
               if (
                 session === spinPopSession &&
                 !spinPopEl.classList.contains("hidden")
@@ -8855,15 +9081,16 @@
           }, 4300);
         };
         refreshSpinStatus();
-
         const spinPopEl = document.getElementById("spinPop");
         function openSpinPop() {
+          clearTimeout(spinCloseTimer);
           spinPopSession++;
           spinPopEl.classList.remove("hidden");
           refreshSpinStatus();
           requestAnimationFrame(fitSheets);
         }
         function closeSpinPop() {
+          clearTimeout(spinCloseTimer);
           spinPopEl.classList.add("hidden");
         }
         document.getElementById("spinLaunchBtn").onclick = openSpinPop;
