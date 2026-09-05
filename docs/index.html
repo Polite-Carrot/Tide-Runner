@@ -3332,6 +3332,7 @@
             desc: "Narrow · restless",
             theme: "lava",
             width: 140,
+            hazards: { rockfall: 7 },
             gen: {
               cx: 1300,
               cy: 950,
@@ -3352,6 +3353,7 @@
             theme: "lava",
             width: 128,
             fleet: [4, 8],
+            hazards: { rockfall: 8, eddy: 5 },
             gen: {
               cx: 1320,
               cy: 960,
@@ -3391,7 +3393,7 @@
             theme: "lava",
             width: 132,
             fleet: [4, 8],
-            hazards: { eddy: 10, log: 8 },
+            hazards: { eddy: 8, rockfall: 9 },
             gen: {
               cx: 1400,
               cy: 1020,
@@ -3434,6 +3436,89 @@
             },
           },
           {
+            name: "Pressure Ridge",
+            desc: "Narrow · buckled",
+            theme: "ice",
+            width: 134,
+            hazards: { orca: 7 },
+            gen: {
+              cx: 1280,
+              cy: 950,
+              R: 530,
+              ax: 1.14,
+              ay: 1.1,
+              k: 9,
+              amp: 0.13,
+              k2: 5,
+              amp2: 0.045,
+              phase: 2.2,
+              count: 28,
+            },
+          },
+          {
+            name: "Floe Maze",
+            desc: "Twisting · drifting",
+            theme: "ice",
+            width: 150,
+            fleet: [4, 8],
+            hazards: { floe: 16, orca: 5 },
+            gen: {
+              cx: 1300,
+              cy: 1040,
+              R: 560,
+              ax: 1.02,
+              ay: 1.3,
+              k: 6,
+              amp: 0.2,
+              k2: 4,
+              amp2: 0.08,
+              phase: 0.4,
+              count: 26,
+            },
+          },
+          {
+            name: "Weddell Sound",
+            desc: "Immense · open",
+            theme: "ice",
+            width: 196,
+            fleet: [6, 12],
+            hazards: { orca: 9 },
+            gen: {
+              cx: 1460,
+              cy: 1000,
+              R: 780,
+              ax: 1.38,
+              ay: 0.9,
+              k: 3,
+              amp: 0.09,
+              k2: 2,
+              amp2: 0.035,
+              count: 18,
+            },
+          },
+          {
+            name: "Crevasse",
+            desc: "Tight · unforgiving",
+            theme: "ice",
+            width: 118,
+            fleet: [4, 8],
+            hazards: { orca: 8, floe: 9, eddy: 5 },
+            gen: {
+              cx: 1300,
+              cy: 960,
+              R: 560,
+              ax: 1.18,
+              ay: 1.02,
+              k: 11,
+              amp: 0.11,
+              k2: 7,
+              amp2: 0.05,
+              phase: 1.1,
+              count: 34,
+            },
+          },
+
+          {
             name: "Nebula Drift",
             desc: "Wide · weightless",
             theme: "space",
@@ -3451,6 +3536,88 @@
               amp2: 0.04,
               phase: 1.4,
               count: 24,
+            },
+          },
+          {
+            name: "Asteroid Belt",
+            desc: "Narrow · cluttered",
+            theme: "space",
+            width: 142,
+            hazards: { rock: 20 },
+            gen: {
+              cx: 1300,
+              cy: 960,
+              R: 570,
+              ax: 1.16,
+              ay: 1.08,
+              k: 7,
+              amp: 0.16,
+              k2: 4,
+              amp2: 0.05,
+              phase: 0.9,
+              count: 26,
+            },
+          },
+          {
+            name: "Ring Sweep",
+            desc: "Immense · flattened",
+            theme: "space",
+            width: 200,
+            fleet: [6, 12],
+            hazards: { rock: 10 },
+            gen: {
+              cx: 1520,
+              cy: 980,
+              R: 800,
+              ax: 1.5,
+              ay: 0.76,
+              k: 2,
+              amp: 0.07,
+              k2: 3,
+              amp2: 0.03,
+              count: 16,
+            },
+          },
+          {
+            name: "The Crossing",
+            desc: "Twisting · trafficked",
+            theme: "space",
+            width: 158,
+            fleet: [4, 8],
+            hazards: { crossing: 11, rock: 6 },
+            gen: {
+              cx: 1320,
+              cy: 1000,
+              R: 600,
+              ax: 1.06,
+              ay: 1.24,
+              k: 4,
+              amp: 0.19,
+              k2: 8,
+              amp2: 0.05,
+              phase: 2.6,
+              count: 24,
+            },
+          },
+          {
+            name: "Event Horizon",
+            desc: "Tight · warped",
+            theme: "space",
+            width: 124,
+            fleet: [4, 8],
+            hazards: { eddy: 11, rock: 8, crossing: 5 },
+            gen: {
+              cx: 1290,
+              cy: 950,
+              R: 540,
+              ax: 1.2,
+              ay: 1.04,
+              k: 10,
+              amp: 0.14,
+              k2: 6,
+              amp2: 0.05,
+              phase: 1.7,
+              count: 30,
             },
           },
         ];
@@ -4581,6 +4748,12 @@
             gore: ["#ffd07a", "#ff6a10"],
             goreHot: true,
             shadow: "#0d0503",
+            // the shared hazards take the world's colours too, so a whirlpool
+            // on lava isn't a teal one
+            eddyEye: "rgba(26,6,2,.88)",
+            eddyMid: "rgba(120,40,6,.45)",
+            eddyArm: "rgba(255,190,90,.4)",
+            hazSpray: "#ff9c3a",
           },
           /* ICE — the river again, frozen in. The channel is still water and
      still the darkest thing on screen; what changed is the plain it runs
@@ -4610,6 +4783,10 @@
             hunterBlurb: "and watch out for the polar bears",
             gore: ["#e8402a", "#f4fbff"],
             shadow: "#7f97ab",
+            eddyEye: "rgba(3,18,26,.88)",
+            eddyMid: "rgba(20,60,80,.45)",
+            eddyArm: "rgba(214,240,255,.42)",
+            hazSpray: "#dbeefb",
           },
           /* SPACE — the same ribbon, run as a river of stars. Inverted again:
      the plain is the darkest thing here and the channel glows, with the
@@ -4647,6 +4824,10 @@
             goreHot: true,
             // nothing to cast a shadow onto out here
             shadow: null,
+            eddyEye: "rgba(0,0,0,.92)",
+            eddyMid: "rgba(40,20,110,.5)",
+            eddyArm: "rgba(150,130,255,.45)",
+            hazSpray: "#8bf3a6",
           },
         };
         const THEME_LABEL = {
@@ -7187,11 +7368,27 @@
         // noticeable chase, not an inescapable snap-to-target lock.
         const TRACER_TURN_RATE = 3.2;
 
+        /* r is the radius the boat reacts to, in world px.
+
+   `solid` is the hull clearance a boat is pushed back to on contact, and
+   marks a hazard as something you hit rather than something you're pulled
+   through; `bite` is what's left of your speed after a hard one. `drift`
+   is how fast it rides the current. `cycle` is [down, up] seconds for the
+   ones that come and go — they only exist to be hit during the up phase,
+   which is what makes them read as an event rather than an obstacle.
+   `cross` is lanes-per-second for the ones that walk across the channel. */
         const HAZ = {
-          // r is the radius the boat reacts to, in world px
           eddy: { r: 92, drift: 0 },
-          log: { r: 17, drift: 26 },
+          log: { r: 17, drift: 26, solid: 9, bite: 0.86 },
           weed: { r: 58, drift: 0 },
+          // ice
+          floe: { r: 30, drift: 15, solid: 10, bite: 0.8 },
+          orca: { r: 27, solid: 12, bite: 0.66, cycle: [4.4, 2.3] },
+          // space
+          rock: { r: 23, drift: 19, solid: 9, bite: 0.82 },
+          crossing: { r: 20, solid: 8, bite: 0.9, cross: 0.34 },
+          // lava
+          rockfall: { r: 34, solid: 13, bite: 0.62, cycle: [3.6, 1.8] },
         };
 
         function spawnHazards() {
@@ -7213,9 +7410,13 @@
               // distance along the track from the start line
               const along = i * track.spacing;
               if (along < startClear || along > track.len - 260) continue;
-              // sit off the centreline, but leave a boat's width of clean water
+              // sit off the centreline, but leave a boat's width of clean
+              // water. The ones that walk across start at a bank instead —
+              // the whole point of them is the crossing.
               const room = type === "weed" ? 0.62 : 0.72;
-              const lane = (Math.random() * 2 - 1) * room;
+              const lane = cfg.cross
+                ? (Math.random() < 0.5 ? -1 : 1) * 0.82
+                : (Math.random() * 2 - 1) * room;
               const p = track.pts[i],
                 nv = track.nrm[i];
               const x = p.x + nv.x * lane * track.half,
@@ -7263,6 +7464,12 @@
                 a: Math.random() * Math.PI,
                 wob: Math.random() * 7,
                 dir: Math.random() < 0.5 ? -1 : 1,
+                // staggered so a course's worth of them don't surface in
+                // unison, which reads as a cutscene rather than a hazard
+                t: cfg.cycle
+                  ? Math.random() * (cfg.cycle[0] + cfg.cycle[1])
+                  : 0,
+                up: false,
               });
               made++;
             }
@@ -7276,11 +7483,38 @@
               h.ttl -= dt;
               continue;
             }
-            if (h.type !== "log") continue;
-            // timber rides the current, turning slowly as it goes
+            const cfg = HAZ[h.type];
+            if (cfg.cycle) {
+              // down for the first stretch, up for the second, round again
+              const period = cfg.cycle[0] + cfg.cycle[1];
+              h.t = (h.t + dt) % period;
+              h.up = h.t > cfg.cycle[0];
+              // how far through the up phase, for the surfacing animation
+              h.phase = h.up ? (h.t - cfg.cycle[0]) / cfg.cycle[1] : 0;
+              continue;
+            }
+            if (cfg.cross) {
+              // walk to the far bank, turn round, walk back
+              h.lane += cfg.cross * h.dir * dt;
+              if (h.lane > 0.82) {
+                h.lane = 0.82;
+                h.dir = -1;
+              } else if (h.lane < -0.82) {
+                h.lane = -0.82;
+                h.dir = 1;
+              }
+              const p = track.pts[h.i],
+                nv = track.nrm[h.i];
+              h.x = p.x + nv.x * h.lane * track.half;
+              h.y = p.y + nv.y * h.lane * track.half;
+              h.wob += dt * 7;
+              continue;
+            }
+            if (!cfg.drift) continue;
+            // anything loose rides the current, turning slowly as it goes
             const t = track.tan[h.i];
-            h.x += t.x * HAZ.log.drift * dt;
-            h.y += t.y * HAZ.log.drift * dt;
+            h.x += t.x * cfg.drift * dt;
+            h.y += t.y * cfg.drift * dt;
             h.a += dt * 0.35 * h.dir;
             h.wob += dt;
             // keep it on the river: re-home to the nearest centreline point and
@@ -7348,30 +7582,46 @@
         /* Solid contact, resolved after the boat has moved — same treatment as a
    buoy, but a log is lighter, so it shoves rather than stops. */
         function hazardCollide(b) {
+          const pal = themeOf(track);
           for (const h of hazards) {
-            if (h.type !== "log") continue;
+            // gear drops its own hazards into this list — a laid net has no
+            // HAZ row, since nothing about it is quoted per course
+            const cfg = HAZ[h.type];
+            if (!cfg || !cfg.solid) continue;
+            // one that comes and goes is only there while it's up
+            if (cfg.cycle && !h.up) continue;
+            const clear = cfg.solid;
             const dx = b.x - h.x,
               dy = b.y - h.y,
               d = Math.hypot(dx, dy);
-            if (d >= h.r + 9) continue;
+            if (d >= h.r + clear) continue;
             const ux = dx / (d || 1),
               uy = dy / (d || 1);
-            b.x = h.x + ux * (h.r + 9);
-            b.y = h.y + uy * (h.r + 9);
+            b.x = h.x + ux * (h.r + clear);
+            b.y = h.y + uy * (h.r + clear);
             const dot = b.vx * ux + b.vy * uy;
             const impact = Math.max(0, -dot);
             b.vx -= 1.35 * dot * ux;
             b.vy -= 1.35 * dot * uy;
-            // the log gets knocked aside too
-            h.x -= ux * 5;
-            h.y -= uy * 5;
+            // anything loose gets knocked aside too; what surfaced under you
+            // or fell on you does not move
+            if (cfg.drift) {
+              h.x -= ux * 5;
+              h.y -= uy * 5;
+            }
             if (impact > 40) {
-              b.vx *= 0.86;
-              b.vy *= 0.86;
+              b.vx *= cfg.bite;
+              b.vy *= cfg.bite;
               if (b === me) {
                 sfxBump(Math.min(1, impact / 150));
                 if (!REDUCED)
-                  for (let i = 0; i < 5; i++) spray(b.x, b.y, "#c9a06a", 1.2);
+                  for (let i = 0; i < 5; i++)
+                    spray(
+                      b.x,
+                      b.y,
+                      cfg.spray || pal.hazSpray || "#c9a06a",
+                      1.2,
+                    );
               }
             }
           }
@@ -7538,15 +7788,20 @@
             } else if (h.type === "eddy") {
               // a whirlpool: arms winding into a dark eye
               ctx.rotate(h.spin);
+              const hp = themeOf(track);
               const g = ctx.createRadialGradient(0, 0, 3, 0, 0, h.r);
-              g.addColorStop(0, "rgba(2,10,16,.85)");
-              g.addColorStop(0.55, "rgba(6,34,48,.42)");
-              g.addColorStop(1, "rgba(6,34,48,0)");
+              g.addColorStop(0, hp.eddyEye || "rgba(2,10,16,.85)");
+              g.addColorStop(0.55, hp.eddyMid || "rgba(6,34,48,.42)");
+              g.addColorStop(
+                1,
+                (hp.eddyMid || "rgba(6,34,48,.42)").replace(/[\d.]+\)$/, "0)"),
+              );
               ctx.fillStyle = g;
               ctx.beginPath();
               ctx.arc(0, 0, h.r, 0, 7);
               ctx.fill();
-              ctx.strokeStyle = "rgba(127,233,216,.34)";
+              ctx.strokeStyle =
+                themeOf(track).eddyArm || "rgba(127,233,216,.34)";
               ctx.lineWidth = 2;
               for (let arm = 0; arm < 3; arm++) {
                 ctx.beginPath();
@@ -7560,7 +7815,7 @@
                 }
                 ctx.stroke();
               }
-              ctx.fillStyle = "rgba(2,10,16,.9)";
+              ctx.fillStyle = themeOf(track).eddyEye || "rgba(2,10,16,.9)";
               ctx.beginPath();
               ctx.arc(0, 0, 7, 0, 7);
               ctx.fill();
@@ -7591,6 +7846,297 @@
               ctx.beginPath();
               ctx.ellipse(0, 0, h.r, h.r * 0.55, 0, 0, 7);
               ctx.stroke();
+            } else if (h.type === "floe") {
+              // a slab of ice: an irregular plate with a lit top face, a wet
+              // rim where it meets the water, and cracks across it
+              ctx.rotate(h.a);
+              const R = h.r;
+              const plate = (k) => {
+                ctx.beginPath();
+                for (let q = 0; q <= 9; q++) {
+                  const ang = (q / 9) * Math.PI * 2;
+                  const rr =
+                    R * k * (0.78 + 0.28 * Math.sin(ang * 2.3 + h.wob * 0.2));
+                  const x = Math.cos(ang) * rr,
+                    y = Math.sin(ang) * rr * 0.86;
+                  q ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+                }
+                ctx.closePath();
+              };
+              ctx.fillStyle = "rgba(0,0,0,.22)";
+              ctx.save();
+              ctx.translate(2, 5);
+              plate(1);
+              ctx.fill();
+              ctx.restore();
+              ctx.fillStyle = "#9dc0d4";
+              plate(1);
+              ctx.fill();
+              ctx.fillStyle = "#eaf4fb";
+              plate(0.84);
+              ctx.fill();
+              ctx.strokeStyle = "rgba(120,155,180,.7)";
+              ctx.lineWidth = 1.2;
+              for (let k = -1; k <= 1; k++) {
+                ctx.beginPath();
+                ctx.moveTo(-R * 0.6, k * R * 0.3);
+                ctx.lineTo(-R * 0.1, k * R * 0.1 + R * 0.12);
+                ctx.lineTo(R * 0.62, k * R * 0.34);
+                ctx.stroke();
+              }
+            } else if (h.type === "rock") {
+              // an asteroid, tumbling: a lumpy silhouette with craters and a
+              // lit edge, so it doesn't read as a flat blob against the stars
+              ctx.rotate(h.a);
+              const R = h.r;
+              ctx.beginPath();
+              for (let q = 0; q <= 11; q++) {
+                const ang = (q / 11) * Math.PI * 2;
+                const rr = R * (0.74 + 0.3 * Math.sin(ang * 3.1 + h.spin));
+                const x = Math.cos(ang) * rr,
+                  y = Math.sin(ang) * rr;
+                q ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+              }
+              ctx.closePath();
+              ctx.fillStyle = "#4a4a63";
+              ctx.fill();
+              ctx.save();
+              ctx.clip();
+              ctx.fillStyle = "#6d6d8c";
+              ctx.beginPath();
+              ctx.arc(-R * 0.3, -R * 0.34, R * 0.9, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = "#3a3a50";
+              for (let k = 0; k < 3; k++) {
+                ctx.beginPath();
+                ctx.arc(
+                  Math.cos(k * 2.2 + h.spin) * R * 0.36,
+                  Math.sin(k * 2.2 + h.spin) * R * 0.36,
+                  R * (0.15 + 0.06 * k),
+                  0,
+                  7,
+                );
+                ctx.fill();
+              }
+              ctx.restore();
+            } else if (h.type === "orca") {
+              /* Down it's a shadow under the surface that grows as it comes
+                 up — the whole hazard is the tell, so the tell has to be
+                 readable a second before it can hit you. Up it's the back
+                 and the fin, breaching along the channel. */
+              const t = track.tan[h.i];
+              ctx.rotate(Math.atan2(t.y, t.x));
+              if (!h.up) {
+                const near = Math.max(
+                  0,
+                  (h.t - (HAZ.orca.cycle[0] - 1.4)) / 1.4,
+                );
+                ctx.globalAlpha = 0.2 + near * 0.4;
+                ctx.fillStyle = "#0a2733";
+                ctx.beginPath();
+                ctx.ellipse(
+                  0,
+                  0,
+                  h.r * (0.7 + near * 0.45),
+                  h.r * (0.34 + near * 0.2),
+                  0,
+                  0,
+                  7,
+                );
+                ctx.fill();
+                ctx.globalAlpha = 1;
+              } else {
+                // rise and sink across the up phase
+                const k = Math.sin(h.phase * Math.PI);
+                const R = h.r * (0.65 + k * 0.5);
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = "#dff1fb";
+                ctx.beginPath();
+                ctx.ellipse(0, 0, R * 1.5, R * 0.85, 0, 0, 7); // white water
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = "#0f1720";
+                ctx.beginPath();
+                ctx.ellipse(0, 0, R * 1.15, R * 0.62, 0, 0, 7); // back
+                ctx.fill();
+                // flukes, just clear of the water behind it
+                ctx.beginPath();
+                ctx.moveTo(-R * 1.0, 0);
+                ctx.lineTo(-R * 1.6, -R * 0.42);
+                ctx.lineTo(-R * 1.35, 0);
+                ctx.lineTo(-R * 1.6, R * 0.42);
+                ctx.closePath();
+                ctx.fill();
+                // saddle behind the fin, and the eye patch up by the head —
+                // orca markings rather than the one big white blob amidships
+                // that read as a face
+                ctx.fillStyle = "#b9cbd8";
+                ctx.beginPath();
+                ctx.ellipse(-R * 0.42, -R * 0.1, R * 0.3, R * 0.15, -0.2, 0, 7);
+                ctx.fill();
+                ctx.fillStyle = "#f6fbff";
+                ctx.beginPath();
+                ctx.ellipse(
+                  R * 0.66,
+                  -R * 0.24,
+                  R * 0.19,
+                  R * 0.1,
+                  -0.25,
+                  0,
+                  7,
+                );
+                ctx.fill();
+                // dorsal: leaned back, lighter than the body and edged, or it
+                // vanishes into the black it stands on
+                ctx.fillStyle = "#26333f";
+                ctx.beginPath();
+                ctx.moveTo(R * 0.18, -R * 0.1);
+                ctx.quadraticCurveTo(
+                  -R * 0.05,
+                  -R * 1.35 * k,
+                  -R * 0.34,
+                  -R * 1.0 * k,
+                );
+                ctx.quadraticCurveTo(-R * 0.16, -R * 0.4, -R * 0.2, -R * 0.05);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = "rgba(220,238,250,.5)";
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+              }
+            } else if (h.type === "rockfall") {
+              /* Down, the shadow tightens as the boulder falls — the classic
+                 incoming telegraph, and the only warning you get. Up, it's
+                 sitting there glowing where it landed. */
+              if (!h.up) {
+                const fall = Math.max(
+                  0,
+                  (h.t - (HAZ.rockfall.cycle[0] - 1.5)) / 1.5,
+                );
+                if (fall > 0) {
+                  ctx.globalAlpha = 0.25 + fall * 0.45;
+                  ctx.fillStyle = "#140803";
+                  ctx.beginPath();
+                  ctx.arc(0, 0, h.r * (1.45 - fall * 0.55), 0, 7);
+                  ctx.fill();
+                  ctx.globalAlpha = 0.5 + fall * 0.5;
+                  ctx.strokeStyle = "#ff9c3a";
+                  ctx.lineWidth = 2;
+                  ctx.beginPath();
+                  ctx.arc(0, 0, h.r * (1.45 - fall * 0.55), 0, 7);
+                  ctx.stroke();
+                  ctx.globalAlpha = 1;
+                }
+              } else {
+                const land = Math.min(1, h.phase * 6); // the moment it hits
+                ctx.save();
+                ctx.globalCompositeOperation = "lighter";
+                ctx.globalAlpha = (1 - land) * 0.8;
+                ctx.fillStyle = "#ffd07a";
+                ctx.beginPath();
+                ctx.arc(0, 0, h.r * (1 + land * 1.6), 0, 7);
+                ctx.fill();
+                ctx.restore();
+                ctx.rotate(h.spin * 0.2);
+                const R = h.r;
+                // 14 points at low amplitude: at 9 and 0.28 the silhouette
+                // pinched into spikes and read as a bowtie rather than a rock
+                ctx.beginPath();
+                for (let q = 0; q <= 14; q++) {
+                  const ang = (q / 14) * Math.PI * 2;
+                  const rr =
+                    R *
+                    (0.88 +
+                      0.11 * Math.sin(ang * 2 + h.wob) +
+                      0.05 * Math.sin(ang * 5 + h.wob * 1.7));
+                  const x = Math.cos(ang) * rr,
+                    y = Math.sin(ang) * rr;
+                  q ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = "#2b1a12";
+                ctx.fill();
+                ctx.save();
+                ctx.clip();
+                ctx.fillStyle = "#4a2c1e";
+                ctx.beginPath();
+                ctx.arc(-R * 0.35, -R * 0.35, R * 0.8, 0, 7);
+                ctx.fill();
+                // cooling cracks, still lit from underneath — short, so they
+                // read as fissures in the rock rather than a cross painted on
+                ctx.strokeStyle = "#ff7a1f";
+                ctx.lineWidth = 1.6;
+                ctx.lineCap = "round";
+                for (let k = 0; k < 5; k++) {
+                  const ang = k * 1.27 + h.wob;
+                  ctx.beginPath();
+                  ctx.moveTo(
+                    Math.cos(ang) * R * 0.12,
+                    Math.sin(ang) * R * 0.12,
+                  );
+                  ctx.lineTo(
+                    Math.cos(ang) * R * 0.66,
+                    Math.sin(ang) * R * 0.66,
+                  );
+                  ctx.stroke();
+                }
+                ctx.fillStyle = "#ffb457";
+                ctx.beginPath();
+                ctx.arc(0, 0, R * 0.14, 0, 7);
+                ctx.fill();
+                ctx.restore();
+              }
+            } else if (h.type === "crossing") {
+              // one of the little green ones, walking across the stream and
+              // not looking. Faces the way it's going.
+              const nv = track.nrm[h.i];
+              ctx.rotate(Math.atan2(nv.y, nv.x) + (h.dir > 0 ? 0 : Math.PI));
+              const R = h.r;
+              const step = Math.sin(h.wob);
+              ctx.fillStyle = "#1d6b3c";
+              for (const sgn of [-1, 1]) {
+                ctx.beginPath();
+                ctx.ellipse(
+                  R * 0.1 + sgn * step * R * 0.3,
+                  sgn * R * 0.34,
+                  R * 0.26,
+                  R * 0.12,
+                  0,
+                  0,
+                  7,
+                );
+                ctx.fill();
+              }
+              ctx.fillStyle = "#2f9e57";
+              ctx.beginPath();
+              ctx.ellipse(0, 0, R * 0.62, R * 0.5, 0, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = "#8bf3a6";
+              ctx.beginPath();
+              ctx.ellipse(R * 0.16, -R * 0.12, R * 0.3, R * 0.18, 0, 0, 7);
+              ctx.fill();
+              ctx.fillStyle = "#0a1a10";
+              for (const sgn of [-1, 1]) {
+                ctx.save();
+                ctx.translate(R * 0.24, sgn * R * 0.22);
+                ctx.rotate(sgn * 0.5);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, R * 0.26, R * 0.15, 0, 0, 7);
+                ctx.fill();
+                ctx.restore();
+              }
+              // antenna, bobbing with the walk
+              ctx.strokeStyle = "#2f9e57";
+              ctx.lineWidth = Math.max(1, R * 0.09);
+              ctx.lineCap = "round";
+              ctx.beginPath();
+              ctx.moveTo(-R * 0.15, 0);
+              ctx.lineTo(-R * 0.5, step * R * 0.25);
+              ctx.stroke();
+              ctx.fillStyle = "#8bf3a6";
+              ctx.beginPath();
+              ctx.arc(-R * 0.56, step * R * 0.28, R * 0.13, 0, 7);
+              ctx.fill();
             } else {
               // a log: timber lying across the stream, riding the swell
               ctx.rotate(h.a);
