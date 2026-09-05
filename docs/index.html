@@ -1365,15 +1365,33 @@
       /* ---------- gear stack: one circle per item you own, same treatment as
          pause, other corner, stacked bottom-up so a full loadout reads as a
          short tower rather than one button that hides what else you're carrying ---------- */
+      /* The gear sits in a box of its own, and the box is the point: a thumb
+         that lands beside a button rather than on it would otherwise plant a
+         fresh joystick right under the gear — the overlay that reads the stick
+         covers the whole screen. Anything inside this box is the gear's, so a
+         near miss costs you nothing. It's drawn rather than invisible so the
+         safe area is somewhere you can see, not something you have to learn.
+         The padding is subtracted back off the offsets, so the buttons sit
+         exactly where they did before the box existed. */
       .gear-stack {
+        --gear-pad-x: 12px;
+        --gear-pad-y: 14px;
         position: fixed;
-        bottom: calc(22px + env(safe-area-inset-bottom));
-        left: calc(20px + env(safe-area-inset-left));
+        bottom: calc(22px + env(safe-area-inset-bottom) - var(--gear-pad-y));
+        left: calc(20px + env(safe-area-inset-left) - var(--gear-pad-x));
         z-index: 6;
         display: none;
         flex-direction: column-reverse;
         align-items: center;
         gap: 10px;
+        padding: var(--gear-pad-y) var(--gear-pad-x);
+        /* a rounded rectangle, not a pill: at a radius wider than half the box
+           the corners round away to nothing and a thumb landing in one is
+           outside the guard again */
+        border-radius: 26px;
+        background: rgba(4, 20, 28, 0.34);
+        border: 1px solid rgba(var(--tint), 0.13);
+        touch-action: none;
       }
       body.racing .gear-stack.show {
         display: flex;
@@ -1386,14 +1404,14 @@
          let go of it. */
       body.joy-left .gear-stack,
       body.joy-right .gear-stack {
-        bottom: calc(80px + env(safe-area-inset-bottom));
+        bottom: calc(80px + env(safe-area-inset-bottom) - var(--gear-pad-y));
       }
       body.joy-left .gear-stack {
         left: auto;
-        right: calc(20px + env(safe-area-inset-right));
+        right: calc(20px + env(safe-area-inset-right) - var(--gear-pad-x));
       }
       body.joy-right .gear-stack {
-        left: calc(20px + env(safe-area-inset-left));
+        left: calc(20px + env(safe-area-inset-left) - var(--gear-pad-x));
         right: auto;
       }
       .gear-use-btn {

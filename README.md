@@ -556,6 +556,16 @@ buttons, which sit at a higher z-index) without taking the pointer hostage; and 
 `detail === 0`. Regression-tested with two real touch points through CDP: the helm stays held
 and still steers while the second finger fires.
 
+**The gear sits in a box of its own**, and the box is the point. The overlay that reads the
+stick covers the whole screen, so a thumb landing _beside_ a gear button rather than on it
+planted a fresh joystick right under the gear — measured before the change: 12px outside the
+stack was enough. The stack now carries 12–14px of padding, and anything inside it belongs to
+the gear. It's drawn rather than invisible so the safe area is somewhere you can see instead of
+something you have to learn, and the padding is subtracted back off the offsets so the buttons
+sit exactly where they did before the box existed (measured: they moved 1px). The corner radius
+is 26px rather than a pill — at a radius wider than half the box, the corners round away to
+nothing and a thumb landing in one is outside the guard again, which the first cut did.
+
 ## Analytics
 
 The web build can send gameplay events to Google Analytics (GA4, `G-2JK7DZ59VV`) — but nothing
