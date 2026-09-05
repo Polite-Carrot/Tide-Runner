@@ -11,8 +11,8 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Fifty-five courses across four worlds** — twenty-five rivers, and ten each of lava, ice
-  and space — each with
+- **Sixty courses across four worlds** — twenty-five rivers, eleven lava and twelve each of
+  ice and space — each with
   its own width and character. The menu shows only the one you've got selected: its plotter
   trace on the left, and on the right its name, its character and a row per stat — how many
   boats it fields, your best lap, your best total, an em dash where you haven't set one yet
@@ -70,22 +70,24 @@ dependencies beyond a webfont.
 - **Some courses roll their fleet size.** A course can name a range instead of a number, and
   it is rolled fresh at the start of every race — Kraken Deep fields anywhere from six boats
   to twelve, so the same course is a procession one race and a scrap the next.
-- **Thirty-one courses have things in the water**, and what's in it depends on the world.
+- **Thirty-two courses have things in the water**, and what's in it depends on the world.
   Hazards are declared per course and spawned per race, so a course with none is untouched
   and still races exactly as its records were set.
 
-  |                  | world  | what it does                                                                                                                                                                                                                                          |
-  | ---------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | **Whirlpool**    | any    | pulls you toward the eye and turns the helm — the only hazard that takes the boat somewhere you didn't point it. Its inward pull peaks at 165 against 340 of thrust, so you can always drive out; you just won't come out pointing where you went in. |
-  | **Log**          | rivers | solid, and it drifts with the current, so the line that worked last lap is not the line this lap.                                                                                                                                                     |
-  | **Weed bed**     | rivers | not solid; it just holds on to the hull, and costs you the exit of whatever corner it's sitting in.                                                                                                                                                   |
-  | **Rockfall**     | lava   | not there, then there. A shadow tightens on the channel for a second and a half, then a boulder lands in it and sits for two — the hardest hit in the game, and the only warning is the shadow.                                                       |
-  | **Orca**         | ice    | surfaces on a cycle, breaching along the channel. Down it's a shadow that grows as it comes up; up it's solid and it takes a third of your speed.                                                                                                     |
-  | **Ice floe**     | ice    | the river's log, frozen — solid, drifting, and it never sits where it did last lap.                                                                                                                                                                   |
-  | **Asteroid**     | space  | tumbling rock, solid and drifting. Asteroid Belt runs twenty of them down a 142px channel.                                                                                                                                                            |
-  | **Alien**        | space  | walks across the channel bank to bank and turns round at each edge, not looking. Soft — it barely slows you — but it's never in the same place twice.                                                                                                 |
-  | **Ashfall**      | lava   | settling soot. Not solid; it holds on to the hull, same as a weed bed.                                                                                                                                                                                |
-  | **Debris field** | space  | orbital junk, thick enough to snag on. Also not solid.                                                                                                                                                                                                |
+  |                    | world  | what it does                                                                                                                                                                                                                                          |
+  | ------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | **Whirlpool**      | any    | pulls you toward the eye and turns the helm — the only hazard that takes the boat somewhere you didn't point it. Its inward pull peaks at 165 against 340 of thrust, so you can always drive out; you just won't come out pointing where you went in. |
+  | **Log**            | rivers | solid, and it drifts with the current, so the line that worked last lap is not the line this lap.                                                                                                                                                     |
+  | **Weed bed**       | rivers | not solid; it just holds on to the hull, and costs you the exit of whatever corner it's sitting in.                                                                                                                                                   |
+  | **Rockfall**       | lava   | not there, then there. A shadow tightens on the channel for a second and a half, then a boulder lands in it and sits for two — the hardest hit in the game, and the only warning is the shadow.                                                       |
+  | **Orca**           | ice    | surfaces on a cycle, breaching along the channel. Down it's a shadow that grows as it comes up; up it's solid and it takes a third of your speed.                                                                                                     |
+  | **Ice floe**       | ice    | the river's log, frozen — solid, drifting, and it never sits where it did last lap.                                                                                                                                                                   |
+  | **Asteroid**       | space  | tumbling rock, solid and drifting. Asteroid Belt runs twenty of them down a 142px channel.                                                                                                                                                            |
+  | **Alien**          | space  | walks across the channel bank to bank and turns round at each edge, not looking. Soft — it barely slows you — but it's never in the same place twice.                                                                                                 |
+  | **Ashfall**        | lava   | settling soot. Not solid; it holds on to the hull, same as a weed bed.                                                                                                                                                                                |
+  | **Debris field**   | space  | orbital junk, thick enough to snag on. Also not solid.                                                                                                                                                                                                |
+  | **Brash ice**      | ice    | loose slush; it holds on to the hull, same as a weed bed.                                                                                                                                                                                             |
+  | **Pressure crack** | ice    | the one hazard that isn't a circle. It opens as a seam straight across the channel on a cycle and is solid the whole way along while it's open — but it stops short of the far bank, and that gap is the way past.                                    |
 
   A hazard is never drawn wider than 80% of the channel half-width. A whirlpool broader than
   the river is not a hazard, it's a roadblock — the first cut had a 92px eddy on a 73px
@@ -111,9 +113,9 @@ dependencies beyond a webfont.
   through `THEMES[theme]` — flats, the four channel bands, the flow dashes, the course
   thumbnail and the chartplotter. Those were hardcoded literals scattered through the render
   before, lifted out unchanged as the river palette, so a further world is a palette entry and
-  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, ten
+  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, a dozen
   courses each, and each world's set is drawn to be a different shape of race rather than the
-  same meander ten times: an open sweep, a narrow buckled one, a twisting one full of drift,
+  same meander a dozen times: an open sweep, a narrow buckled one, a twisting one full of drift,
   a flattened ring, and one tight enough to be unforgiving.
 
   Every world now carries an **open, flat-out course drawn by hand** — Basalt Plain's rounded
@@ -123,7 +125,16 @@ dependencies beyond a webfont.
   the top half only, Terminator Line's wide sweeping arcs on one side and tight switchbacks on
   the other. A sinusoid's corners always arrive on the beat and it behaves the same all the way
   round; uneven spacing and a course with two different halves are things it structurally
-  cannot produce, which is what those six slots are for. The meander generator is a sinusoid, so
+  cannot produce, which is what those six slots are for.
+
+  Each world also has its **built environment** now, and the three are deliberately different
+  kinds of built: Foundry Quays is an L of right angles, Erebus Quay a harbour basin with a
+  jetty you go up one side of and back down the other, Relay Quays a regular hexagonal station
+  ring. Erebus Quay took four passes to land — the first was 5,685px against a 4,000–5,000
+  band, and two attempts to shorten it drove the hairpin round the jetty from radius 46 to 21,
+  tighter than anything else in the game. The fix was spacing rather than scale: control points
+  60px apart either side of a right angle make a kink the smoothing can't round, and the three
+  bands of the harbour (top edge, jetty, bottom edge) each need a channel width of room. The meander generator is a sinusoid, so
   a straight is one of the few shapes it cannot draw at all; those three are the only courses
   outside the rivers with real straights in them, and The Ecliptic is the only course in the
   game whose long axis isn't square to the world. Each also carries a **surging** course, where

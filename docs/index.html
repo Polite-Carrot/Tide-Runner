@@ -3461,6 +3461,34 @@
               [1837, 640],
             ],
           },
+          /* Slot 11 — the built environment. Right angles and straight runs:
+     everything the meander generator makes is curved everywhere, so a
+     course with corners in it has to be drawn. */
+          {
+            name: "Foundry Quays",
+            desc: "Worked · stone",
+            theme: "lava",
+            width: 130,
+            cps: [
+              [700, 500],
+              [1000, 500],
+              [1300, 500],
+              [1600, 500],
+              [1900, 500],
+              [1900, 700],
+              [1900, 900],
+              [1730, 900],
+              [1560, 900],
+              [1560, 1150],
+              [1560, 1400],
+              [1250, 1400],
+              [940, 1400],
+              [700, 1400],
+              [700, 1150],
+              [700, 900],
+              [700, 700],
+            ],
+          },
           {
             name: "Obsidian Narrows",
             desc: "Tight · glassy",
@@ -3684,6 +3712,60 @@
               [2039, 713],
             ],
           },
+          /* Slot 11, ice — a harbour with a jetty running into it, so the loop
+     goes up one side of it and back down the other. That hairpin round the
+     tip is the tightest corner outside the rivers. */
+          {
+            name: "Erebus Quay",
+            desc: "Harbour · frozen in",
+            theme: "ice",
+            width: 132,
+            hazards: { brash: 8 },
+            cps: [
+              [740, 480],
+              [1080, 480],
+              [1420, 480],
+              [1760, 480],
+              [1760, 790],
+              [1560, 790],
+              [1380, 790],
+              [1290, 830],
+              [1250, 950],
+              [1290, 1070],
+              [1380, 1110],
+              [1560, 1110],
+              [1760, 1110],
+              [1760, 1420],
+              [1420, 1420],
+              [1080, 1420],
+              [740, 1420],
+              [740, 1110],
+              [740, 790],
+            ],
+          },
+          /* Slot 13 — the world's signature hazard at its worst. Eight lobes
+     and the shelf breaking up under you. */
+          {
+            name: "Larsen Break",
+            desc: "Brutal · collapsing",
+            theme: "ice",
+            width: 134,
+            fleet: [4, 8],
+            hazards: { crack: 10, orca: 6 },
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 525,
+              ax: 1.2,
+              ay: 1.04,
+              k: 8,
+              amp: 0.17,
+              k2: 5,
+              amp2: 0.05,
+              phase: 1.6,
+              count: 30,
+            },
+          },
           {
             name: "Floe Maze",
             desc: "Twisting · drifting",
@@ -3878,6 +3960,56 @@
               [1740, 500],
               [1960, 720],
             ],
+          },
+          /* Slot 11, space — a station ring: six equal straights at sixty
+     degrees. Regular where the lava and ice quays are irregular, so the
+     three built environments don't read as one shape three times. */
+          {
+            name: "Relay Quays",
+            desc: "Station · docked",
+            theme: "space",
+            width: 132,
+            hazards: { crossing: 8 },
+            cps: [
+              [1975, 1149],
+              [1893, 1292],
+              [1810, 1435],
+              [1465, 1634],
+              [1300, 1634],
+              [1135, 1634],
+              [790, 1435],
+              [708, 1292],
+              [625, 1149],
+              [625, 751],
+              [708, 608],
+              [790, 465],
+              [1135, 266],
+              [1300, 266],
+              [1465, 266],
+              [1810, 465],
+              [1893, 608],
+              [1975, 751],
+            ],
+          },
+          {
+            name: "Kuiper Narrows",
+            desc: "Relentless · no respite",
+            theme: "space",
+            width: 126,
+            hazards: { rock: 8 },
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 585,
+              ax: 1.16,
+              ay: 1.06,
+              k: 9,
+              amp: 0.085,
+              k2: 6,
+              amp2: 0.03,
+              phase: 2.4,
+              count: 34,
+            },
           },
           {
             name: "Asteroid Belt",
@@ -7725,6 +7857,19 @@
           // ice
           floe: { r: 30, drift: 15, solid: 10, bite: 0.8 },
           orca: { r: 27, solid: 12, bite: 0.66, cycle: [4.4, 2.3] },
+          brash: { r: 60, drift: 0, drag: true },
+          /* The one hazard that isn't a circle. A pressure crack opens as a
+     seam straight across the channel and closes again, and it is solid the
+     whole way along while it's open — so `line` swaps the circle test in
+     hazardCollide for a segment one. It never spans the full width: the
+     inner end stops short of the far bank, and that gap is the way past. */
+          crack: {
+            r: 70,
+            solid: 11,
+            bite: 0.55,
+            cycle: [4.2, 2.6],
+            line: true,
+          },
           // space
           rock: { r: 23, drift: 19, solid: 9, bite: 0.82 },
           crossing: { r: 20, solid: 8, bite: 0.9, cross: 0.34 },
@@ -7818,6 +7963,23 @@
               made++;
             }
           }
+        }
+
+        /* The seam runs from the bank on one side (lane ±1) to a little past
+   the centreline, so roughly two thirds of the channel is blocked and the
+   last third is open. Computed from the track rather than stored, so it
+   stays put against the channel however the course was generated. */
+        function crackEnds(h) {
+          const p = track.pts[h.i],
+            nv = track.nrm[h.i];
+          const outer = h.dir * track.half * 1.02,
+            inner = h.dir * track.half * -0.3;
+          return {
+            x1: p.x + nv.x * outer,
+            y1: p.y + nv.y * outer,
+            x2: p.x + nv.x * inner,
+            y2: p.y + nv.y * inner,
+          };
         }
 
         function stepHazards(dt) {
@@ -7937,14 +8099,30 @@
             // one that comes and goes is only there while it's up
             if (cfg.cycle && !h.up) continue;
             const clear = cfg.solid;
-            const dx = b.x - h.x,
-              dy = b.y - h.y,
+            // where on the hazard the hull is being pushed away from: the
+            // centre of a circle, or the nearest point along a seam
+            let cx = h.x,
+              cy = h.y,
+              reach = h.r;
+            if (cfg.line) {
+              const e = crackEnds(h);
+              const ex = e.x2 - e.x1,
+                ey = e.y2 - e.y1;
+              const L2 = ex * ex + ey * ey || 1;
+              let t = ((b.x - e.x1) * ex + (b.y - e.y1) * ey) / L2;
+              t = Math.max(0, Math.min(1, t));
+              cx = e.x1 + ex * t;
+              cy = e.y1 + ey * t;
+              reach = 0; // the seam has no thickness; only the clearance counts
+            }
+            const dx = b.x - cx,
+              dy = b.y - cy,
               d = Math.hypot(dx, dy);
-            if (d >= h.r + clear) continue;
+            if (d >= reach + clear) continue;
             const ux = dx / (d || 1),
               uy = dy / (d || 1);
-            b.x = h.x + ux * (h.r + clear);
-            b.y = h.y + uy * (h.r + clear);
+            b.x = cx + ux * (reach + clear);
+            b.y = cy + uy * (reach + clear);
             const dot = b.vx * ux + b.vy * uy;
             const impact = Math.max(0, -dot);
             b.vx -= 1.35 * dot * ux;
@@ -8255,6 +8433,93 @@
                 ctx.fillRect(-w / 2, -t / 2, w, t);
                 if (k % 4 === 1) ctx.fillRect(-t / 2, -w / 2, t, w);
                 ctx.restore();
+              }
+            } else if (h.type === "brash") {
+              // brash ice: a raft of loose lumps, pale on dark water
+              ctx.fillStyle = "rgba(180,208,226,.3)";
+              ctx.beginPath();
+              ctx.arc(0, 0, h.r * 0.95, 0, 7);
+              ctx.fill();
+              for (let k = 0; k < 17; k++) {
+                const a = (k / 17) * Math.PI * 2 + h.spin * 0.2;
+                const rr = h.r * (0.18 + 0.66 * (((k * 5) % 13) / 13));
+                ctx.save();
+                ctx.translate(Math.cos(a) * rr, Math.sin(a) * rr);
+                ctx.rotate(a * 3 + Math.sin(waveT + k) * 0.2);
+                ctx.fillStyle = k % 3 === 0 ? "#eaf4fb" : "#b9d2e2";
+                const w = h.r * (0.1 + 0.1 * ((k % 4) / 4));
+                ctx.beginPath();
+                ctx.moveTo(-w, -w * 0.6);
+                ctx.lineTo(w * 0.8, -w * 0.9);
+                ctx.lineTo(w, w * 0.7);
+                ctx.lineTo(-w * 0.7, w * 0.8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+              }
+            } else if (h.type === "crack") {
+              /* Drawn in the track's own frame rather than translated to a
+                 centre, since a seam is defined by its two ends. Closed, it's
+                 a hairline that darkens as the break comes; open, it's a gap
+                 with the sea showing through and the lips shoved apart. */
+              ctx.restore();
+              ctx.save();
+              const e = crackEnds(h);
+              const jag = (w, off) => {
+                ctx.beginPath();
+                const ex = e.x2 - e.x1,
+                  ey = e.y2 - e.y1;
+                const L = Math.hypot(ex, ey) || 1;
+                const px = -ey / L,
+                  py = ex / L;
+                const N = 9;
+                for (let k = 0; k <= N; k++) {
+                  const t = k / N;
+                  const wob = Math.sin(k * 2.3 + h.wob) * w * 0.5 + off * w;
+                  const x = e.x1 + ex * t + px * wob,
+                    y = e.y1 + ey * t + py * wob;
+                  k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+                }
+              };
+              if (!h.up) {
+                const near = Math.max(
+                  0,
+                  (h.t - (HAZ.crack.cycle[0] - 1.4)) / 1.4,
+                );
+                ctx.globalAlpha = 0.25 + near * 0.55;
+                ctx.strokeStyle = "#5d7b8d";
+                ctx.lineWidth = 1.5 + near * 2.5;
+                jag(3, 0);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+              } else {
+                const k = Math.sin(h.phase * Math.PI);
+                const w = 7 + k * 17;
+                ctx.fillStyle = "#04202e";
+                ctx.beginPath();
+                jag(w, -0.5);
+                const ex = e.x2 - e.x1,
+                  ey = e.y2 - e.y1;
+                const L = Math.hypot(ex, ey) || 1;
+                const px = -ey / L,
+                  py = ex / L;
+                const N = 9;
+                for (let q = N; q >= 0; q--) {
+                  const t = q / N;
+                  const wob = Math.sin(q * 2.3 + h.wob) * w * 0.5 + 0.5 * w;
+                  ctx.lineTo(
+                    e.x1 + ex * t + px * wob,
+                    e.y1 + ey * t + py * wob,
+                  );
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = "#dceaf4";
+                ctx.lineWidth = 2.5;
+                jag(w, -0.5);
+                ctx.stroke();
+                jag(w, 0.5);
+                ctx.stroke();
               }
             } else if (h.type === "floe") {
               // a slab of ice: an irregular plate with a lit top face, a wet
