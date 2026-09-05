@@ -11,8 +11,8 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Eighty-five courses across four worlds** — twenty-five rivers and twenty each of lava, ice
-  and space — each with
+- **One hundred courses across four worlds** — twenty-five each of rivers, lava, ice and space —
+  each with
   its own width and character. The menu shows only the one you've got selected: its plotter
   trace on the left, and on the right its name, its character and a row per stat — how many
   boats it fields, your best lap, your best total, an em dash where you haven't set one yet
@@ -70,7 +70,7 @@ dependencies beyond a webfont.
 - **Some courses roll their fleet size.** A course can name a range instead of a number, and
   it is rolled fresh at the start of every race — Kraken Deep fields anywhere from six boats
   to twelve, so the same course is a procession one race and a scrap the next.
-- **Forty-four courses have things in the water**, and what's in it depends on the world.
+- **Fifty-nine courses have things in the water**, and what's in it depends on the world.
   Hazards are declared per course and spawned per race, so a course with none is untouched
   and still races exactly as its records were set.
 
@@ -113,9 +113,9 @@ dependencies beyond a webfont.
   through `THEMES[theme]` — flats, the four channel bands, the flow dashes, the course
   thumbnail and the chartplotter. Those were hardcoded literals scattered through the render
   before, lifted out unchanged as the river palette, so a further world is a palette entry and
-  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, twenty
+  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, twenty-five
   courses each, and each world's set is drawn to be a different shape of race rather than the
-  same meander twenty times: an open sweep, a narrow buckled one, a twisting one full of drift,
+  same meander twenty-five times: an open sweep, a narrow buckled one, a twisting one full of drift,
   a flattened ring, and one tight enough to be unforgiving.
 
   Every world now carries an **open, flat-out course drawn by hand** — Basalt Plain's rounded
@@ -147,7 +147,13 @@ dependencies beyond a webfont.
   it by construction, because every angle is a right angle and no control point sits within
   200px of its neighbour.
 
-  Each world now has a **full-fleet set piece** too — The Firebowl, The Ice Shelf and The
+  Each world ends the way the rivers do: a **vast** course and an **enormous** one at 8,900 and
+  9,800px a lap against Kraken Deep's 9,298 and Leviathan Run's 10,193, a **dogbone** with two
+  long straights and the only real slipstreaming in the world, and an **asymmetric finale** that
+  is two courses in one — a smooth sweep down one side and a weave down the other that gives
+  nothing back.
+
+  Each world also has a **full-fleet set piece** — The Firebowl, The Ice Shelf and The
   Drydock, all 290px wide and twelve boats, the same shape of race The Broadwater is on the
   rivers. They run to about 6,500px a lap against the 4,000&ndash;5,000 everything else holds,
   which is deliberate: a set piece should feel like a different size of event.
@@ -241,6 +247,10 @@ dependencies beyond a webfont.
   the accent is the green everything alive out there is lit in, from the drifting aliens to
   the beam that gets you. Ice takes its white straight, since the panels stay dark.
 
+- **Building all hundred costs 47ms at boot.** `TRACKS = COURSES.map(buildTrack)` runs for every
+  course at load, and at forty courses that measured 40ms, which suggested a hundred would land
+  near 100ms and want building lazily. Measured at a hundred: 46.9ms for 33,540 centreline
+  points. The first number was mostly JIT warm-up, and the lazy build is not worth writing.
 - **Three of them are enormous.** Kraken Deep, The Great Sound and Leviathan Run run to
   9,300–10,200px a lap against 4,000–5,000 for the rest, so a lap is a voyage rather than a
   circuit. Wildlife is scaled by track length so the big water isn't empty.
