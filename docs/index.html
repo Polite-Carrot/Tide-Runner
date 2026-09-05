@@ -3392,6 +3392,75 @@
               count: 22,
             },
           },
+          /* Slot 8 — relentless. High lobe count at low amplitude: the channel
+     never straightens and never gives you a corner worth the name, so
+     there is no rhythm to settle into. */
+          {
+            name: "Scoria Weave",
+            desc: "Relentless · abrasive",
+            theme: "lava",
+            width: 128,
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 585,
+              ax: 1.16,
+              ay: 1.06,
+              k: 7,
+              amp: 0.12,
+              k2: 5,
+              amp2: 0.034,
+              phase: 1.9,
+              count: 28,
+            },
+          },
+          /* Slot 9 — the opposite: two big lobes and nothing else, so it is
+     all commitment and no correction. */
+          {
+            name: "The Long Burn",
+            desc: "Long swell · exposed",
+            theme: "lava",
+            width: 160,
+            fleet: [4, 8],
+            hazards: { ashfall: 8 },
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 630,
+              ax: 1.24,
+              ay: 0.96,
+              k: 2,
+              amp: 0.2,
+              k2: 5,
+              amp2: 0.035,
+              phase: 0.6,
+              count: 20,
+            },
+          },
+          /* Slot 10 — blind. Three notches cut into a circle at deliberately
+     uneven spacing, because a sinusoid's corners always arrive on the
+     beat and these must not: you have to learn where they are. */
+          {
+            name: "Aa Field",
+            desc: "Blind · broken ground",
+            theme: "lava",
+            width: 124,
+            hazards: { rockfall: 9 },
+            cps: [
+              [1920, 950],
+              [1594, 1120],
+              [1610, 1487],
+              [1300, 1570],
+              [990, 1487],
+              [1006, 1120],
+              [680, 950],
+              [763, 640],
+              [1130, 656],
+              [1300, 330],
+              [1610, 413],
+              [1837, 640],
+            ],
+          },
           {
             name: "Obsidian Narrows",
             desc: "Tight · glassy",
@@ -3547,6 +3616,75 @@
             },
           },
           {
+            name: "Sastrugi Weave",
+            desc: "Relentless · scoured",
+            theme: "ice",
+            width: 128,
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 590,
+              ax: 1.2,
+              ay: 1.04,
+              k: 7,
+              amp: 0.12,
+              k2: 5,
+              amp2: 0.03,
+              phase: 0.4,
+              count: 28,
+            },
+          },
+          {
+            name: "The Long Lead",
+            desc: "Long swell · exposed",
+            theme: "ice",
+            width: 162,
+            fleet: [4, 8],
+            hazards: { orca: 8 },
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 630,
+              ax: 1.26,
+              ay: 0.94,
+              k: 2,
+              amp: 0.2,
+              k2: 5,
+              amp2: 0.03,
+              phase: 2.3,
+              count: 20,
+            },
+          },
+          /* Slot 10, ice — blind by a different means: a slalom worked into
+     the top half only. The generator is periodic all the way round, so a
+     course that behaves differently on one side than the other is
+     something it structurally cannot produce. */
+          {
+            name: "Serac Passage",
+            desc: "Blind · ice towers",
+            theme: "ice",
+            width: 120,
+            hazards: { floe: 9 },
+            cps: [
+              [2000, 950],
+              [1947, 1149],
+              [1795, 1318],
+              [1568, 1430],
+              [1300, 1470],
+              [1032, 1430],
+              [805, 1318],
+              [653, 1149],
+              [600, 950],
+              [561, 713],
+              [876, 653],
+              [994, 378],
+              [1300, 530],
+              [1606, 378],
+              [1724, 653],
+              [2039, 713],
+            ],
+          },
+          {
             name: "Floe Maze",
             desc: "Twisting · drifting",
             theme: "ice",
@@ -3675,6 +3813,71 @@
               phase: 2.0,
               count: 22,
             },
+          },
+          {
+            name: "Debris Weave",
+            desc: "Relentless · cluttered",
+            theme: "space",
+            width: 130,
+            hazards: { debris: 10 },
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 590,
+              ax: 1.18,
+              ay: 1.06,
+              k: 7,
+              amp: 0.12,
+              k2: 5,
+              amp2: 0.032,
+              phase: 2.8,
+              count: 28,
+            },
+          },
+          {
+            name: "The Long Fall",
+            desc: "Long swell · exposed",
+            theme: "space",
+            width: 164,
+            fleet: [4, 8],
+            gen: {
+              cx: 1300,
+              cy: 950,
+              R: 630,
+              ax: 1.28,
+              ay: 0.94,
+              k: 2,
+              amp: 0.2,
+              k2: 5,
+              amp2: 0.032,
+              phase: 1.5,
+              count: 20,
+            },
+          },
+          /* Slot 10, space — one course, two characters: wide sweeping arcs
+     on the lit half, tight switchbacks on the dark one. Crossing the line
+     between them is the whole course. */
+          {
+            name: "Terminator Line",
+            desc: "Blind · day into night",
+            theme: "space",
+            width: 122,
+            hazards: { rock: 9 },
+            cps: [
+              [2000, 950],
+              [1866, 1361],
+              [1516, 1616],
+              [1084, 1616],
+              [734, 1361],
+              [600, 950],
+              [640, 700],
+              [860, 500],
+              [1080, 800],
+              [1300, 500],
+              [1520, 800],
+              [1740, 500],
+              [1960, 720],
+            ],
           },
           {
             name: "Asteroid Belt",
@@ -7518,15 +7721,18 @@
         const HAZ = {
           eddy: { r: 92, drift: 0 },
           log: { r: 17, drift: 26, solid: 9, bite: 0.86 },
-          weed: { r: 58, drift: 0 },
+          weed: { r: 58, drift: 0, drag: true },
           // ice
           floe: { r: 30, drift: 15, solid: 10, bite: 0.8 },
           orca: { r: 27, solid: 12, bite: 0.66, cycle: [4.4, 2.3] },
           // space
           rock: { r: 23, drift: 19, solid: 9, bite: 0.82 },
           crossing: { r: 20, solid: 8, bite: 0.9, cross: 0.34 },
+          // space
+          debris: { r: 58, drift: 0, drag: true },
           // lava
           rockfall: { r: 34, solid: 13, bite: 0.62, cycle: [3.6, 1.8] },
+          ashfall: { r: 62, drift: 0, drag: true },
         };
 
         function spawnHazards() {
@@ -7551,7 +7757,7 @@
               // sit off the centreline, but leave a boat's width of clean
               // water. The ones that walk across start at a bank instead —
               // the whole point of them is the crossing.
-              const room = type === "weed" ? 0.62 : 0.72;
+              const room = cfg.drag ? 0.62 : 0.72;
               const lane = cfg.cross
                 ? (Math.random() < 0.5 ? -1 : 1) * 0.82
                 : (Math.random() * 2 - 1) * room;
@@ -7686,7 +7892,9 @@
             const d2 = dx * dx + dy * dy;
             if (d2 > h.r * h.r) continue;
             const d = Math.sqrt(d2) || 1;
-            if (h.type === "weed") {
+            if ((HAZ[h.type] || {}).drag) {
+              // weed, ash and orbital junk are one mechanic in three coats:
+              // nothing solid to hit, it just holds on to the hull
               b.weed = true;
             } else if (h.type === "eddy") {
               // strongest at the eye, nothing at the rim
@@ -7984,6 +8192,70 @@
               ctx.beginPath();
               ctx.ellipse(0, 0, h.r, h.r * 0.55, 0, 0, 7);
               ctx.stroke();
+            } else if (h.type === "ashfall") {
+              // a settling ash cloud: a soft dark patch with motes turning
+              // over in it, lit from beneath by the channel it sits on
+              ctx.fillStyle = "rgba(28,18,13,.66)";
+              ctx.beginPath();
+              for (let k = 0; k <= 24; k++) {
+                const a = (k / 24) * Math.PI * 2;
+                const rr =
+                  h.r * (0.72 + 0.26 * Math.sin(a * 2.4 + h.spin * 0.6));
+                const x = Math.cos(a) * rr,
+                  y = Math.sin(a) * rr;
+                k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+              }
+              ctx.closePath();
+              ctx.fill();
+              ctx.fillStyle = "rgba(88,66,52,.5)";
+              for (let k = 0; k < 9; k++) {
+                const a = (k / 9) * Math.PI * 2 + waveT * 0.5;
+                const rr = h.r * (0.24 + 0.42 * ((k % 3) / 3));
+                ctx.beginPath();
+                ctx.ellipse(
+                  Math.cos(a) * rr,
+                  Math.sin(a) * rr,
+                  h.r * 0.2,
+                  h.r * 0.13,
+                  a,
+                  0,
+                  7,
+                );
+                ctx.fill();
+              }
+              ctx.fillStyle = "rgba(255,156,58,.28)";
+              for (let k = 0; k < 7; k++) {
+                const a = k * 0.9 + waveT * 1.4;
+                ctx.beginPath();
+                ctx.arc(
+                  Math.cos(a) * h.r * 0.5,
+                  Math.sin(a) * h.r * 0.5,
+                  1.6,
+                  0,
+                  7,
+                );
+                ctx.fill();
+              }
+            } else if (h.type === "debris") {
+              // a junk field: no single silhouette, just enough tumbling
+              // fragments in one place to snag on
+              ctx.fillStyle = "rgba(18,16,38,.5)";
+              ctx.beginPath();
+              ctx.arc(0, 0, h.r * 0.92, 0, 7);
+              ctx.fill();
+              for (let k = 0; k < 13; k++) {
+                const a = (k / 13) * Math.PI * 2 + h.spin * 0.3;
+                const rr = h.r * (0.2 + 0.62 * (((k * 7) % 11) / 11));
+                ctx.save();
+                ctx.translate(Math.cos(a) * rr, Math.sin(a) * rr);
+                ctx.rotate(a * 2 + h.spin);
+                ctx.fillStyle = k % 3 === 0 ? "#8f9ad6" : "#4a5177";
+                const w = h.r * (0.1 + 0.12 * ((k % 4) / 4)),
+                  t = h.r * 0.045;
+                ctx.fillRect(-w / 2, -t / 2, w, t);
+                if (k % 4 === 1) ctx.fillRect(-t / 2, -w / 2, t, w);
+                ctx.restore();
+              }
             } else if (h.type === "floe") {
               // a slab of ice: an irregular plate with a lit top face, a wet
               // rim where it meets the water, and cracks across it

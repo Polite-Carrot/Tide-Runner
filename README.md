@@ -11,7 +11,7 @@ dependencies beyond a webfont.
 
 ## Racing
 
-- **Forty-six courses across four worlds** — twenty-five rivers, and seven each of lava, ice
+- **Fifty-five courses across four worlds** — twenty-five rivers, and ten each of lava, ice
   and space — each with
   its own width and character. The menu shows only the one you've got selected: its plotter
   trace on the left, and on the right its name, its character and a row per stat — how many
@@ -70,20 +70,22 @@ dependencies beyond a webfont.
 - **Some courses roll their fleet size.** A course can name a range instead of a number, and
   it is rolled fresh at the start of every race — Kraken Deep fields anywhere from six boats
   to twelve, so the same course is a procession one race and a scrap the next.
-- **Twenty-two courses have things in the water**, and what's in it depends on the world.
+- **Thirty-one courses have things in the water**, and what's in it depends on the world.
   Hazards are declared per course and spawned per race, so a course with none is untouched
   and still races exactly as its records were set.
 
-  |               | world  | what it does                                                                                                                                                                                                                                          |
-  | ------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | **Whirlpool** | any    | pulls you toward the eye and turns the helm — the only hazard that takes the boat somewhere you didn't point it. Its inward pull peaks at 165 against 340 of thrust, so you can always drive out; you just won't come out pointing where you went in. |
-  | **Log**       | rivers | solid, and it drifts with the current, so the line that worked last lap is not the line this lap.                                                                                                                                                     |
-  | **Weed bed**  | rivers | not solid; it just holds on to the hull, and costs you the exit of whatever corner it's sitting in.                                                                                                                                                   |
-  | **Rockfall**  | lava   | not there, then there. A shadow tightens on the channel for a second and a half, then a boulder lands in it and sits for two — the hardest hit in the game, and the only warning is the shadow.                                                       |
-  | **Orca**      | ice    | surfaces on a cycle, breaching along the channel. Down it's a shadow that grows as it comes up; up it's solid and it takes a third of your speed.                                                                                                     |
-  | **Ice floe**  | ice    | the river's log, frozen — solid, drifting, and it never sits where it did last lap.                                                                                                                                                                   |
-  | **Asteroid**  | space  | tumbling rock, solid and drifting. Asteroid Belt runs twenty of them down a 142px channel.                                                                                                                                                            |
-  | **Alien**     | space  | walks across the channel bank to bank and turns round at each edge, not looking. Soft — it barely slows you — but it's never in the same place twice.                                                                                                 |
+  |                  | world  | what it does                                                                                                                                                                                                                                          |
+  | ---------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | **Whirlpool**    | any    | pulls you toward the eye and turns the helm — the only hazard that takes the boat somewhere you didn't point it. Its inward pull peaks at 165 against 340 of thrust, so you can always drive out; you just won't come out pointing where you went in. |
+  | **Log**          | rivers | solid, and it drifts with the current, so the line that worked last lap is not the line this lap.                                                                                                                                                     |
+  | **Weed bed**     | rivers | not solid; it just holds on to the hull, and costs you the exit of whatever corner it's sitting in.                                                                                                                                                   |
+  | **Rockfall**     | lava   | not there, then there. A shadow tightens on the channel for a second and a half, then a boulder lands in it and sits for two — the hardest hit in the game, and the only warning is the shadow.                                                       |
+  | **Orca**         | ice    | surfaces on a cycle, breaching along the channel. Down it's a shadow that grows as it comes up; up it's solid and it takes a third of your speed.                                                                                                     |
+  | **Ice floe**     | ice    | the river's log, frozen — solid, drifting, and it never sits where it did last lap.                                                                                                                                                                   |
+  | **Asteroid**     | space  | tumbling rock, solid and drifting. Asteroid Belt runs twenty of them down a 142px channel.                                                                                                                                                            |
+  | **Alien**        | space  | walks across the channel bank to bank and turns round at each edge, not looking. Soft — it barely slows you — but it's never in the same place twice.                                                                                                 |
+  | **Ashfall**      | lava   | settling soot. Not solid; it holds on to the hull, same as a weed bed.                                                                                                                                                                                |
+  | **Debris field** | space  | orbital junk, thick enough to snag on. Also not solid.                                                                                                                                                                                                |
 
   A hazard is never drawn wider than 80% of the channel half-width. A whirlpool broader than
   the river is not a hazard, it's a roadblock — the first cut had a 92px eddy on a 73px
@@ -93,7 +95,10 @@ dependencies beyond a webfont.
   clearance a boat is pushed back to on contact and marks it as something you hit rather than
   something you're pulled through, `bite` is what's left of your speed after a hard one,
   `drift` is how fast it rides the current, `cycle` is `[down, up]` seconds for the ones that
-  come and go, and `cross` is lanes-per-second for the ones that walk. A laid Net has no row —
+  come and go, `cross` is lanes-per-second for the ones that walk, and `drag` marks the ones
+  that just hold on to the hull. Weed, ashfall and debris are that last one in three coats of
+  paint — the second and third cost a table row and a drawing each, which is the point of
+  having the table. A laid Net has no row —
   nothing about it is quoted per course — so the collision pass has to tolerate a hazard the
   table doesn't know, which is a guard worth having for whatever gear comes next.
 
@@ -106,14 +111,19 @@ dependencies beyond a webfont.
   through `THEMES[theme]` — flats, the four channel bands, the flow dashes, the course
   thumbnail and the chartplotter. Those were hardcoded literals scattered through the render
   before, lifted out unchanged as the river palette, so a further world is a palette entry and
-  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, seven
+  some `gen` configs rather than a render rewrite. **Ice** and **Space** are exactly that, ten
   courses each, and each world's set is drawn to be a different shape of race rather than the
-  same meander seven times: an open sweep, a narrow buckled one, a twisting one full of drift,
+  same meander ten times: an open sweep, a narrow buckled one, a twisting one full of drift,
   a flattened ring, and one tight enough to be unforgiving.
 
   Every world now carries an **open, flat-out course drawn by hand** — Basalt Plain's rounded
   triangle, The Polynya's long lead down one side and a bay round the other, The Ecliptic's
-  stadium canted eighteen degrees off the horizontal. The meander generator is a sinusoid, so
+  stadium canted eighteen degrees off the horizontal — and a **blind one**: Aa Field's three
+  notches cut into a circle at deliberately uneven spacing, Serac Passage's slalom worked into
+  the top half only, Terminator Line's wide sweeping arcs on one side and tight switchbacks on
+  the other. A sinusoid's corners always arrive on the beat and it behaves the same all the way
+  round; uneven spacing and a course with two different halves are things it structurally
+  cannot produce, which is what those six slots are for. The meander generator is a sinusoid, so
   a straight is one of the few shapes it cannot draw at all; those three are the only courses
   outside the rivers with real straights in them, and The Ecliptic is the only course in the
   game whose long axis isn't square to the world. Each also carries a **surging** course, where
