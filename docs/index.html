@@ -2308,6 +2308,13 @@
         }
       }
 
+      /* display:flex on a class beats the UA stylesheet's [hidden]{display:none},
+         so the attribute silently does nothing without this — which left the
+         advert-personalisation row showing for everyone, offering a form that
+         only exists where consent was required. */
+      .setrow[hidden] {
+        display: none;
+      }
       .setrow {
         display: flex;
         justify-content: space-between;
@@ -2931,6 +2938,17 @@
             and difficulties get played — never your name, and never anything
             you type.</span
           >
+        </div>
+        <div class="setrow">
+          <label for="analyticsToggle2">Send usage data</label>
+          <button
+            class="toggle"
+            id="analyticsToggle2"
+            data-on="1"
+            aria-label="Send usage data"
+          >
+            <span></span>
+          </button>
         </div>
         <div class="setrow" id="privacyOptionsRow" hidden>
           <label for="adPrivacyBtn">Advert personalisation</label>
@@ -14893,12 +14911,19 @@
         const sfxTog = document.getElementById("sfxToggle");
         const hapticsTog = document.getElementById("hapticsToggle");
         const analyticsTog = document.getElementById("analyticsToggle");
+        /* The same setting, shown in two places: here in Settings where it is
+   one tap away, and again in Privacy & data so that sheet is a complete
+   account of what leaves the device rather than one that explains usage
+   data and then sends you elsewhere to change it. Deliberately not moved
+   — burying an opt-out a level deeper is the wrong direction. */
+        const analyticsTog2 = document.getElementById("analyticsToggle2");
 
         function syncToggles() {
           musicTog.dataset.on = SETTINGS.music ? "1" : "0";
           sfxTog.dataset.on = SETTINGS.sfx ? "1" : "0";
           hapticsTog.dataset.on = SETTINGS.haptics ? "1" : "0";
           analyticsTog.dataset.on = SETTINGS.analytics ? "1" : "0";
+          analyticsTog2.dataset.on = SETTINGS.analytics ? "1" : "0";
         }
         syncToggles();
 
@@ -15093,6 +15118,9 @@
         syncConsentBanner();
 
         analyticsTog.onclick = () =>
+          resolveAnalyticsConsent(!SETTINGS.analytics);
+        // same resolver, so either copy moves both — see syncToggles
+        analyticsTog2.onclick = () =>
           resolveAnalyticsConsent(!SETTINGS.analytics);
 
         /* ============================================================

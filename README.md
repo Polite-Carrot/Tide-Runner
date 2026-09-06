@@ -497,6 +497,21 @@ device: progress and captain name (nothing), adverts (AdMob, and what it gets),
 and usage data (only if switched on). It carries the consent control when there
 is one, and links the full policy.
 
+**The usage-data toggle appears in both places**, in Settings and again here, and
+that duplication is the point: the sheet was explaining usage data and then
+sending you elsewhere to change it. Mirroring rather than moving, because
+burying an opt-out a level deeper is the wrong direction. `resolveAnalyticsConsent()`
+already called `syncToggles()`, so keeping the two copies in step cost one line.
+
+The two controls are not symmetrical and can't be. The analytics choice is a
+toggle this app owns; the advert one is **Google's form** — UMP renders it,
+stores the answer, and only reports a Change control as required for players it
+decided need one. All this side can do is open it.
+
+**`display:flex` on a class beats `[hidden]`**, which is how the
+advert-personalisation row came to show for everyone at first, offering a form
+that only exists where consent was required. `.setrow[hidden]` puts it back.
+
 **The policy itself had gone false** and was fixed at the same time — it still
 said the game had "no advertising, and no third-party SDKs", written before
 AdMob existed. Shipping a privacy policy that describes a different app is not a
