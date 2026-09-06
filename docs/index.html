@@ -8160,11 +8160,12 @@
               coachTouch ? { x: W * 0.5, y: H * 0.72, r: 78 } : null,
             arrows: false,
             done: () => joyActive() || anyDriveKey(),
+            by: 0.12,
           },
           {
             id: "throttle",
             title: "Push forward",
-            text: "Away from you is throttle, back is astern. The further you push, the harder she pulls.",
+            text: "Push the way her bow is pointing — that's throttle. The other way is astern, and the further you push the harder she pulls.",
             keyTitle: "Open her up",
             keyText: "W or up for throttle, S or down to go astern.",
             spot: joySpot,
@@ -8172,6 +8173,7 @@
             // held, not tapped: a stray flick shouldn't tick this off
             hold: 0.55,
             test: () => controls().thr > 0.45,
+            by: 0.22,
           },
           {
             id: "turn",
@@ -8184,6 +8186,7 @@
             arrows: "side",
             hold: 0.4,
             test: () => Math.abs(controls().steer) > 0.45,
+            by: 0.33,
           },
           {
             id: "gear",
@@ -8194,6 +8197,7 @@
             spot: () => elSpot(document.getElementById("gearStack"), 14),
             arrows: false,
             done: () => coachGearFired,
+            by: 0.78,
           },
           {
             id: "line",
@@ -8221,6 +8225,24 @@
                 r: r.width * 0.56,
               }
             : { x: W * 0.5, y: H * 0.72, r: 78 };
+        }
+        /* The stick is heading-relative: forward is the way her bow points,
+   not the top of the screen. So a fixed up-arrow is a lie the moment she is
+   running south, which is most of a lap. The whole cluster turns with her —
+   "up" becomes the bow, and the pair either side of it becomes port and
+   starboard, which is what the steering step wants anyway. */
+        function coachAimArrows(st) {
+          if (!st || !st.arrows) return;
+          const h = me ? me.h : -Math.PI / 2;
+          coachArrowsEl.style.transform = `rotate(${h + Math.PI / 2}rad)`;
+        }
+        /* How far round she is, 0 at the line. Not meaningful until she has
+   crossed it — boats start on the grid *behind* the line, which is the far
+   end of the index range, and reading that as "nearly a lap done" would
+   time every step out before the player had touched anything. */
+        function coachLapFrac() {
+          if (!me || !track || me.lap < 0) return 0;
+          return Math.max(0, Math.min(1, me.idx / track.n));
         }
         function elSpot(el, pad) {
           const r = el.getBoundingClientRect();
@@ -8274,6 +8296,7 @@
           coachArrowsEl.querySelector(".right").style.display =
             st.arrows === "side" ? "" : "none";
           coachHole(st.spot ? st.spot() : null);
+          coachAimArrows(st);
         }
         function coachHole(sp) {
           if (!sp) {
@@ -8301,10 +8324,30 @@
         }
         function stepCoaching(dt) {
           if (coachStep < 0) return;
-          const st = COACH_STEPS[coachStep];
+          let st = COACH_STEPS[coachStep];
           if (!st) return stopCoaching();
+          /* A step nobody performs must not hold the whole tutorial hostage.
+             Each one names the point in the lap by which it gives up, so a
+             player who never quite satisfies "steer" still gets shown their
+             gear a third of the way round instead of never. Skipping is a
+             loop rather than one step a frame, so an overdue run lands on the
+             right step instead of flickering through the ones between. */
+          const frac = coachLapFrac();
+          let skipped = false;
+          while (st && st.by && frac >= st.by) {
+            coachStep++;
+            st = COACH_STEPS[coachStep];
+            skipped = true;
+          }
+          if (skipped) {
+            coachHold = 0;
+            coachSettle = 0;
+            if (!st) return stopCoaching();
+            showCoachStep();
+          }
           // the helm moves under the player, so the spotlight follows it
           if (st.spot) coachHole(st.spot());
+          coachAimArrows(st);
           const satisfied = st.done ? st.done() : st.test();
           if (!satisfied) {
             coachHold = 0;

@@ -840,6 +840,27 @@ first hunter, the first world change) is one more entry and no new machinery.
 Steps read `controls()` rather than the stick directly, so the same tutorial
 works on a keyboard, and each carries alternate copy for it.
 
+**But a step nobody performs must not hold the tutorial hostage.** A player who
+never quite pushes the stick far enough sideways would sit on "steer with the
+same thumb" for the whole lap and never be shown their gear at all. So each step
+also names a `by` — the point in the lap at which it gives up and moves on. Gear
+lands a third of the way round at the latest, and lets go itself at 78% so the
+run always reaches the finish. The skip is a loop rather than one step per
+frame: an overdue run lands on the right step instead of flickering through the
+ones between it. Lap position is only read once she has crossed the line, since
+boats start on the grid _behind_ it — the far end of the index range, which read
+naively is "nearly a lap done" and would time every step out before the player
+had touched anything.
+
+**The arrows point at the bow, not at the top of the screen.** The helm is
+heading-relative: forward is `dx·cos h + dy·sin h`, the way she is actually
+pointing, so telling a player to push "up" while she runs south is teaching them
+the wrong control. The whole arrow cluster is rotated by `h + π/2`, which puts
+the up-arrow on her bow and — for free, because they were laid out either side
+of it — puts the other two on port and starboard, which is exactly what the
+steering step means by left and right. The copy follows: "push the way her bow
+is pointing", not "away from you".
+
 **The spotlight is one enormous spread `box-shadow` on a transparent element**:
 everything outside it goes dark and the element itself stays clear. A hole in
 the screen with no mask, no SVG and no second layer to keep in sync. Nothing in
