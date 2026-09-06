@@ -795,6 +795,15 @@
         text-transform: uppercase;
         color: rgba(234, 247, 244, 0.5);
       }
+      .course .tilemedal {
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        font-size: 19px;
+        line-height: 1;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+        pointer-events: none;
+      }
       .course .tilerec {
         margin: 3px 0 0;
         color: var(--amber);
@@ -3024,7 +3033,8 @@
           <span
             >Google AdMob serves them. It receives your device's advert
             identifier, approximate location from your IP address, and basic
-            device information.</span
+            device information. On iOS the advert identifier is only read if you
+            allow tracking when asked.</span
           >
         </div>
         <div class="dsrow">
@@ -7830,6 +7840,9 @@
           wake = [],
           trail = [],
           trailAcc = 0;
+        // what the course was worth before this race, so the results screen
+        // can tell a first gold from a gold you already had
+        let medalAtStart = null;
         let newLapRecord = false,
           newTotalRecord = false,
           newTtRecord = false,
@@ -7925,6 +7938,88 @@
         const OMEGA = 1.25,
           DECEL = 250,
           LANE_MAX = 0.5;
+        /* ---------- par times ----------
+   A target time for a course nobody has driven, worked out from the course
+   itself rather than typed in by hand. Hand-tuning a hundred of these was
+   never going to happen, and a guessed number is worse than none: a gold
+   that half the field gets on their first lap means nothing, and one no
+   human can reach is just an insult.
+
+   So the same model the AI steers by is run round the centreline: every
+   point has a speed its own bend allows, braking is propagated backwards
+   from each of them, and the lap is the sum of the time between points.
+   That respects a course's length and its corners together, which is the
+   whole difficulty of the thing — a long straight course and a short
+   twisty one can want the same target.
+
+   PAR_GRIP and PAR_POWER are the top tier's own constants, so par is
+   literally the lap that boat would drive on a perfect line. Two real laps
+   were measured against it in the browser: the Insane AI came in 6.7%
+   over par on a short course and 24.8% over on a long one. Both slower
+   than par, which is the right direction — but the spread is real, and it
+   is not acceleration out of the bends (adding that pass moved par by
+   under 1%). It is the things the geometry cannot know: contact, traffic
+   and a line that isn't perfect, all of which a longer lap has more of.
+
+   So the multipliers below are deliberately loose rather than pretending
+   to a precision this doesn't have. Gold is roughly "match the best AI"
+   on a short course and "beat it" on a long one, which makes gold hard
+   everywhere and impossible nowhere. They want playtesting; they are one
+   line to move when they get it. */
+        const PAR_GRIP = 1.28,
+          PAR_POWER = 1.24;
+        function parLap(t) {
+          const n = t.n,
+            sp = t.spacing;
+          const v = new Float64Array(n);
+          for (let i = 0; i < n; i++)
+            v[i] = Math.min(TOP * PAR_POWER, OMEGA * t.R[i] * PAR_GRIP);
+          /* Brake back from every corner. Twice round, because the last point
+             feeds the first and one pass cannot see past the join. */
+          for (let pass = 0; pass < 2; pass++)
+            for (let i = n - 1; i >= 0; i--) {
+              const allow = Math.sqrt(
+                v[(i + 1) % n] * v[(i + 1) % n] + 2 * DECEL * sp,
+              );
+              if (allow < v[i]) v[i] = allow;
+            }
+          let time = 0;
+          for (let i = 0; i < n; i++) time += sp / v[i];
+          return time;
+        }
+        /* Three targets off the one par time. Gold sits a little the far side
+   of par because par is a clean sim lap and a real one carries contact,
+   a line that isn't perfect and a boat that has to accelerate out of the
+   bend; bronze is meant for anyone who gets round without stopping. They
+   are lap targets, not race targets — a lap is the thing you can practise
+   and beat, and it already has a record to hang off. */
+        const MEDALS = [
+          { id: "gold", name: "Gold", mult: 1.15, mark: "\uD83E\uDD47" },
+          { id: "silver", name: "Silver", mult: 1.3, mark: "\uD83E\uDD48" },
+          { id: "bronze", name: "Bronze", mult: 1.55, mark: "\uD83E\uDD49" },
+        ];
+        // par is pure geometry, so it never changes for a course — worth
+        // keeping rather than integrating a hundred tracks on every repaint
+        const parCache = {};
+        function parFor(name) {
+          if (parCache[name] === undefined) {
+            const t = TRACKS.find((x) => x.name === name);
+            parCache[name] = t ? parLap(t) : 0;
+          }
+          return parCache[name];
+        }
+        function medalTargets(name) {
+          const par = parFor(name);
+          return MEDALS.map((m) => ({ ...m, target: par * m.mult }));
+        }
+        /* Which medal a lap earns, best first — null for a lap slower than
+   bronze. Handed a time of 0 (never driven) it must say null, not gold. */
+        function medalFor(name, lap) {
+          if (!(lap > 0)) return null;
+          const par = parFor(name);
+          for (const m of MEDALS) if (lap <= par * m.mult) return m;
+          return null;
+        }
         const tightness = (r) =>
           r >= 1100 ? 0 : Math.min(1, (1100 - r) / 800);
 
@@ -7984,6 +8079,12 @@
 
         function startRace() {
           track = tutorial ? TUTORIAL_TRACK : TRACKS[courseIdx];
+          medalAtStart = tutorial
+            ? null
+            : medalFor(
+                track.name,
+                timeTrial ? bestTtFor(track.name) : bestLapFor(track.name),
+              );
           if (tutorial) startCoaching();
           else stopCoaching();
           // same layout every attempt, and the one the ghost was set on
@@ -8072,6 +8173,7 @@
           ghostBegin();
           newLapRecord = false;
           newTotalRecord = false;
+          medalAtStart = null;
           newTtRecord = false;
           cam.x = me.x;
           cam.y = me.y;
@@ -13770,6 +13872,15 @@
               ? "Clean water all the way home."
               : "The leader is still out there somewhere.";
           const bits = ["your best lap " + fmt(me.bestLap)];
+          /* Medals are derived from the lap, so this is simply what the lap
+             just driven is worth — and worth saying only when it beats what
+             the course already held. */
+          const medalNow = tutorial ? null : medalFor(track.name, me.bestLap);
+          const medalUp =
+            medalNow &&
+            (!medalAtStart || medalNow.mult < medalAtStart.mult) &&
+            !(medalAtStart && medalNow.id === medalAtStart.id);
+          if (medalUp) bits.push(medalNow.name.toLowerCase() + " lap");
           if (newLapRecord) bits.push("new lap record");
           if (newTotalRecord) bits.push("new " + totalLaps + "-lap record");
           if (unlocksNext && courseUnlocked(nextIdx))
@@ -13947,6 +14058,7 @@
             t.desc +
             "</p>" +
             '<p class="tilerec"></p></div>' +
+            '<span class="tilemedal" aria-hidden="true"></span>' +
             '<span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span><em></em></span>';
           drawCourseThumb(el.querySelector("canvas"), t);
           el.onclick = () => {
@@ -14031,6 +14143,22 @@
                 ["Best lap", lap ? fmt(lap) : "—"],
                 ["Best " + totalLaps + "-lap", total ? fmt(total) : "—"],
               ];
+          /* The next medal up, and what it costs. A target nobody can see is
+             not a target — and naming only the one still to get keeps the
+             card to a line whether the player has none of them or two. */
+          const held = medalFor(t.name, timeTrial ? tt : lap);
+          const next = held
+            ? MEDALS[MEDALS.indexOf(MEDALS.find((m) => m.id === held.id)) - 1]
+            : MEDALS[MEDALS.length - 1];
+          rows.push([
+            "Medal",
+            next
+              ? (held ? held.mark + " · " : "") +
+                next.name +
+                " at " +
+                fmt(parFor(t.name) * next.mult)
+              : held.mark + " " + held.name,
+          ]);
           courseSummaryStats.innerHTML = "";
           for (const [k, v] of rows) {
             const dt = document.createElement("dt");
@@ -14119,6 +14247,15 @@
               if (lap) parts.push("Lap " + fmt(lap));
               if (total) parts.push(totalLaps + "-lap " + fmt(total));
             }
+            /* The medal is earned by the lap record, so it is derived rather
+               than stored — nothing to migrate, and it stays right if a
+               course is ever reshaped. */
+            const med = timeTrial
+              ? medalFor(name, bestTtFor(name))
+              : medalFor(name, bestLapFor(name));
+            const pip = el.querySelector(".tilemedal");
+            pip.textContent = med ? med.mark : "";
+            pip.title = med ? med.name + " lap" : "";
             el.querySelector(".tilerec").textContent = parts.join(" · ");
           });
           // the summary card carries the same records for the selected course
@@ -14734,6 +14871,70 @@
           return consentAsked;
         }
 
+        /* ---------- App Tracking Transparency (iOS) ----------
+   Apple's rule, and independent of Google's: on iOS the advert identifier
+   may not be read at all until the player has answered the system prompt.
+   So there are two gates on a personalised ad, and either one saying no is
+   a no — a player can consent under UMP and still refuse tracking here, in
+   which case Apple wins and the request goes out non-personalised.
+
+   Apple allows the prompt once per install, so the moment matters. It is
+   fired on the first ad the player *chose* to watch — someone who has just
+   tapped "double your coins" understands what is being asked in a way that
+   someone who just opened the game does not. An interstitial, which nobody
+   asked for, only reads the answer and never prompts for it. */
+        // null on anything that is not iOS; otherwise Apple's own wording:
+        // authorized, denied, restricted or notDetermined
+        let attStatus = null;
+        let attAsked = null;
+        function attEnsure(mayPrompt) {
+          const M = adMobPlugin();
+          if (
+            !M ||
+            adPlatform() !== "ios" ||
+            !M.trackingAuthorizationStatus ||
+            !M.requestTrackingAuthorization
+          )
+            return Promise.resolve();
+          if (attAsked) return attAsked;
+          const run = M.trackingAuthorizationStatus()
+            .then(async (r) => {
+              let status = (r && r.status) || "notDetermined";
+              if (status === "notDetermined") {
+                /* Unanswered. Nothing may be read yet, so this ad goes out
+                   non-personalised — but the question stays open rather than
+                   being burned here, because a rewarded ad is a better place
+                   to spend the one prompt we get. */
+                if (!mayPrompt) {
+                  attStatus = "notDetermined";
+                  return false;
+                }
+                await M.requestTrackingAuthorization();
+                const after = await M.trackingAuthorizationStatus();
+                status = (after && after.status) || status;
+              }
+              attStatus = status;
+              syncPrivacyRow();
+              return true;
+            })
+            .catch(() => {
+              // the plugin threw: assume nothing, read nothing
+              attStatus = "denied";
+              return true;
+            });
+          attAsked = run.then((settled) => {
+            if (!settled) attAsked = null; // ask properly at the next reward
+          });
+          return attAsked;
+        }
+        /* What actually rides on the request. Both regimes have to be happy,
+   and on iOS anything short of an explicit yes counts as a no. */
+        function adNpa() {
+          return (
+            adConsent.npa || (attStatus !== null && attStatus !== "authorized")
+          );
+        }
+
         let adMobReady = null;
         function adMobInit() {
           const M = adMobPlugin();
@@ -14803,13 +15004,14 @@
             if (!(await adMobInit())) return;
             const c = await adConsentInit();
             if (!c.canRequestAds) return;
+            await attEnsure(false);
             const unit =
               AD_UNITS.interstitial[adPlatform()] ||
               AD_UNITS.interstitial.android;
             await M.prepareInterstitial({
               adId: unit,
               isTesting: AD_TESTING,
-              npa: c.npa,
+              npa: adNpa(),
             });
             await M.showInterstitial();
             trackEvent("ad_shown", { placement: "interstitial" });
@@ -14856,12 +15058,14 @@
             if (!(await adMobInit())) throw new Error("admob did not start");
             const c = await adConsentInit();
             if (!c.canRequestAds) throw new Error("ads not permitted here");
+            // the player chose this one, so it is where Apple's prompt goes
+            await attEnsure(true);
             const unit =
               AD_UNITS.rewarded[adPlatform()] || AD_UNITS.rewarded.android;
             await M.prepareRewardVideoAd({
               adId: unit,
               isTesting: AD_TESTING,
-              npa: c.npa,
+              npa: adNpa(),
             });
             /* Resolves when the reward is earned and rejects when it isn't —
                a dismissal before the reward point lands here as a throw, which
@@ -15243,13 +15447,20 @@
         /* Google requires a standing way to reopen the consent choice for
    anyone it decided needed one — so the row appears only when UMP says
    privacy options are required, and never invents itself elsewhere. */
+        /* Naming which regime said no matters: UMP's answer can be changed
+   right here by the button above, Apple's only in iOS Settings. A player
+   told "not personalised" with no idea why has nowhere to go. */
         function syncPrivacyRow() {
           privacyOptionsRowEl.hidden = !adConsent.canChange;
-          privacyNoteEl.textContent = adConsent.canChange
-            ? adConsent.npa
+          let note = "";
+          if (attStatus === "denied" || attStatus === "restricted")
+            note =
+              "Adverts are not personalised — app tracking is off for Tide Runner in iOS Settings.";
+          else if (adConsent.canChange)
+            note = adConsent.npa
               ? "Adverts are currently not personalised."
-              : "Adverts are currently personalised."
-            : "";
+              : "Adverts are currently personalised.";
+          privacyNoteEl.textContent = note;
         }
         document.getElementById("privacyBtn").onclick = () => {
           syncPrivacyRow();

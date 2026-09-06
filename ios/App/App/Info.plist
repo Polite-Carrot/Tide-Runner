@@ -80,6 +80,6 @@
 		</dict>
 	</array>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier will be used to show you more relevant ads.</string>
+	<string>Tide Runner uses this to show adverts that are more relevant to you. Your races, times and progress are never shared.</string>
 </dict>
 </plist>

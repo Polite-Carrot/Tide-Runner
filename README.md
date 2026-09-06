@@ -808,6 +808,54 @@ Three bugs worth keeping in mind if this is ever extended:
   track and asked for `pts[-8]`. They all happened at the lap time, so the commit
   says so.
 
+### Medals
+
+**A hundred courses cannot have hand-typed target times**, so the target is
+computed from the course. `parLap()` runs the same speed model the AI steers by
+round the centreline — every point has a speed its own bend allows, braking is
+propagated backwards from each of them, and the lap is the sum of the time
+between points. That respects length and corners together, which is the whole
+difficulty: a long straight course and a short twisty one can want the same
+target. `PAR_GRIP` and `PAR_POWER` are the top tier's own constants, so par is
+literally the lap that boat would drive on a perfect line.
+
+**Two real laps were measured against it** rather than trusting the model. The
+Insane AI came in 6.7% over par on a short course and 24.8% over on a long one —
+slower than par in both cases, which is the right direction, but a 17% spread
+that a single multiplier cannot serve. It is not acceleration out of the bends:
+adding that pass moved par by under 1% and was taken out again rather than kept
+for a reason the measurement disproved. It is what the geometry cannot know —
+contact, traffic and an imperfect line, all of which a longer lap has more of.
+
+So the multipliers are deliberately loose rather than pretending to a precision
+this doesn't have: gold at 1.15x par, silver 1.30x, bronze 1.55x. Gold works out
+as roughly "match the best AI" on a short course and "beat it" on a long one,
+which makes it hard everywhere and impossible nowhere. **These want
+playtesting** — they are one line to move when they get it.
+
+The medal is derived from the lap record rather than stored, so there is nothing
+to migrate and it stays correct if a course is ever reshaped. It shows twice: a
+pip on the course tile, and a row on the summary card naming the next one up and
+what it costs — a target nobody can see is not a target.
+
+### App Tracking Transparency
+
+**Two independent gates on a personalised ad, and either one saying no is a
+no.** UMP settles GDPR; ATT is Apple's, and on iOS the advert identifier may not
+be read at all until the player has answered the system prompt. A player can
+consent under UMP and still refuse tracking, in which case Apple wins and the
+request goes out non-personalised.
+
+Apple allows the prompt once per install, so the moment matters. It fires on the
+first ad the player _chose_ to watch — someone who just tapped "double your
+coins" understands what is being asked in a way that someone who just opened the
+game does not. An interstitial, which nobody asked for, only reads the answer and
+never prompts for it; an unanswered status leaves the question open rather than
+burning the one prompt there. `attStatus` holds Apple's own wording rather than a
+boolean, because "they said no" and "we haven't asked" need different copy — the
+privacy sheet says which regime refused, since UMP's answer can be changed by the
+button right there and Apple's only in iOS Settings.
+
 ### The tutorial
 
 **A separate course, deliberately kept out of `COURSES`.** Everything downstream
