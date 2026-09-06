@@ -3128,11 +3128,6 @@
               count: 24,
             },
           },
-
-          /* Hand-drawn courses. The meander generator can't make a hairpin, so these
-     are laid out by control point and checked for two things: no corner
-     tighter than the hull can turn, and no two stretches of river running
-     closer together than a channel width (they'd merge into one pool). */
           {
             name: "Monaco Harbour",
             desc: "Technical · hairpin",
@@ -3163,7 +3158,6 @@
               [1560, 1440],
             ],
           },
-
           {
             name: "Amsterdam Cut",
             desc: "Canals · sharp",
@@ -3184,7 +3178,6 @@
               [560, 800],
             ],
           },
-
           {
             name: "Fjord Run",
             desc: "Open water · flat out",
@@ -3204,10 +3197,6 @@
               [560, 1180],
             ],
           },
-
-          /* Later additions — three generated, two hand-drawn, so this block mixes both
-     forms. All five are held to the same limits as the courses above: no corner
-     tighter than the hull turns, no two reaches closer than a channel width. */
           {
             name: "Severn Bore",
             desc: "Tidal · surging",
@@ -3226,7 +3215,6 @@
               count: 22,
             },
           },
-
           {
             name: "Reedham Weave",
             desc: "Reedy · relentless",
@@ -3245,7 +3233,6 @@
               count: 28,
             },
           },
-
           {
             name: "Atlantic Leg",
             desc: "Long swell · exposed",
@@ -3264,7 +3251,6 @@
               count: 20,
             },
           },
-
           {
             name: "Skerry Passage",
             desc: "Rocks · blind bends",
@@ -3290,7 +3276,6 @@
               [640, 1220],
             ],
           },
-
           {
             name: "Pool of London",
             desc: "City · stone quays",
@@ -3315,10 +3300,6 @@
               [540, 860],
             ],
           },
-
-          /* Corner-heavy courses. The generated ones raise the meander count instead of
-     its depth — deeper meanders at this frequency fold the bank back through
-     itself long before the corners get interesting. */
           {
             name: "Hell's Mouth",
             desc: "Relentless · no respite",
@@ -3337,7 +3318,6 @@
               count: 34,
             },
           },
-
           {
             name: "Corryvreckan",
             desc: "Whirlpool · brutal",
@@ -3356,7 +3336,6 @@
               count: 30,
             },
           },
-
           {
             name: "Bosphorus Run",
             desc: "Strait · long sweeps",
@@ -3375,7 +3354,6 @@
               count: 22,
             },
           },
-
           {
             name: "Staithes Twist",
             desc: "Blind · stone walls",
@@ -3405,7 +3383,6 @@
               [700, 1150],
             ],
           },
-
           {
             name: "Lagoon Circuit",
             desc: "Shallow · technical",
@@ -3431,8 +3408,6 @@
               [540, 980],
             ],
           },
-
-          /* Wide enough to start a full fleet two abreast and still leave room to pass. */
           {
             name: "The Broadwater",
             desc: "Wide · full fleet",
@@ -3452,23 +3427,6 @@
               count: 26,
             },
           },
-
-          /* ---------------------------------------------------------------
-     Courses with things in the water. Hazards are declared per course and
-     spawned per race, so the seventeen above are untouched and still race
-     exactly as their records were set. Counts are per lap-ish: spawnHazards
-     scales them by track length so a big course isn't sparser than a small
-     one.
-
-       eddy  a whirlpool. Pulls you in and turns the helm — the only hazard
-             that takes the boat somewhere you didn't point it.
-       log   drifting timber. Solid, and it moves, so the line you picked
-             last lap is not the line this lap.
-       weed  a kelp bed. Not solid; it just holds on to the hull, so it
-             costs you the exit of whatever corner it's sitting in.
-
-     fleet as a pair is a range, rolled fresh at the start of every race.
-     --------------------------------------------------------------- */
           {
             name: "Timber Drive",
             desc: "Log drive · dodging",
@@ -3527,9 +3485,6 @@
               count: 28,
             },
           },
-
-          /* ---- the big ones. R roughly double the usual, so a lap is a
-     voyage rather than a circuit. ---- */
           {
             name: "Kraken Deep",
             desc: "Vast · whirlpools",
@@ -3589,19 +3544,6 @@
               count: 34,
             },
           },
-
-          /* ---------------------------------------------------------------
-     Two shapes the meander generator cannot make. It is a sinusoid, so
-     every course it draws has the same character the whole way round;
-     these two are hand-drawn control points precisely so they don't.
-     --------------------------------------------------------------- */
-
-          /* A dogbone, and the only course in the game with a proper straight.
-     The geometry is set by the physics: you must slow for anything under
-     R=180 (TOP 225 over OMEGA 1.25), so the ends are turns of about that
-     radius and the reaches sit 340px apart to make them. What decides the
-     race is the 1,500px of open water between them — long enough to sit in
-     a wake and be towed the whole way, which no other course offers. */
           {
             name: "The Long Bight",
             desc: "Long reaches · slipstream",
@@ -3627,14 +3569,6 @@
               [730, 980],
             ],
           },
-
-          /* Two sectors, and they are nothing like each other. The north is one
-     enormous open sweep held at full throttle on six control points; the
-     south is a rock shelf where the points sit close enough together that
-     the corners never let you back up to speed, and the tide sets up
-     whirlpools in them. The generated courses cannot do this — the
-     generator is a sinusoid, so its character is the same the whole way
-     round — which is the reason this one is drawn by hand. */
           {
             name: "Skerryvore Sound",
             desc: "Fast north · foul south",
@@ -3664,15 +3598,6 @@
               [1232, 1455],
             ],
           },
-
-          /* ---------------------------------------------------------------
-     LAVA — a second world rather than five more rivers. Same physics and
-     the same generator; what changes is the palette it's drawn in
-     (THEMES.lava) and that it unlocks on its own chain, so Ember Flow is
-     open from the start rather than sitting behind all 25 river courses.
-     Channels run a touch narrower than their river equivalents — molten
-     rock should feel like it wants to touch the hull.
-     --------------------------------------------------------------- */
           {
             name: "Ember Flow",
             desc: "Wide · molten",
@@ -3730,9 +3655,6 @@
               count: 24,
             },
           },
-          /* Slot 4 — technical. A street circuit: straights of unequal length
-     with corners of unequal tightness between them, including one notch
-     that doubles back. A sinusoid's corners are all the same corner. */
           {
             name: "Vent Row",
             desc: "Technical · hairpin",
@@ -3755,8 +3677,6 @@
               [595, 785],
             ],
           },
-          /* Slot 5 — angular. A plus sign: twelve right angles, every arm the
-     same width, nothing curved anywhere. */
           {
             name: "The Dykes",
             desc: "Angular · sharp",
@@ -3790,10 +3710,6 @@
               [1100, 540],
             ],
           },
-          /* Slot 6 — open, flat out. A rounded triangle with three genuine
-     straights: the meander generator is a sinusoid, so a straight is one
-     of the few shapes it cannot draw at all, which is exactly why this
-     slot is hand-drawn in every world. */
           {
             name: "Basalt Plain",
             desc: "Open · flat out",
@@ -3813,8 +3729,6 @@
               [1069, 320],
             ],
           },
-          /* Slot 7 — surging. A fourth harmonic over the fourfold meander, so
-     the channel swells and pinches rather than holding one width. */
           {
             name: "Pulse Flow",
             desc: "Surging · pulsing",
@@ -3835,9 +3749,6 @@
               count: 22,
             },
           },
-          /* Slot 8 — relentless. High lobe count at low amplitude: the channel
-     never straightens and never gives you a corner worth the name, so
-     there is no rhythm to settle into. */
           {
             name: "Scoria Weave",
             desc: "Relentless · abrasive",
@@ -3857,8 +3768,6 @@
               count: 28,
             },
           },
-          /* Slot 9 — the opposite: two big lobes and nothing else, so it is
-     all commitment and no correction. */
           {
             name: "The Long Burn",
             desc: "Long swell · exposed",
@@ -3880,9 +3789,6 @@
               count: 20,
             },
           },
-          /* Slot 10 — blind. Three notches cut into a circle at deliberately
-     uneven spacing, because a sinusoid's corners always arrive on the
-     beat and these must not: you have to learn where they are. */
           {
             name: "Aa Field",
             desc: "Blind · broken ground",
@@ -3904,9 +3810,6 @@
               [1837, 640],
             ],
           },
-          /* Slot 11 — the built environment. Right angles and straight runs:
-     everything the meander generator makes is curved everywhere, so a
-     course with corners in it has to be drawn. */
           {
             name: "Foundry Quays",
             desc: "Worked · stone",
@@ -3954,6 +3857,27 @@
             },
           },
           {
+            name: "The Crucible",
+            desc: "Brutal · unrelenting",
+            theme: "lava",
+            width: 132,
+            fleet: [4, 8],
+            hazards: { eddy: 8, rockfall: 9 },
+            gen: {
+              cx: 1400,
+              cy: 1020,
+              R: 640,
+              ax: 1.22,
+              ay: 1.0,
+              k: 8,
+              amp: 0.17,
+              k2: 5,
+              amp2: 0.06,
+              phase: 2.1,
+              count: 30,
+            },
+          },
+          {
             name: "Rift Strait",
             desc: "Strait · long sweeps",
             theme: "lava",
@@ -3973,9 +3897,6 @@
               count: 22,
             },
           },
-          /* Slot 15 — blind. An irregular pentagon: five sharp corners at
-     unequal intervals down sides of unequal length, so there is no
-     rhythm to learn, only the corners themselves. */
           {
             name: "Sulphur Steps",
             desc: "Blind · terraced",
@@ -4137,34 +4058,6 @@
             },
           },
           {
-            name: "The Crucible",
-            desc: "Brutal · unrelenting",
-            theme: "lava",
-            width: 132,
-            fleet: [4, 8],
-            hazards: { eddy: 8, rockfall: 9 },
-            gen: {
-              cx: 1400,
-              cy: 1020,
-              R: 640,
-              ax: 1.22,
-              ay: 1.0,
-              k: 8,
-              amp: 0.17,
-              k2: 5,
-              amp2: 0.06,
-              phase: 2.1,
-              count: 30,
-            },
-          },
-
-          /* ---------------------------------------------------------------
-     ICE and SPACE — one course each for now, enough to race a world and
-     see whether it's worth five. Both are the same generator and the same
-     physics as everything above; a world is a palette, a ground texture
-     and a creature roster, not a second engine.
-     --------------------------------------------------------------- */
-          {
             name: "Pyroclast Run",
             desc: "Enormous · everything",
             theme: "lava",
@@ -4185,9 +4078,6 @@
               count: 34,
             },
           },
-          /* Slot 24 — the dogbone. Two 1,300px straights joined by a loop at
-     each end: the only shape in the world that gives you somewhere to sit
-     in a wake long enough for the tow to matter. */
           {
             name: "The Hot Gate",
             desc: "Long reaches · slipstream",
@@ -4214,9 +4104,6 @@
               [460, 790],
             ],
           },
-          /* Slot 25 — the finale, and deliberately two courses in one: a long
-     smooth sweep down the east side, and a weave down the west that gives
-     nothing back. */
           {
             name: "Hellmouth Sound",
             desc: "Fast side · foul side",
@@ -4299,8 +4186,6 @@
               count: 24,
             },
           },
-          /* Slot 4, ice — a bay with an inlet cut into the head of it. The
-     hairpin is the inlet: in one side, round the top, out the other. */
           {
             name: "Whalers' Bay",
             desc: "Technical · hairpin",
@@ -4322,8 +4207,6 @@
               [620, 1180],
             ],
           },
-          /* Slot 5, ice — a staircase. Treads and risers at right angles all
-     the way down, closed off by two long straights. */
           {
             name: "Station Cuts",
             desc: "Angular · sharp",
@@ -4352,9 +4235,6 @@
               [700, 810],
             ],
           },
-          /* Slot 6 — a polynya is open water inside the pack, so the shape is
-     the thing itself: one long straight lead down the west side and a
-     single wide bay swung round the east. */
           {
             name: "The Polynya",
             desc: "Open · flat out",
@@ -4438,10 +4318,6 @@
               count: 20,
             },
           },
-          /* Slot 10, ice — blind by a different means: a slalom worked into
-     the top half only. The generator is periodic all the way round, so a
-     course that behaves differently on one side than the other is
-     something it structurally cannot produce. */
           {
             name: "Serac Passage",
             desc: "Blind · ice towers",
@@ -4467,9 +4343,6 @@
               [2039, 713],
             ],
           },
-          /* Slot 11, ice — a harbour with a jetty running into it, so the loop
-     goes up one side of it and back down the other. That hairpin round the
-     tip is the tightest corner outside the rivers. */
           {
             name: "Erebus Quay",
             desc: "Harbour · frozen in",
@@ -4498,8 +4371,27 @@
               [740, 790],
             ],
           },
-          /* Slot 13 — the world's signature hazard at its worst. Eight lobes
-     and the shelf breaking up under you. */
+          {
+            name: "Crevasse",
+            desc: "Tight · unforgiving",
+            theme: "ice",
+            width: 118,
+            fleet: [4, 8],
+            hazards: { orca: 8, floe: 9, eddy: 5 },
+            gen: {
+              cx: 1300,
+              cy: 960,
+              R: 560,
+              ax: 1.18,
+              ay: 1.02,
+              k: 11,
+              amp: 0.11,
+              k2: 7,
+              amp2: 0.05,
+              phase: 1.1,
+              count: 34,
+            },
+          },
           {
             name: "Larsen Break",
             desc: "Brutal · collapsing",
@@ -4541,8 +4433,6 @@
               count: 22,
             },
           },
-          /* Slot 15, ice — blind. Seven corners rather than the lava
-     pentagon's five, and none of the sides the same length. */
           {
             name: "Rime Narrows",
             desc: "Blind · frozen walls",
@@ -4731,9 +4621,6 @@
               count: 34,
             },
           },
-          /* Slot 24, ice — the same dogbone idea, run tighter: the straights
-     sit 420px apart rather than 500, so the tow matters more and there is
-     less room to come out of it. */
           {
             name: "The Ice Gate",
             desc: "Long reaches · slipstream",
@@ -4783,28 +4670,6 @@
               [1490, 305],
             ],
           },
-          {
-            name: "Crevasse",
-            desc: "Tight · unforgiving",
-            theme: "ice",
-            width: 118,
-            fleet: [4, 8],
-            hazards: { orca: 8, floe: 9, eddy: 5 },
-            gen: {
-              cx: 1300,
-              cy: 960,
-              R: 560,
-              ax: 1.18,
-              ay: 1.02,
-              k: 11,
-              amp: 0.11,
-              k2: 7,
-              amp2: 0.05,
-              phase: 1.1,
-              count: 34,
-            },
-          },
-
           {
             name: "Nebula Drift",
             desc: "Wide · weightless",
@@ -4863,8 +4728,6 @@
               count: 24,
             },
           },
-          /* Slot 4, space — a docking slot cut into the side of the ring, so
-     the hairpin is a berth you run into and back out of. */
           {
             name: "Dock Seven",
             desc: "Technical · hairpin",
@@ -4887,10 +4750,6 @@
               [1600, 450],
             ],
           },
-          /* Slot 5, space — angular, and deliberately not another regular
-     polygon: Relay Quays is already a hexagon in this world. A straight
-     north edge with a sawtooth of gantries down the south one, so the
-     course behaves differently depending which way round you are. */
           {
             name: "The Gantries",
             desc: "Angular · sharp",
@@ -4916,10 +4775,6 @@
               [700, 960],
             ],
           },
-          /* Slot 6 — a stadium canted eighteen degrees off the horizontal.
-     Two 1,100px straights, and the only course in the game whose long
-     axis isn't square to the world, which is what makes it read as an
-     orbit rather than another oval. */
           {
             name: "The Ecliptic",
             desc: "Open · flat out",
@@ -5003,9 +4858,6 @@
               count: 20,
             },
           },
-          /* Slot 10, space — one course, two characters: wide sweeping arcs
-     on the lit half, tight switchbacks on the dark one. Crossing the line
-     between them is the whole course. */
           {
             name: "Terminator Line",
             desc: "Blind · day into night",
@@ -5028,9 +4880,6 @@
               [1960, 720],
             ],
           },
-          /* Slot 11, space — a station ring: six equal straights at sixty
-     degrees. Regular where the lava and ice quays are irregular, so the
-     three built environments don't read as one shape three times. */
           {
             name: "Relay Quays",
             desc: "Station · docked",
@@ -5079,6 +4928,27 @@
             },
           },
           {
+            name: "Event Horizon",
+            desc: "Tight · warped",
+            theme: "space",
+            width: 124,
+            fleet: [4, 8],
+            hazards: { eddy: 11, rock: 8, crossing: 5 },
+            gen: {
+              cx: 1290,
+              cy: 950,
+              R: 540,
+              ax: 1.2,
+              ay: 1.04,
+              k: 10,
+              amp: 0.14,
+              k2: 6,
+              amp2: 0.05,
+              phase: 1.7,
+              count: 30,
+            },
+          },
+          {
             name: "Heliopause",
             desc: "Strait · long sweeps",
             theme: "space",
@@ -5098,8 +4968,6 @@
               count: 22,
             },
           },
-          /* Slot 15, space — blind. A kite: two long runs meeting at a point
-     at each end, so both corners arrive with no warning at all. */
           {
             name: "Corona Pass",
             desc: "Blind · close walls",
@@ -5175,6 +5043,27 @@
               amp2: 0.05,
               phase: 0.9,
               count: 26,
+            },
+          },
+          {
+            name: "The Crossing",
+            desc: "Twisting · trafficked",
+            theme: "space",
+            width: 158,
+            fleet: [4, 8],
+            hazards: { crossing: 11, rock: 6 },
+            gen: {
+              cx: 1320,
+              cy: 1000,
+              R: 600,
+              ax: 1.06,
+              ay: 1.24,
+              k: 4,
+              amp: 0.19,
+              k2: 8,
+              amp2: 0.05,
+              phase: 2.6,
+              count: 24,
             },
           },
           {
@@ -5260,9 +5149,6 @@
               count: 34,
             },
           },
-          /* Slot 24, space — the dogbone with one end pulled to a point. You
-     whip round the tight end and it fires you down a 1,450px straight,
-     which is what the name is about. */
           {
             name: "The Slingshot",
             desc: "Long reaches · slipstream",
@@ -5311,48 +5197,6 @@
               [681, 613],
               [1000, 368],
             ],
-          },
-          {
-            name: "The Crossing",
-            desc: "Twisting · trafficked",
-            theme: "space",
-            width: 158,
-            fleet: [4, 8],
-            hazards: { crossing: 11, rock: 6 },
-            gen: {
-              cx: 1320,
-              cy: 1000,
-              R: 600,
-              ax: 1.06,
-              ay: 1.24,
-              k: 4,
-              amp: 0.19,
-              k2: 8,
-              amp2: 0.05,
-              phase: 2.6,
-              count: 24,
-            },
-          },
-          {
-            name: "Event Horizon",
-            desc: "Tight · warped",
-            theme: "space",
-            width: 124,
-            fleet: [4, 8],
-            hazards: { eddy: 11, rock: 8, crossing: 5 },
-            gen: {
-              cx: 1290,
-              cy: 950,
-              R: 540,
-              ax: 1.2,
-              ay: 1.04,
-              k: 10,
-              amp: 0.14,
-              k2: 6,
-              amp2: 0.05,
-              phase: 1.7,
-              count: 30,
-            },
           },
         ];
 
@@ -5693,12 +5537,21 @@
           const at = seq.indexOf(i);
           return at >= 0 && at + 1 < seq.length ? seq[at + 1] : -1;
         }
+        /* Still one course at a time, but measured from the furthest one you
+   have finished rather than by insisting every earlier one is done. For
+   anyone working down a world in order the two are the same rule. The
+   difference only shows when a world is reordered: inserting a course
+   part-way up a chain would otherwise re-lock everything behind it for a
+   player who had already raced past that point, and taking back courses
+   somebody earned is not an acceptable cost of fixing a running order. */
         function courseUnlocked(i) {
-          for (const n of THEME_SEQ[TRACKS[i].theme]) {
-            if (n === i) return true;
-            if (!progress.completed[TRACKS[n].name]) return false;
-          }
-          return true;
+          const seq = THEME_SEQ[TRACKS[i].theme];
+          const at = seq.indexOf(i);
+          if (at <= 0) return true;
+          let furthest = -1;
+          for (let k = 0; k < seq.length; k++)
+            if (progress.completed[TRACKS[seq[k]].name]) furthest = k;
+          return at <= furthest + 1;
         }
 
         /* Colours cost too now — a token 25, a fraction of a flag's 150. They
@@ -6620,10 +6473,11 @@
    Bit positions are assigned by array order. Appending a course or a skin
    is safe; inserting one in the middle is not, which is what the version
    byte is for. */
-        /* 2: the colour list grew, and bit positions come from array order,
-   so every skin after it moved. Codes written by version 1 are refused
-   rather than silently decoded into the wrong skins. */
-        const TRANSFER_VERSION = 2;
+        /* Bit positions come from array order, so anything that reorders or
+   grows COURSES or the skin lists has to land here too — an old code
+   would otherwise decode cleanly into the wrong courses and skins.
+   2: the colour list grew. 3: three worlds were put into slot order. */
+        const TRANSFER_VERSION = 3;
         const TRANSFER_SALT = "tide-runner/transfer/v1";
         // The most a code can hand over, however large the number inside it.
         const TRANSFER_COIN_CAP = 2500;
@@ -13566,24 +13420,38 @@
         });
 
         /* Daily spin: one free spin per calendar day, weighted toward small
-   coin amounts with a couple of gear items as the rarer outcome — a taste
-   of the gear economy above rather than a way around it. The wheel is
-   built from this same list, so it can never show an outcome spinning
-   couldn't actually give you. */
+   coin amounts with gear as the rarer outcome — a taste of the gear
+   economy above rather than a way around it. The wheel is built from this
+   same list, so it can never show an outcome spinning couldn't actually
+   give you.
+
+   Re-cut once gear had real prices on it. The rule is that a rarer wedge
+   has to be worth more than a common one, and it wasn't: a NET landed at
+   12 coins of value while a far more likely 25-coin wedge paid twice
+   that, so the "special" outcome was the disappointing one. Gear now runs
+   net 12 at weight 12, nitro 15 at 10 and torpedo 20 at 4, each rarer
+   than the last and each worth more. The duplicate 10-coin wedge made way
+   for the torpedo. The 25 is deliberate: it is exactly a colour. */
         const SPIN_REWARDS = [
-          { label: "15", sub: "coins", type: "coins", amount: 15, weight: 18 },
-          { label: "NET", sub: "+1 gear", type: "gear", id: "net", weight: 8 },
-          { label: "25", sub: "coins", type: "coins", amount: 25, weight: 14 },
           { label: "10", sub: "coins", type: "coins", amount: 10, weight: 20 },
+          { label: "NET", sub: "+1 gear", type: "gear", id: "net", weight: 12 },
+          { label: "25", sub: "coins", type: "coins", amount: 25, weight: 15 },
+          { label: "15", sub: "coins", type: "coins", amount: 15, weight: 18 },
           {
             label: "NITRO",
             sub: "+1 gear",
             type: "gear",
             id: "nitro",
-            weight: 8,
+            weight: 10,
           },
-          { label: "40", sub: "coins", type: "coins", amount: 40, weight: 10 },
-          { label: "10", sub: "coins", type: "coins", amount: 10, weight: 20 },
+          { label: "40", sub: "coins", type: "coins", amount: 40, weight: 9 },
+          {
+            label: "TORPEDO",
+            sub: "+1 gear",
+            type: "gear",
+            id: "torpedo",
+            weight: 4,
+          },
           { label: "75", sub: "coins", type: "coins", amount: 75, weight: 2 },
         ];
         /* The spin "day" turns over at 9am, not midnight — shift the clock

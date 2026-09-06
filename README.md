@@ -420,6 +420,39 @@ finer detail than that was left out.
 Both changes moved bit positions in the transfer code, hence `TRANSFER_VERSION`
 2 — see below.
 
+### Chain order
+
+**Lava, ice and space now run in slot order.** They were filled in around the
+five courses each world started with, and those five sat in the array in the
+order they were written — which left lava's The Crucible (slot 13) at 22,
+ice's Crevasse (slot 12) at 25, and space's Event Horizon (13) and The Crossing
+(19) at the end. Every other course was already in plan order and simply
+displaced by them, so putting those four back fixed all three worlds at once.
+
+**Reordering a world used to be able to take courses away**, which is why this
+sat unfixed for so long. `courseUnlocked()` walked the chain and stopped at the
+first course you hadn't completed, so inserting Crevasse at slot 12 would
+re-lock everything behind it for a player who had already raced past that point.
+It now measures from the furthest course you have finished — `at <= furthest + 1`
+— which is the same rule for anyone working down a world in order, and which
+means a running order can be fixed without anybody losing what they earned.
+
+Bit positions in the transfer code come from `TRACKS` order, so this took
+`TRANSFER_VERSION` to 3.
+
+### The daily spin, re-cut
+
+The wheel was set when gear cost a token coin, and once gear had real prices the
+weighting was backwards: a **NET** landed at 12 coins of value while a far more
+likely 25-coin wedge paid twice that, so the rarer outcome was the disappointing
+one. Gear now runs net 12 at weight 12, nitro 15 at 10 and torpedo 20 at 4 —
+each rarer than the last, and each worth more than the last. The duplicate
+10-coin wedge made way for the torpedo. The 25 is deliberate: it is exactly a
+colour.
+
+That comes out at **19.2 coins a spin against a three-lap Normal win's 22** — a
+daily worth about a race, which is the shape a daily wants.
+
 ### Haptics
 
 **No import, and so no build step.** Capacitor puts its plugins on
