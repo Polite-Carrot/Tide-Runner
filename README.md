@@ -943,30 +943,34 @@ skin and nothing to come back for.
 
 ### Animated skins
 
-**Sixteen of them, and eight palettes.** `PALETTES` holds five stops each, darkest
+**Twenty of them, and eight palettes.** `PALETTES` holds five stops each, darkest
 first, and a skin names one — so the effect maths stays colour-blind and a new
 skin can be a new pattern, a new palette, or both, without disturbing the other.
 
 Each effect is its own idea rather than a recolour of the last:
 
-| Skin         | The trick                                                                                                                    |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Lime Nebula  | three octaves of fractal noise, warped by each other, plus a twinkling star lattice                                          |
-| Lime Flux    | domain-warped noise posterised to four tones, so camo edges stay crisp                                                       |
-| Lime Pulse   | hex cells lit by a travelling wave, the cell found by nearest lattice point                                                  |
-| Ember Crawl  | ridged noise `1-\|2n-1\|` raised to a power — peaks land on a field's _contours_, which is exactly where a crack wants to be |
-| Frost Bloom  | the same ridge, quantised into steps so it reads as cut planes catching light                                                |
-| Deep Current | two sine fields crossed at an angle; the bright net is where their sum passes zero                                           |
-| Oil Slick    | thin-film interference — no palette, the colour _is_ the film thickness                                                      |
-| Signal Rain  | columns falling at their own seeded speeds, with a free scanline from `py & 1`                                               |
-| Dazzle       | hard-edged WWI dazzle — a warped stripe field posterised to two tones, the warp scrolling so the panels shear                |
-| Ripple Rings | three expanding ring sources, combined by _max_ rather than average so each wavefront stays a wavefront                      |
-| Circuitry    | a grid of traces with lit vias, the light running along a trace as a travelling pulse                                        |
-| Aurora       | vertical curtains whose base is a slow noise ridge, brightening in bands that drift sideways                                 |
-| Fish Scale   | a staggered lattice, nearest-cell distance giving each scale a lip; the sheen phase is seeded per cell                       |
-| Marble       | sine of a coordinate plus heavy fbm — classic marble veining, the turbulence term animated                                   |
-| Plasma       | four sine fields at unrelated frequencies summed, the classic demo-scene plasma                                              |
-| Storm Front  | a coarse low octave for the cloud mass, a fine one for the rain, and an occasional lightning flash                           |
+| Skin         | The trick                                                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Lime Nebula  | three octaves of fractal noise, warped by each other, plus a twinkling star lattice                                           |
+| Lime Flux    | domain-warped noise posterised to four tones, so camo edges stay crisp                                                        |
+| Lime Pulse   | hex cells lit by a travelling wave, the cell found by nearest lattice point                                                   |
+| Ember Crawl  | ridged noise `1-\|2n-1\|` raised to a power — peaks land on a field's _contours_, which is exactly where a crack wants to be  |
+| Frost Bloom  | the same ridge, quantised into steps so it reads as cut planes catching light                                                 |
+| Deep Current | two sine fields crossed at an angle; the bright net is where their sum passes zero                                            |
+| Oil Slick    | thin-film interference — no palette, the colour _is_ the film thickness                                                       |
+| Signal Rain  | columns falling at their own seeded speeds, with a free scanline from `py & 1`                                                |
+| Dazzle       | hard-edged WWI dazzle — a warped stripe field posterised to two tones, the warp scrolling so the panels shear                 |
+| Ripple Rings | three expanding ring sources, combined by _max_ rather than average so each wavefront stays a wavefront                       |
+| Circuitry    | a grid of traces with lit vias, the light running along a trace as a travelling pulse                                         |
+| Aurora       | vertical curtains whose base is a slow noise ridge, brightening in bands that drift sideways                                  |
+| Fish Scale   | a staggered lattice, nearest-cell distance giving each scale a lip; the sheen phase is seeded per cell                        |
+| Marble       | sine of a coordinate plus heavy fbm — classic marble veining, the turbulence term animated                                    |
+| Plasma       | four sine fields at unrelated frequencies summed, the classic demo-scene plasma                                               |
+| Storm Front  | a coarse low octave for the cloud mass, a fine one for the rain, and an occasional lightning flash                            |
+| Crazed       | Voronoi again, but the cell _borders_ — the gap between the two nearest seeds is zero on a border and grows inwards           |
+| Bloom        | metaballs: an inverse-square field from drifting centres, summed so two of them merge with a neck, plus a rim at the membrane |
+| Moire        | two sets of concentric rings a short way apart, their product giving hyperbolic interference fringes                          |
+| Glitch       | every pair of rows slides on its own hashed timer over a posterised field, with occasional tears large enough to break it     |
 
 Two of the first eight took a second pass after looking at the output. Frost Bloom's facets
 were too small and read as static rather than ice, so the field scale came down
@@ -987,6 +991,18 @@ account for it rather than double down on it. Plasma's four frequencies were all
 too low to interfere within one hull, so it washed to a single colour. Storm
 Front had both octaves fine-grained, which is static, not weather — the cloud
 octave had to get much coarser than felt right on paper.
+
+Two of the last four needed one as well, and both were the same lesson as Fish
+Scale: an effect has to fit inside a hull 48 pixels wide. Moire started as two
+straight grids of nearly equal pitch — which is how moire is normally
+described, and which produced plain diagonal stripes here, because the beat
+between two close pitches has a wavelength longer than the boat and all you ever
+see is one grid. Concentric rings from two centres a short way apart put the
+fringes at a spacing set by that separation, which is a distance that fits.
+Glitch displaced a smooth noise field, and a smooth field slides under a tear
+and shows nothing at all: displacement is only visible if it moves an edge, so
+the field is posterised into steps first, and the tears had to get both larger
+and far more frequent before they read as a fault rather than as motion.
 
 ### Animated skins — the machinery
 
