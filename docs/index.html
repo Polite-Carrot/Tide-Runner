@@ -1367,6 +1367,69 @@
         color: #ff9d8a;
       }
 
+      /* ---------- transfer save ---------- */
+      /* Opened from Settings, which is a .screen at the same z-index and
+         later in the document — so without saying so explicitly, Settings
+         paints over this one and swallows every tap meant for it. */
+      #transferPop {
+        z-index: 7;
+      }
+      /* .tag is built for the menu, where a button sits to its right — in a
+         popup that padding is just a narrow column of text. */
+      .xfer-blurb {
+        max-width: none;
+        padding-right: 0;
+        font-size: 12.5px;
+      }
+      .xfer-label {
+        display: block;
+        margin: 14px 0 6px;
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+      .xfer-box {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(var(--tint), 0.28);
+        background: rgba(4, 20, 28, 0.7);
+        color: inherit;
+        font: inherit;
+        /* the code is groups of five, so let it wrap on the dashes and give
+           it room to breathe rather than one unreadable ribbon */
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        line-height: 1.6;
+        word-break: break-all;
+        resize: vertical;
+      }
+      .xfer-box:focus {
+        outline: none;
+        border-color: rgba(var(--tint), 0.7);
+      }
+      #transferPop .go-btn,
+      #transferPop .ghost {
+        margin-top: 10px;
+        width: 100%;
+      }
+      .xfer-note {
+        margin: 12px 0 0;
+        min-height: 1.3em;
+        font-size: 13px;
+        line-height: 1.45;
+        opacity: 0.85;
+      }
+      .xfer-note.bad {
+        color: #ff9d8a;
+      }
+      .xfer-note.good {
+        color: #9dffc9;
+      }
+
       /* ---------- first-run coaching ----------
          The dimming is one enormous spread box-shadow on a transparent,
          positioned element: everything outside the element goes dark and the
@@ -2775,6 +2838,53 @@
       </div>
     </div>
 
+    <!-- moving a save between devices -->
+    <div
+      class="screen hidden"
+      id="transferPop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="transferTitle"
+    >
+      <div class="sheet panel" style="max-width: 460px">
+        <div class="pop-head">
+          <h2 id="transferTitle">Transfer save</h2>
+          <button class="pop-close" id="transferClose" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <p class="tag xfer-blurb" id="transferBlurb">
+          Send this to yourself to carry your progress to another device.
+          Courses, skins, gear and lap times travel. Trial ghosts don't — they
+          record themselves again on the first run.
+        </p>
+        <label class="xfer-label" for="transferOut">This device's code</label>
+        <textarea
+          id="transferOut"
+          class="xfer-box"
+          readonly
+          rows="3"
+          spellcheck="false"
+        ></textarea>
+        <button class="go-btn" type="button" id="transferCopy">
+          Copy code
+        </button>
+        <label class="xfer-label" for="transferIn">Restore from a code</label>
+        <textarea
+          id="transferIn"
+          class="xfer-box"
+          rows="3"
+          spellcheck="false"
+          autocapitalize="characters"
+          placeholder="TIDE-…"
+        ></textarea>
+        <button class="ghost" type="button" id="transferRestore">
+          Restore
+        </button>
+        <p class="xfer-note" id="transferMsg" aria-live="polite"></p>
+      </div>
+    </div>
+
     <!-- daily spin: full screen so the wheel and the win both read big -->
     <div
       class="screen hidden"
@@ -2899,6 +3009,7 @@
         </div>
         <div class="btnstack">
           <button class="ghost" id="howToPlay">How to play</button>
+          <button class="ghost" id="transferBtn">Transfer save</button>
           <button class="go-btn" id="settingsDone">Done</button>
         </div>
       </div>
@@ -6206,6 +6317,226 @@
           item.draw(c);
           c.restore();
         }
+        /* ============================================================
+   TRANSFER CODE
+   ============================================================
+   Moving a save between devices. Everything here lives in the page, which
+   is served from a public repo, so this is a tamper seal and not
+   cryptography: anyone who reads the source can mint a code. What it does
+   buy is that a code cannot be hand-edited into something better, does not
+   look like data worth poking at, and — because the coin balance is capped
+   on the way in — is not worth passing round as a shortcut. Records are
+   local anyway, so a forged code mostly cheats the forger.
+
+   Bit positions are assigned by array order. Appending a course or a skin
+   is safe; inserting one in the middle is not, which is what the version
+   byte is for. */
+        const TRANSFER_VERSION = 1;
+        const TRANSFER_SALT = "tide-runner/transfer/v1";
+        // The most a code can hand over, however large the number inside it.
+        const TRANSFER_COIN_CAP = 2500;
+        const TRANSFER_GEAR_CAP = 99;
+        const TRANSFER_SKIN_IDS = DEFAULT_SKINS.map((s) => s.id).concat(
+          SHOP_SKINS.map((s) => s.id),
+          CHALLENGE_SKIN_LIST.map((s) => s.id),
+          [DIAMOND_SKIN.id],
+          ANIMATED_SKINS.map((s) => s.id),
+        );
+        const TRANSFER_GEAR_IDS = GEAR_ITEMS.map((g) => g.id);
+
+        /* Crockford's alphabet: no I, L, O or U, so nothing in a code can be
+   misread as a digit or turn into a word by accident. */
+        const B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+        function b32encode(bytes) {
+          let out = "",
+            buf = 0,
+            bits = 0;
+          for (const b of bytes) {
+            buf = (buf << 8) | b;
+            bits += 8;
+            while (bits >= 5) {
+              out += B32[(buf >>> (bits - 5)) & 31];
+              bits -= 5;
+            }
+          }
+          if (bits) out += B32[(buf << (5 - bits)) & 31];
+          return out;
+        }
+        function b32decode(str) {
+          const bytes = [];
+          let buf = 0,
+            bits = 0;
+          for (const ch of str) {
+            const v = B32.indexOf(ch);
+            if (v < 0) return null;
+            buf = (buf << 5) | v;
+            bits += 5;
+            if (bits >= 8) {
+              bytes.push((buf >>> (bits - 8)) & 255);
+              bits -= 8;
+            }
+          }
+          return bytes;
+        }
+        function transferHash(bytes) {
+          let h = 2166136261;
+          for (const b of bytes) {
+            h ^= b;
+            h = Math.imul(h, 16777619);
+          }
+          for (let i = 0; i < TRANSFER_SALT.length; i++) {
+            h ^= TRANSFER_SALT.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+          }
+          return h >>> 0;
+        }
+
+        function packBits(flags, count) {
+          const out = new Array(Math.ceil(count / 8)).fill(0);
+          for (let i = 0; i < count; i++)
+            if (flags[i]) out[i >> 3] |= 1 << (i & 7);
+          return out;
+        }
+        function bitAt(bytes, at, i) {
+          const b = bytes[at + (i >> 3)];
+          return b === undefined ? false : !!(b & (1 << (i & 7)));
+        }
+
+        function buildTransferCode() {
+          const out = [TRANSFER_VERSION];
+          out.push(progress.tutorialDone ? 1 : 0);
+          const coins = Math.max(0, Math.min(0xffffff, progress.coins | 0));
+          out.push((coins >> 16) & 255, (coins >> 8) & 255, coins & 255);
+          for (const id of TRANSFER_GEAR_IDS)
+            out.push(Math.min(255, gearOwned(id)));
+          const skinAt = TRANSFER_SKIN_IDS.indexOf(progress.skin);
+          out.push(skinAt < 0 ? 255 : skinAt);
+          out.push(
+            ...packBits(
+              TRACKS.map((t) => !!progress.completed[t.name]),
+              TRACKS.length,
+            ),
+          );
+          out.push(
+            ...packBits(
+              TRANSFER_SKIN_IDS.map((id) => !!progress.skins[id]),
+              TRANSFER_SKIN_IDS.length,
+            ),
+          );
+          /* Records are sparse — most saves hold a handful — so they are
+             written as pairs rather than a slot per course. Ghost laps are
+             left out on purpose: one is about 470 bytes, which would turn a
+             code you can paste into one you cannot, and a ghost re-records
+             itself the first time you run a trial. */
+          const laps = [],
+            tts = [];
+          TRACKS.forEach((t, i) => {
+            const lap = Math.round(bestLapFor(t.name) * 100);
+            if (lap > 0 && lap < 65535) laps.push([i, lap]);
+            const tt = Math.round(bestTtFor(t.name) * 100);
+            if (tt > 0 && tt < 65535) tts.push([i, tt]);
+          });
+          for (const list of [laps, tts]) {
+            out.push(Math.min(255, list.length));
+            for (const [i, cs] of list.slice(0, 255))
+              out.push(i, (cs >> 8) & 255, cs & 255);
+          }
+          const sum = transferHash(out);
+          out.push(
+            (sum >>> 24) & 255,
+            (sum >>> 16) & 255,
+            (sum >>> 8) & 255,
+            sum & 255,
+          );
+          const raw = b32encode(out);
+          return "TIDE-" + (raw.match(/.{1,5}/g) || []).join("-");
+        }
+
+        /* Returns a description of what was restored, or throws with a reason
+   a player can act on. */
+        function applyTransferCode(text) {
+          const clean = String(text || "")
+            .toUpperCase()
+            .replace(/^TIDE/, "")
+            .replace(/[^0-9A-Z]/g, "")
+            // the letters Crockford leaves out, forgiven on the way in
+            .replace(/O/g, "0")
+            .replace(/[IL]/g, "1");
+          if (clean.length < 20) throw new Error("That code looks too short.");
+          const bytes = b32decode(clean);
+          if (!bytes || bytes.length < 20)
+            throw new Error("That doesn't look like a transfer code.");
+          const sum = bytes.splice(-4);
+          const want =
+            ((sum[0] << 24) | (sum[1] << 16) | (sum[2] << 8) | sum[3]) >>> 0;
+          if (transferHash(bytes) !== want)
+            throw new Error("That code is damaged or has been edited.");
+          if (bytes[0] !== TRANSFER_VERSION)
+            throw new Error("That code came from a different version.");
+
+          let at = 1;
+          const tutorialDone = !!bytes[at++];
+          const coins = (bytes[at++] << 16) | (bytes[at++] << 8) | bytes[at++];
+          const gear = {};
+          for (const id of TRANSFER_GEAR_IDS)
+            gear[id] = Math.min(TRANSFER_GEAR_CAP, bytes[at++] || 0);
+          const skinAt = bytes[at++];
+          const courseBytes = Math.ceil(TRACKS.length / 8);
+          const completed = {};
+          let courseCount = 0;
+          for (let i = 0; i < TRACKS.length; i++)
+            if (bitAt(bytes, at, i)) {
+              completed[TRACKS[i].name] = true;
+              courseCount++;
+            }
+          at += courseBytes;
+          const skinBytes = Math.ceil(TRANSFER_SKIN_IDS.length / 8);
+          const skins = {};
+          let skinCount = 0;
+          for (let i = 0; i < TRANSFER_SKIN_IDS.length; i++)
+            if (bitAt(bytes, at, i)) {
+              skins[TRANSFER_SKIN_IDS[i]] = true;
+              skinCount++;
+            }
+          at += skinBytes;
+
+          const readList = () => {
+            const n = bytes[at++] || 0;
+            const list = [];
+            for (let k = 0; k < n; k++) {
+              const i = bytes[at++],
+                cs = ((bytes[at++] || 0) << 8) | (bytes[at++] || 0);
+              if (i < TRACKS.length && cs > 0) list.push([i, cs / 100]);
+            }
+            return list;
+          };
+          const laps = readList(),
+            tts = readList();
+
+          progress.completed = completed;
+          progress.skins = skins;
+          progress.coins = Math.min(TRANSFER_COIN_CAP, coins);
+          progress.gear = gear;
+          progress.tutorialDone = tutorialDone;
+          if (skinAt < TRANSFER_SKIN_IDS.length)
+            progress.skin = TRANSFER_SKIN_IDS[skinAt];
+          saveProgress();
+          for (const [i, t] of laps) ensureRec(TRACKS[i].name).lap = t;
+          for (const [i, t] of tts) {
+            const r = ensureRec(TRACKS[i].name);
+            // the time comes across, the ghost does not — it re-records
+            r.tt = { lap: t, path: [] };
+          }
+          saveRecords();
+          return {
+            courses: courseCount,
+            skins: skinCount,
+            coins: progress.coins,
+            capped: coins > TRANSFER_COIN_CAP,
+            records: laps.length + tts.length,
+          };
+        }
+
         function gearOwned(id) {
           return progress.gear[id] || 0;
         }
@@ -13289,6 +13620,71 @@
               : "Start race";
         }
         syncStartBtn();
+        /* ---------- transfer save ---------- */
+        const transferPopEl = document.getElementById("transferPop"),
+          transferOutEl = document.getElementById("transferOut"),
+          transferInEl = document.getElementById("transferIn"),
+          transferMsgEl = document.getElementById("transferMsg");
+        function transferSay(text, kind) {
+          transferMsgEl.textContent = text;
+          transferMsgEl.classList.toggle("bad", kind === "bad");
+          transferMsgEl.classList.toggle("good", kind === "good");
+        }
+        document.getElementById("transferBtn").onclick = () => {
+          transferOutEl.value = buildTransferCode();
+          transferInEl.value = "";
+          transferSay("", null);
+          transferPopEl.classList.remove("hidden");
+        };
+        document.getElementById("transferClose").onclick = () =>
+          transferPopEl.classList.add("hidden");
+        document.getElementById("transferCopy").onclick = async () => {
+          const code = transferOutEl.value;
+          try {
+            await navigator.clipboard.writeText(code);
+            transferSay("Copied. Paste it on the other device.", "good");
+          } catch (e) {
+            /* No clipboard permission — every webview grants it differently,
+               and a selected box the player can copy by hand is a better
+               answer than an error they can do nothing about. */
+            transferOutEl.focus();
+            transferOutEl.select();
+            transferSay("Selected — copy it with your keyboard or menu.", null);
+          }
+        };
+        document.getElementById("transferRestore").onclick = () => {
+          const raw = transferInEl.value.trim();
+          if (!raw) return transferSay("Paste a code first.", "bad");
+          let res;
+          try {
+            res = applyTransferCode(raw);
+          } catch (e) {
+            return transferSay(e.message, "bad");
+          }
+          // everything downstream of progress has to be told
+          syncCourses();
+          refreshRecords();
+          refreshSkins();
+          refreshSpinStatus();
+          syncStartBtn();
+          transferOutEl.value = buildTransferCode();
+          transferInEl.value = "";
+          transferSay(
+            "Restored " +
+              res.courses +
+              " courses, " +
+              res.skins +
+              " skins, " +
+              res.records +
+              " lap times and " +
+              res.coins +
+              " coins" +
+              (res.capped ? " (the code's balance was over the cap)" : "") +
+              ".",
+            "good",
+          );
+        };
+
         document.getElementById("howToPlay").onclick = () => {
           // reachable from a paused race as well as the menu, so tear both
           // screens down rather than handing back to whatever opened Settings
@@ -13420,6 +13816,11 @@
         let settingsReturn = null;
         function openSettings(from) {
           settingsReturn = from || null;
+          /* Not mid-race. Restoring rewrites progress, records and the gear
+             locker under a race that is still running and will write its own
+             result at the finish — so the offer is only made from the menu. */
+          document.getElementById("transferBtn").style.display =
+            from === "pause" ? "none" : "";
           syncToggles();
           settingsEl.classList.remove("hidden");
         }

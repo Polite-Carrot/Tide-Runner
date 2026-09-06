@@ -399,6 +399,41 @@ menu defaults to whichever tab holds the currently equipped skin, via `skinCateg
 **Nine solid colours now**, not five — Harbour Gold, Jet Black, Volt Green, Flare Red and Ion
 Cyan, plus Pearl White, Riptide Purple, Sunset Orange and Coral Pink.
 
+### Transfer code
+
+**Moving a save between devices**, from Settings — and only from the menu, not
+from a paused race, since restoring rewrites progress, records and the gear
+locker under a race that is still running and will write its own result at the
+finish.
+
+**This is a tamper seal, not cryptography, and it is worth being honest about
+that.** Everything here lives in a page served from a public repo, so anyone who
+reads the source can mint a code. What the design buys is that a code cannot be
+hand-edited into something better, does not look like data worth poking at, and
+is not worth passing round as a shortcut:
+
+- **Bit-packed, not JSON.** 100 course completions and ~130 skin flags are bits.
+  A typical save is a **93-character code**; a completionist's, with 100 courses
+  and 200 lap times, is about 1,230.
+- **Signed** with an FNV-1a hash of the payload plus a constant baked into the
+  app. Flipping a single character fails the check.
+- **Crockford base32**, grouped in fives behind a `TIDE-` prefix. No ambiguous
+  `0/O` or `1/I` — and the ones people still type are forgiven on the way in.
+- **A version byte**, because bit positions are assigned by array order:
+  appending a course or skin is safe, inserting one in the middle is not.
+- **Capped on import** — `TRANSFER_COIN_CAP` (2,500) and `TRANSFER_GEAR_CAP`
+  (99). This is the part that actually matters: a forged code hands over
+  cosmetics its holder would have earned anyway and no real spending power, and
+  since every record is local, it mostly cheats the forger.
+
+**Ghost laps are left out on purpose.** One is about 470 bytes, which would turn
+a code you can paste into one you can't — and a ghost re-records itself the
+first time you run a trial. The trial _time_ travels; the lap it was set on
+doesn't.
+
+Records are written as sparse pairs rather than a slot per course, because most
+saves hold a handful.
+
 ### Time trial
 
 **A mode, not a filter.** Race or Time trial sits above the Laps picker;
