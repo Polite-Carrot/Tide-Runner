@@ -468,6 +468,40 @@ They fire when the player has read the result and chosen what's next — Next
 race, Race again, or Main menu — rather than the instant the results appear,
 where they'd collide with the double-your-coins offer.
 
+### Ad consent, and the privacy sheet
+
+**Google's UMP, because Google requires a certified consent platform** before a
+personalised advert reaches anyone in the EEA or the UK. UMP works out on its own
+whether this player is somewhere consent is required — there is no geography
+check written here, and a guess would be worse than asking.
+
+Two things come back that matter. `canRequestAds` says whether any advert may be
+requested at all; refusing consent does not mean no adverts, it means no
+**personalised** ones, which is what `npa` carries on every request.
+`privacyOptionsRequirementStatus` says whether this player must be given a
+standing way to change their mind — which is what the Settings row is, appearing
+only when UMP says it is required rather than inventing itself everywhere.
+
+**`NOT_REQUIRED` is not a refusal**, and the first cut got this wrong: it read
+anything other than `OBTAINED` as "no", which served non-personalised adverts to
+most of the world for nothing. `NOT_REQUIRED` is UMP saying the player is outside
+the regime. Personalised is fine there and where consent was given; `REQUIRED`
+(still outstanding) and `UNKNOWN` go non-personalised.
+
+Every other ending is covered too: a dismissed form, a form that will not render,
+and UMP itself failing all fall to non-personalised rather than to nothing —
+the player still gets their reward and nobody is tracked.
+
+**Privacy & data** in Settings says, in four short rows, what actually leaves the
+device: progress and captain name (nothing), adverts (AdMob, and what it gets),
+and usage data (only if switched on). It carries the consent control when there
+is one, and links the full policy.
+
+**The policy itself had gone false** and was fixed at the same time — it still
+said the game had "no advertising, and no third-party SDKs", written before
+AdMob existed. Shipping a privacy policy that describes a different app is not a
+detail; it is the document a store reviewer reads.
+
 ### Removing ads
 
 **One question — `adsRemoved()` — that the whole app asks instead of reading a

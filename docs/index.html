@@ -1367,6 +1367,38 @@
         color: #ff9d8a;
       }
 
+      /* ---------- privacy & data ---------- */
+      #privacyPop {
+        z-index: 7;
+      }
+      /* the one place this app links out; unstyled it comes out browser-blue */
+      #privacyPop a,
+      #consentBanner a {
+        color: var(--amber);
+      }
+      .dsrow {
+        margin: 13px 0;
+        padding-left: 11px;
+        border-left: 2px solid rgba(var(--tint), 0.28);
+      }
+      .dsrow b {
+        display: block;
+        font-size: 11.5px;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: rgb(var(--tint));
+        margin-bottom: 3px;
+      }
+      .dsrow span {
+        display: block;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: rgba(234, 247, 244, 0.72);
+      }
+      #privacyPop .setrow {
+        margin-top: 16px;
+      }
+
       /* ---------- transfer save ---------- */
       /* Opened from Settings, which is a .screen at the same z-index and
          later in the document — so without saying so explicitly, Settings
@@ -2853,6 +2885,66 @@
       </div>
     </div>
 
+    <!-- what actually leaves the device, and the controls over it -->
+    <div
+      class="screen hidden"
+      id="privacyPop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="privacyPopTitle"
+    >
+      <div class="sheet panel" style="max-width: 460px">
+        <div class="pop-head">
+          <h2 id="privacyPopTitle">Privacy &amp; data</h2>
+          <button class="pop-close" id="privacyClose" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <p class="tag xfer-blurb">
+          Everything below is what actually leaves this device. Nothing else
+          does.
+        </p>
+        <div class="dsrow">
+          <b>Your progress</b>
+          <span
+            >Courses, skins, coins, gear and lap times live on this device only.
+            They are never uploaded — Transfer save is the only way they leave,
+            and only when you send the code yourself.</span
+          >
+        </div>
+        <div class="dsrow">
+          <b>Your captain name</b>
+          <span>Stored here, shown only to you, never sent anywhere.</span>
+        </div>
+        <div class="dsrow">
+          <b>Adverts</b>
+          <span
+            >Google AdMob serves them. It receives your device's advert
+            identifier, approximate location from your IP address, and basic
+            device information.</span
+          >
+        </div>
+        <div class="dsrow">
+          <b>Usage data</b>
+          <span
+            >Only if you turn it on. Google Analytics then records which courses
+            and difficulties get played — never your name, and never anything
+            you type.</span
+          >
+        </div>
+        <div class="setrow" id="privacyOptionsRow" hidden>
+          <label for="adPrivacyBtn">Advert personalisation</label>
+          <button class="ghost" type="button" id="adPrivacyBtn">Change</button>
+        </div>
+        <p class="xfer-note" id="privacyNote"></p>
+        <p class="tag xfer-blurb">
+          The full policy is at
+          <a href="privacy.html" target="_blank" rel="noopener">privacy.html</a
+          >.
+        </p>
+      </div>
+    </div>
+
     <!-- moving a save between devices -->
     <div
       class="screen hidden"
@@ -3036,6 +3128,7 @@
         <div class="btnstack">
           <button class="ghost" id="howToPlay">How to play</button>
           <button class="ghost" id="transferBtn">Transfer save</button>
+          <button class="ghost" id="privacyBtn">Privacy &amp; data</button>
           <button class="go-btn" id="settingsDone">Done</button>
         </div>
       </div>
@@ -14073,6 +14166,61 @@
           const c = window.Capacitor;
           return (c && c.getPlatform && c.getPlatform()) || "web";
         }
+        /* ---------- ad consent (Google UMP) ----------
+   Google requires a certified consent platform before personalised ads
+   are served to anyone in the EEA or the UK, and UMP is theirs. It works
+   out on its own whether the player is somewhere consent is required —
+   there is no geography check to write here, and guessing at one would
+   be worse than asking.
+
+   Two things come back that matter. canRequestAds says whether any ad may
+   be requested at all; refusing consent does not mean no ads, it means no
+   *personalised* ads, which is what npa carries on every request below.
+   privacyOptionsRequirementStatus says whether this player must be given
+   a standing way to change their mind — that is the Settings entry. */
+        let adConsent = { canRequestAds: true, npa: false, canChange: false };
+        let consentAsked = null;
+        function adConsentInit() {
+          const M = adMobPlugin();
+          if (!M || !M.requestConsentInfo) return Promise.resolve(adConsent);
+          if (consentAsked) return consentAsked;
+          consentAsked = M.requestConsentInfo()
+            .then(async (info) => {
+              if (info.status === "REQUIRED" && info.isConsentFormAvailable) {
+                try {
+                  info = (await M.showConsentForm()) || info;
+                } catch (e) {
+                  /* Dismissed, or the form failed to render. Not consented is
+                     the safe reading of that, and it is what UMP reports back
+                     anyway — nothing to do but carry on with what we know. */
+                }
+              }
+              adConsent = {
+                canRequestAds: info.canRequestAds !== false,
+                /* Personalised is fine when consent was given and equally
+                   when it was never needed — NOT_REQUIRED is UMP saying this
+                   player is outside the regime, not that they said no.
+                   Treating it as a refusal would serve non-personalised ads
+                   to most of the world for nothing. REQUIRED means still
+                   outstanding, and UNKNOWN means we don't know: both go
+                   non-personalised. */
+                npa: !(
+                  info.status === "OBTAINED" || info.status === "NOT_REQUIRED"
+                ),
+                canChange: info.privacyOptionsRequirementStatus === "REQUIRED",
+              };
+              syncPrivacyRow();
+              return adConsent;
+            })
+            .catch(() => {
+              /* UMP itself failed. Serve non-personalised rather than nothing:
+                 the player still gets their reward and nobody is tracked. */
+              adConsent = { canRequestAds: true, npa: true, canChange: false };
+              return adConsent;
+            });
+          return consentAsked;
+        }
+
         let adMobReady = null;
         function adMobInit() {
           const M = adMobPlugin();
@@ -14140,10 +14288,16 @@
           saveProgress();
           try {
             if (!(await adMobInit())) return;
+            const c = await adConsentInit();
+            if (!c.canRequestAds) return;
             const unit =
               AD_UNITS.interstitial[adPlatform()] ||
               AD_UNITS.interstitial.android;
-            await M.prepareInterstitial({ adId: unit, isTesting: AD_TESTING });
+            await M.prepareInterstitial({
+              adId: unit,
+              isTesting: AD_TESTING,
+              npa: c.npa,
+            });
             await M.showInterstitial();
             trackEvent("ad_shown", { placement: "interstitial" });
           } catch (e) {
@@ -14187,9 +14341,15 @@
           if (!M) return setTimeout(() => done(true), AD_FAKE_MS);
           try {
             if (!(await adMobInit())) throw new Error("admob did not start");
+            const c = await adConsentInit();
+            if (!c.canRequestAds) throw new Error("ads not permitted here");
             const unit =
               AD_UNITS.rewarded[adPlatform()] || AD_UNITS.rewarded.android;
-            await M.prepareRewardVideoAd({ adId: unit, isTesting: AD_TESTING });
+            await M.prepareRewardVideoAd({
+              adId: unit,
+              isTesting: AD_TESTING,
+              npa: c.npa,
+            });
             /* Resolves when the reward is earned and rejects when it isn't —
                a dismissal before the reward point lands here as a throw, which
                is exactly the "watched nothing, paid nothing" case. */
@@ -14563,6 +14723,42 @@
               : "Start race";
         }
         syncStartBtn();
+        /* ---------- privacy & data ---------- */
+        const privacyPopEl = document.getElementById("privacyPop"),
+          privacyOptionsRowEl = document.getElementById("privacyOptionsRow"),
+          privacyNoteEl = document.getElementById("privacyNote");
+        /* Google requires a standing way to reopen the consent choice for
+   anyone it decided needed one — so the row appears only when UMP says
+   privacy options are required, and never invents itself elsewhere. */
+        function syncPrivacyRow() {
+          privacyOptionsRowEl.hidden = !adConsent.canChange;
+          privacyNoteEl.textContent = adConsent.canChange
+            ? adConsent.npa
+              ? "Adverts are currently not personalised."
+              : "Adverts are currently personalised."
+            : "";
+        }
+        document.getElementById("privacyBtn").onclick = () => {
+          syncPrivacyRow();
+          privacyPopEl.classList.remove("hidden");
+        };
+        document.getElementById("privacyClose").onclick = () =>
+          privacyPopEl.classList.add("hidden");
+        document.getElementById("adPrivacyBtn").onclick = async () => {
+          const M = adMobPlugin();
+          if (!M || !M.showPrivacyOptionsForm) return;
+          try {
+            await M.showPrivacyOptionsForm();
+            // the form writes the new choice into UMP; re-read rather than
+            // assume which way they went
+            consentAsked = null;
+            await adConsentInit();
+            syncPrivacyRow();
+          } catch (e) {
+            privacyNoteEl.textContent = "Couldn't open that just now.";
+          }
+        };
+
         /* ---------- transfer save ---------- */
         const transferPopEl = document.getElementById("transferPop"),
           transferOutEl = document.getElementById("transferOut"),
