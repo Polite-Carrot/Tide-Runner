@@ -815,8 +815,11 @@ of `TRACKS` is index-aligned to it — `CHALLENGE_META`, `THEME_SEQ`, the unlock
 chains — so a 101st course would shift the challenge skins by one and leave a
 world showing 26 entries. `TUTORIAL_TRACK` is built through `buildTrack()` like
 any other, so it renders, races and sounds identical; it just never appears in a
-list. Calder Reach: 2,707px, wide, barely bent, two rivals on Easy, one lap.
+list. Calder Reach: 2,707px, wide, barely bent, two rivals on Easy, two laps.
 Nothing here should be hard, because the player is reading rather than racing.
+The coaching is all done inside the first lap; the second is the player's own,
+the same water with nobody talking over it, which is where the controls actually
+start to land.
 
 **A tutorial run is an ordinary race with every consequence removed.** One
 `tutorial` flag, read in five places: `startRace()` picks the track and lends a
@@ -840,6 +843,18 @@ first hunter, the first world change) is one more entry and no new machinery.
 Steps read `controls()` rather than the stick directly, so the same tutorial
 works on a keyboard, and each carries alternate copy for it.
 
+**A keyboard gets keys, not a stick.** `coachTouch` is decided once per run from
+`(pointer: coarse)`, and on a desktop the stick steps have nothing to point at —
+the joystick is never planted, so `joySpot` falls back to its suggested position
+and spotlights bare water. So the coaching draws the keys instead: an
+inverted-T of four keycaps, with the pair that matters lit and rippling. The
+first step lights all four, throttle lights up and down, steering lights left
+and right, and the gear step drops them and goes back to spotlighting the gear.
+The bow-relative arrows belong to the stick, so they stay off entirely on a
+keyboard — an arrow key does not turn with the boat. The keycaps are the
+spotlight target too, so the bubble placement and the dimming need no special
+case.
+
 **But a step nobody performs must not hold the tutorial hostage.** A player who
 never quite pushes the stick far enough sideways would sit on "steer with the
 same thumb" for the whole lap and never be shown their gear at all. So each step
@@ -847,10 +862,12 @@ also names a `by` — the point in the lap at which it gives up and moves on. Ge
 lands a third of the way round at the latest, and lets go itself at 78% so the
 run always reaches the finish. The skip is a loop rather than one step per
 frame: an overdue run lands on the right step instead of flickering through the
-ones between it. Lap position is only read once she has crossed the line, since
-boats start on the grid _behind_ it — the far end of the index range, which read
-naively is "nearly a lap done" and would time every step out before the player
-had touched anything.
+ones between it. Position counts laps as well as index, so it keeps climbing
+past the line rather than resetting a pending step's deadline under it — and it
+is only read once she has crossed the line at all, since boats start on the grid
+_behind_ it, at the far end of the index range, which read naively is "nearly a
+lap done" and would time every step out before the player had touched
+anything.
 
 **The arrows point at the bow, not at the top of the screen.** The helm is
 heading-relative: forward is `dx·cos h + dy·sin h`, the way she is actually

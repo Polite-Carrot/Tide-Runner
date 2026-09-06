@@ -1578,6 +1578,66 @@
           transform: translateX(9px);
         }
       }
+      /* On a keyboard there is no stick to point at, so the coaching shows
+         the keys themselves instead of a spotlight on empty water. Screen
+         orientation, not the boat's: an arrow key does not turn with her. */
+      #coachKeys {
+        position: absolute;
+        left: 50%;
+        bottom: 16%;
+        transform: translateX(-50%);
+        display: none;
+        grid-template-columns: repeat(3, 46px);
+        grid-auto-rows: 46px;
+        gap: 8px;
+      }
+      body.coach-keys #coachKeys {
+        display: grid;
+      }
+      .ck {
+        display: grid;
+        place-items: center;
+        font-style: normal;
+        font-size: 21px;
+        line-height: 1;
+        border-radius: 10px;
+        border: 1px solid rgba(var(--tint), 0.3);
+        background: rgba(4, 20, 28, 0.82);
+        color: rgba(var(--tint), 0.4);
+      }
+      .ck.up {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      .ck.left {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      .ck.down {
+        grid-column: 2;
+        grid-row: 2;
+      }
+      .ck.right {
+        grid-column: 3;
+        grid-row: 2;
+      }
+      .ck.lit {
+        color: #04141c;
+        background: rgba(var(--tint), 0.92);
+        border-color: rgba(var(--tint), 0.92);
+        animation: ckPulse 1.3s ease-out infinite;
+      }
+      /* a ripple rather than a bob: these four point four different ways and
+         a shared translate would send the down arrow upwards */
+      @keyframes ckPulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(var(--tint), 0.5);
+        }
+        70%,
+        100% {
+          box-shadow: 0 0 0 9px rgba(var(--tint), 0);
+        }
+      }
       #coachBubble {
         position: absolute;
         left: 50%;
@@ -2665,6 +2725,10 @@
       <div id="coachHole"></div>
       <div id="coachArrows">
         <i class="ca up"></i><i class="ca left"></i><i class="ca right"></i>
+      </div>
+      <div id="coachKeys" aria-hidden="true">
+        <i class="ck up">&#8593;</i><i class="ck left">&#8592;</i
+        ><i class="ck down">&#8595;</i><i class="ck right">&#8594;</i>
       </div>
       <div id="coachBubble">
         <b id="coachTitle"></b>
@@ -7738,9 +7802,12 @@
         function startTutorial() {
           setMode(false);
           tutorial = true;
-          // one lap, and the laps picker gets its value back afterwards
+          /* Two laps: the coaching is all done inside the first, so the
+             second is the player's own — the same water with nobody talking
+             over it, which is where the controls actually start to land. The
+             laps picker gets its value back afterwards. */
           lapsBeforeTutorial = totalLaps;
-          totalLaps = 1;
+          totalLaps = 2;
           plotFit = null;
           initAudio();
           startRace();
@@ -8139,7 +8206,8 @@
           coachBubbleEl = document.getElementById("coachBubble"),
           coachTitleEl = document.getElementById("coachTitle"),
           coachTextEl = document.getElementById("coachText"),
-          coachArrowsEl = document.getElementById("coachArrows");
+          coachArrowsEl = document.getElementById("coachArrows"),
+          coachKeysEl = document.getElementById("coachKeys");
         let coachStep = -1,
           coachHold = 0,
           coachSettle = 0,
@@ -8160,6 +8228,7 @@
               coachTouch ? { x: W * 0.5, y: H * 0.72, r: 78 } : null,
             arrows: false,
             done: () => joyActive() || anyDriveKey(),
+            keys: "all",
             by: 0.12,
           },
           {
@@ -8173,6 +8242,7 @@
             // held, not tapped: a stray flick shouldn't tick this off
             hold: 0.55,
             test: () => controls().thr > 0.45,
+            keys: "thr",
             by: 0.22,
           },
           {
@@ -8186,6 +8256,7 @@
             arrows: "side",
             hold: 0.4,
             test: () => Math.abs(controls().steer) > 0.45,
+            keys: "steer",
             by: 0.33,
           },
           {
@@ -8202,7 +8273,7 @@
           {
             id: "line",
             title: "Now take her round",
-            text: "One lap. Two rivals, and they aren't trying very hard.",
+            text: "Two laps. Two rivals, and they aren't trying very hard — the second lap is yours, with nobody talking over it.",
             spot: null,
             arrows: false,
             // read-and-go: nothing to perform, so it clears on its own
@@ -8232,7 +8303,7 @@
    "up" becomes the bow, and the pair either side of it becomes port and
    starboard, which is what the steering step wants anyway. */
         function coachAimArrows(st) {
-          if (!st || !st.arrows) return;
+          if (!st || !st.arrows || !coachTouch) return;
           const h = me ? me.h : -Math.PI / 2;
           coachArrowsEl.style.transform = `rotate(${h + Math.PI / 2}rad)`;
         }
@@ -8242,7 +8313,16 @@
    time every step out before the player had touched anything. */
         function coachLapFrac() {
           if (!me || !track || me.lap < 0) return 0;
-          return Math.max(0, Math.min(1, me.idx / track.n));
+          // laps included, so it keeps climbing past the line: a step still
+          // pending at the end of lap one must not have its deadline reset
+          return Math.max(0, me.lap + me.idx / track.n);
+        }
+        /* What this step points at. On a keyboard the stick steps point at
+   the keycaps instead — the joystick is never planted, so `joySpot` would
+   fall back to its suggested position and spotlight bare water. */
+        function stepSpot(st) {
+          if (!coachTouch && st.keys) return elSpot(coachKeysEl, 12);
+          return st.spot ? st.spot() : null;
         }
         function elSpot(el, pad) {
           const r = el.getBoundingClientRect();
@@ -8278,6 +8358,7 @@
           document.body.classList.remove(
             "coaching",
             "coach-arrows",
+            "coach-keys",
             "coach-low",
           );
         }
@@ -8286,8 +8367,14 @@
           if (!st) return stopCoaching();
           coachTitleEl.textContent = (!coachTouch && st.keyTitle) || st.title;
           coachTextEl.textContent = (!coachTouch && st.keyText) || st.text;
-          document.body.classList.toggle("coach-arrows", !!st.arrows);
-          coachArrowsEl.style.display = st.arrows === "up" ? "" : "";
+          // the bow-relative arrows are about the stick, so they belong to
+          // the touch path only; a keyboard gets the keycaps instead
+          const keyHint = coachTouch ? null : st.keys;
+          document.body.classList.toggle(
+            "coach-arrows",
+            !!st.arrows && !keyHint,
+          );
+          document.body.classList.toggle("coach-keys", !!keyHint);
           // only the pair that matches this step
           coachArrowsEl.querySelector(".up").style.display =
             st.arrows === "up" ? "" : "none";
@@ -8295,7 +8382,14 @@
             st.arrows === "side" ? "" : "none";
           coachArrowsEl.querySelector(".right").style.display =
             st.arrows === "side" ? "" : "none";
-          coachHole(st.spot ? st.spot() : null);
+          for (const k of ["up", "left", "down", "right"]) {
+            const lit =
+              keyHint === "all" ||
+              (keyHint === "thr" && (k === "up" || k === "down")) ||
+              (keyHint === "steer" && (k === "left" || k === "right"));
+            coachKeysEl.querySelector("." + k).classList.toggle("lit", lit);
+          }
+          coachHole(stepSpot(st));
           coachAimArrows(st);
         }
         function coachHole(sp) {
@@ -8346,7 +8440,8 @@
             showCoachStep();
           }
           // the helm moves under the player, so the spotlight follows it
-          if (st.spot) coachHole(st.spot());
+          const sp = stepSpot(st);
+          if (sp) coachHole(sp);
           coachAimArrows(st);
           const satisfied = st.done ? st.done() : st.test();
           if (!satisfied) {
