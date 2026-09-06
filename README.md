@@ -440,6 +440,38 @@ means a running order can be fixed without anybody losing what they earned.
 Bit positions in the transfer code come from `TRACKS` order, so this took
 `TRANSFER_VERSION` to 3.
 
+### Double your coins
+
+**A rewarded-ad placement on the results screen**, offered once an hour. It sits
+under the coin badge, reuses the bonus spin's button wholesale, and doubles what
+the race actually paid.
+
+**The cooldown is the design, not a limit bolted on.** A race is 30–90 seconds,
+so "once per race" would put an ad offer on every single results screen — which
+turns the screen into a toll gate and trains people to swipe past it. An hour
+makes it something you take when it's there. It is held as a wall-clock
+timestamp in `progress.lastDoubleAd` rather than a count, so it survives a
+restart and can't be reset by replaying a race.
+
+Three things it has to get right:
+
+- **The amount is captured at the finish**, in `doubleOffer`, and never
+  recomputed — so what gets doubled is always what was actually awarded.
+- **The offer is re-checked when tapped.** A results screen can sit open for a
+  long time, and an offer that has expired since it was drawn must not pay out.
+- **One bite per race**, whatever the clock says: `doubleOffer` is zeroed inside
+  the completion handler, before the coins land.
+
+Nothing is offered when the race paid nothing, which is every tutorial run and
+every time trial.
+
+**`playRewardedAd()` now takes the button it drives** rather than reaching for a
+particular one, so both placements share a single integration point. That
+function is still a 2.2-second `setTimeout` — it is where a real SDK gets wired
+in, and whatever replaces it has to keep the same contract: call `onComplete`
+only for a genuinely completed view, and leave the button usable again on a skip
+or a failed fill.
+
 ### The daily spin, re-cut
 
 The wheel was set when gear cost a token coin, and once gear had real prices the

@@ -2051,6 +2051,21 @@
       .ad-spin-btn.loading .ad-progress {
         width: 100%;
       }
+      /* Same button as the bonus-spin offer, on a sheet that centres its
+         own content — so it only needs placing, not restyling. */
+      .double-btn {
+        margin: 10px auto 0;
+      }
+      .double-note {
+        margin: 8px 0 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: rgba(234, 247, 244, 0.55);
+        min-height: 1.2em;
+      }
+      .double-note.done {
+        color: var(--stbd);
+      }
       .spin-result {
         margin: 14px 0 0;
         color: var(--stbd);
@@ -3036,6 +3051,12 @@
             <span class="coin-icon" aria-hidden="true"></span>
             <b id="coinRewardAmt"></b>
           </div>
+          <button class="ad-spin-btn double-btn" type="button" id="doubleBtn">
+            <span class="ad-play-ico" aria-hidden="true"></span>
+            <span id="doubleBtnLabel">Double it</span>
+            <span class="ad-progress" aria-hidden="true"></span>
+          </button>
+          <p class="double-note" id="doubleNote" aria-live="polite"></p>
         </div>
         <table>
           <thead>
@@ -12862,6 +12883,8 @@
           coinRewardAmtEl.textContent = "+" + coinsEarned + " coins";
           coinRewardEl.classList.remove("pop");
           coinRewardEl.classList.toggle("on", !tutorial && !timeTrial);
+          doubleOffer = coinsEarned;
+          refreshDoubleOffer();
           coinRewardEl.setAttribute(
             "aria-label",
             coinsEarned + " coins earned",
@@ -13595,14 +13618,24 @@
    only once the viewer has actually earned the reward (watched through),
    and leave the button in its normal state without arming a bonus spin
    if they skipped or it failed to load. */
-        function playRewardedAd(onComplete) {
+        /* THE one place a real ad SDK gets wired in. It takes the button it
+   is driving rather than reaching for a particular one, so every
+   placement — the bonus spin, the results-screen double — shares a
+   single integration point and a single set of states to get right.
+   Whatever replaces the timeout below must still call onComplete only
+   for a genuinely completed view, and must leave the button usable
+   again if the player skips or the fill fails. */
+        function playRewardedAd(btn, label, onComplete) {
           adLoading = true;
-          adSpinBtnEl.disabled = true;
-          adSpinBtnEl.classList.add("loading");
-          adSpinBtnLabelEl.textContent = "Loading ad…";
+          btn.disabled = true;
+          btn.classList.add("loading");
+          const wording = label.textContent;
+          label.textContent = "Loading ad…";
           setTimeout(() => {
             adLoading = false;
-            adSpinBtnEl.classList.remove("loading");
+            btn.classList.remove("loading");
+            btn.disabled = false;
+            label.textContent = wording;
             onComplete();
           }, 2200);
         }
@@ -13633,6 +13666,77 @@
             spinStatusEl.textContent = "Come back at 9am";
           }
         }
+        /* ---------- double your coins ----------
+   Offered on the results screen, once an hour. The cooldown is the whole
+   design: an offer on every single race turns the results screen into a
+   toll gate and trains people to ignore it, and a race is short enough
+   that "once per race" would be exactly that. An hour makes it a thing
+   you take when it's there rather than a tax you pay to leave.
+
+   Held in wall-clock milliseconds rather than a count, so it survives a
+   restart and can't be reset by replaying a race. */
+        const DOUBLE_COOLDOWN = 3600000; // one hour
+        const doubleBtnEl = document.getElementById("doubleBtn"),
+          doubleBtnLabelEl = document.getElementById("doubleBtnLabel"),
+          doubleNoteEl = document.getElementById("doubleNote");
+        // what this race paid, captured at the finish — never recomputed, so
+        // the amount doubled is always the amount actually awarded
+        let doubleOffer = 0;
+        function doubleReadyIn() {
+          const last = progress.lastDoubleAd || 0;
+          return Math.max(0, last + DOUBLE_COOLDOWN - Date.now());
+        }
+        function refreshDoubleOffer() {
+          const wait = doubleReadyIn();
+          // nothing to double after a tutorial or a trial, both of which pay 0
+          if (doubleOffer <= 0) {
+            doubleBtnEl.classList.remove("show");
+            doubleNoteEl.textContent = "";
+            return;
+          }
+          if (wait > 0) {
+            doubleBtnEl.classList.remove("show");
+            const mins = Math.ceil(wait / 60000);
+            doubleNoteEl.classList.remove("done");
+            doubleNoteEl.textContent =
+              "Another double in " +
+              (mins >= 60
+                ? "an hour"
+                : mins > 1
+                  ? mins + " minutes"
+                  : "a minute");
+            return;
+          }
+          doubleBtnEl.classList.add("show");
+          doubleBtnEl.disabled = false;
+          doubleBtnLabelEl.textContent = "Double it · watch an ad";
+          doubleNoteEl.classList.remove("done");
+          doubleNoteEl.textContent = "";
+        }
+        doubleBtnEl.onclick = () => {
+          if (doubleBtnEl.disabled || adLoading) return;
+          // re-checked here as well as at the finish: the results screen can
+          // sit open a long while, and the offer must be honest when tapped
+          if (doubleOffer <= 0 || doubleReadyIn() > 0)
+            return refreshDoubleOffer();
+          playRewardedAd(doubleBtnEl, doubleBtnLabelEl, () => {
+            const paid = doubleOffer;
+            doubleOffer = 0; // one bite per race, whatever the clock says
+            progress.coins += paid;
+            progress.lastDoubleAd = Date.now();
+            saveProgress();
+            coinRewardAmtEl.textContent = "+" + paid * 2 + " coins";
+            doubleBtnEl.classList.remove("show");
+            doubleNoteEl.classList.add("done");
+            doubleNoteEl.textContent = "Doubled — another " + paid + " coins.";
+            refreshSkins();
+            trackEvent("ad_reward", {
+              placement: "double_coins",
+              amount: paid,
+            });
+          });
+        };
+
         adSpinBtnEl.onclick = () => {
           if (adSpinBtnEl.disabled || adLoading) return;
           /* The ad offer appears the moment the free spin lands — which is
@@ -13642,7 +13746,7 @@
              with the ad calls the auto-close off, and the reopen below covers
              the case where it had already fired. */
           clearTimeout(spinCloseTimer);
-          playRewardedAd(() => {
+          playRewardedAd(adSpinBtnEl, adSpinBtnLabelEl, () => {
             bonusSpinArmed = true;
             if (spinPopEl.classList.contains("hidden")) openSpinPop();
             else refreshSpinStatus();
@@ -13989,6 +14093,8 @@
           startRace();
         };
         function leaveResults() {
+          doubleOffer = 0;
+          refreshDoubleOffer();
           endTutorial();
           state = S.menu;
           syncConsentBanner();
