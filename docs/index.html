@@ -13826,6 +13826,46 @@
         // Filled in by buildSpinWheel(), in reward order — lets the spin
         // handler flash the wedge that was actually won.
         const wheelPaths = [];
+        /* Every label the wheel drew, with the width it has to live inside.
+   Kept so the fit can be redone once the web font arrives — measured
+   against a fallback face, a label sized to fit would be wrong the
+   moment Barlow Condensed loads under it. */
+        const wheelLabels = [];
+        /* Labels sit tangentially, so what a wedge affords is the chord of
+   its arc at the text's radius — not the radius. Shrink to fit rather
+   than squashing the glyphs with textLength: a condensed face squashed
+   further stops looking like the rest of the game. */
+        function fitWheelLabel(el, maxW, startSize) {
+          el.setAttribute("font-size", startSize);
+          if (!el.getComputedTextLength) return;
+          const w = el.getComputedTextLength();
+          if (!w || w <= maxW) return;
+          // one proportional step lands very close; the loop tidies rounding
+          let size = Math.max(6, startSize * (maxW / w));
+          el.setAttribute("font-size", size.toFixed(2));
+          while (size > 6 && el.getComputedTextLength() > maxW) {
+            size -= 0.4;
+            el.setAttribute("font-size", size.toFixed(2));
+          }
+        }
+        /* Fit each, then bring every label of the same kind down to the
+   smallest size any of them needed. One long word shrinking on its own
+   reads as a mistake; the whole set shrinking together reads as the
+   design. Grouped by the size they started at, which is exactly what
+   distinguishes a headline from a subtitle here. */
+        function fitWheelLabels() {
+          const smallest = {};
+          for (const l of wheelLabels) {
+            fitWheelLabel(l.el, l.maxW, l.size);
+            const got = +l.el.getAttribute("font-size");
+            smallest[l.size] = Math.min(
+              smallest[l.size] === undefined ? l.size : smallest[l.size],
+              got,
+            );
+          }
+          for (const l of wheelLabels)
+            l.el.setAttribute("font-size", smallest[l.size].toFixed(2));
+        }
         (function buildSpinWheel() {
           const svg = document.getElementById("wheelSvg");
           const ns = "http://www.w3.org/2000/svg";
@@ -13892,7 +13932,6 @@
             t1.setAttribute("text-anchor", "middle");
             t1.setAttribute("font-family", "Barlow Condensed, sans-serif");
             t1.setAttribute("font-weight", "700");
-            t1.setAttribute("font-size", rw.type === "gear" ? "13" : "18");
             t1.setAttribute("fill", rw.type === "gear" ? "#7fe9d8" : "#ffd84a");
             t1.textContent = rw.label;
             g.appendChild(t1);
@@ -13901,12 +13940,29 @@
             t2.setAttribute("y", ly + 10);
             t2.setAttribute("text-anchor", "middle");
             t2.setAttribute("font-family", "IBM Plex Mono, monospace");
-            t2.setAttribute("font-size", "6.5");
             t2.setAttribute("fill", "rgba(234,247,244,0.65)");
             t2.textContent = rw.sub;
             g.appendChild(t2);
             svg.appendChild(g);
+            // in the document before measuring: an unattached node has no
+            // computed text length to read
+            const maxW = 2 * (r * 0.65) * Math.sin(Math.PI / n) * 0.86;
+            const big = rw.type === "gear" ? 13 : 18;
+            wheelLabels.push(
+              { el: t1, maxW, size: big },
+              {
+                el: t2,
+                maxW,
+                size: 6.5,
+              },
+            );
           });
+          fitWheelLabels();
+          /* Re-fit once the web font has actually arrived. Until it does the
+             measurements above are of a fallback face, which is a different
+             width — usually wider, so a label would end up needlessly small. */
+          if (document.fonts && document.fonts.ready)
+            document.fonts.ready.then(fitWheelLabels).catch(() => {});
         })();
         function weightedSpinIndex() {
           const total = SPIN_REWARDS.reduce((s, r) => s + r.weight, 0);
@@ -14308,6 +14364,11 @@
           clearTimeout(spinCloseTimer);
           spinPopSession++;
           spinPopEl.classList.remove("hidden");
+          /* Only now is the wheel measurable. It is built at load, while this
+             popup is still display:none, and getComputedTextLength on an
+             unrendered node returns 0 — so a fit done back then silently did
+             nothing at all. */
+          fitWheelLabels();
           refreshSpinStatus();
           requestAnimationFrame(fitSheets);
         }

@@ -570,6 +570,30 @@ in, and whatever replaces it has to keep the same contract: call `onComplete`
 only for a genuinely completed view, and leave the button usable again on a skip
 or a failed fill.
 
+### Wheel labels fit themselves
+
+Adding TORPEDO to the wheel broke it: the label ran out of its wedge and into
+the next one. Labels sit tangentially, so what a wedge affords is **the chord of
+its arc at the text's radius**, not the radius — about 42 units on a 200-unit
+viewBox at eight wedges. Each label is measured and shrunk to fit, rather than
+squashed with `textLength`, since a condensed face condensed further stops
+looking like the rest of the game.
+
+Two things this needs to get right, and the first one bit:
+
+- **The wheel is built at load, while its popup is still `display: none`** — and
+  `getComputedTextLength()` on an unrendered node returns 0, so a fit done then
+  silently does nothing at all. `openSpinPop()` re-fits at the moment the wheel
+  is actually measurable.
+- **Then again once the web font arrives**, via `document.fonts.ready`. Measured
+  against a fallback face, a label sized to fit would be wrong the moment Barlow
+  Condensed loaded under it — usually needlessly small, since the fallback is
+  wider.
+
+Every label of a kind then comes down to the smallest size any of them needed.
+One long word shrinking alone reads as a mistake; the set shrinking together
+reads as the design.
+
 ### The daily spin, re-cut
 
 The wheel was set when gear cost a token coin, and once gear had real prices the
