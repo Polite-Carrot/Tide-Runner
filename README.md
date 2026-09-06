@@ -440,6 +440,46 @@ means a running order can be fixed without anybody losing what they earned.
 Bit positions in the transfer code come from `TRACKS` order, so this took
 `TRANSFER_VERSION` to 3.
 
+### AdMob
+
+**Wired up for real, on Google's test ad units.** Those serve a genuine ad
+through the real SDK with a real reward callback — they just never bill anyone
+and never count as traffic. So this is the integration, not a mock of one:
+replacing `AD_UNITS` with live IDs and setting `AD_TESTING` to false is the whole
+of what is left.
+
+The unit IDs were taken from the plugin's own native source rather than from
+memory (`AdOptions.java`, `AdMobPlugin.swift`), and the app IDs in
+`strings.xml` and `Info.plist` are Google's published test app IDs — **replace
+all four before release.** Watch the first device launch for an AdMob init error
+if any of them is wrong.
+
+**No import, same as the haptics**: `@capacitor-community/admob` arrives on
+`window.Capacitor.Plugins` at runtime, so the native build reaches it without
+this file gaining a bundler. The SDK is initialised lazily on the first ad rather
+than at launch, so a player who never taps one never pays for it spinning up.
+`requestTrackingAuthorization` is deliberately not set — the ATT prompt belongs
+at a moment the player understands, not thrown at them by a background init.
+
+**Every way an ad can end has to pay correctly**, which is the whole job:
+
+| Ending                 | Result                                                         |
+| ---------------------- | -------------------------------------------------------------- |
+| No plugin at all (web) | stand-in ad, reward granted — keeps the browser build testable |
+| Reward earned          | reward granted                                                 |
+| Viewer dismissed early | nothing, button usable again                                   |
+| No fill                | nothing, "Ad unavailable — try again"                          |
+| SDK wouldn't start     | nothing                                                        |
+
+That last row is the one worth guarding. The simulated ad is for the **web build
+only** — somewhere with no ad network to ask. Falling back to it on a device
+whose SDK failed to start would hand free rewards to anyone with a wrong AdMob
+config or no signal, which is a revenue leak rather than a kindness. On a device,
+an SDK that won't start is an ad failure like any other.
+
+Both placements go through one `playRewardedAd()`, so there is one set of states
+to get right rather than two.
+
 ### Double your coins
 
 **A rewarded-ad placement on the results screen**, offered once an hour. It sits

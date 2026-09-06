@@ -4,4 +4,7 @@
     <string name="title_activity_main">Tiderunner</string>
     <string name="package_name">com.politecarrot.tiderunner</string>
     <string name="custom_url_scheme">com.politecarrot.tiderunner</string>
+    <!-- Google's test AdMob application id. Serves test ads only; replace
+         with your own before release. -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
 </resources>

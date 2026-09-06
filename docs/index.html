@@ -13618,26 +13618,105 @@
    only once the viewer has actually earned the reward (watched through),
    and leave the button in its normal state without arming a bonus spin
    if they skipped or it failed to load. */
-        /* THE one place a real ad SDK gets wired in. It takes the button it
-   is driving rather than reaching for a particular one, so every
-   placement — the bonus spin, the results-screen double — shares a
-   single integration point and a single set of states to get right.
-   Whatever replaces the timeout below must still call onComplete only
-   for a genuinely completed view, and must leave the button usable
-   again if the player skips or the fill fails. */
-        function playRewardedAd(btn, label, onComplete) {
+        /* ---------- rewarded ads ----------
+   Google AdMob through @capacitor-community/admob, on Google's own test
+   ad units. Those serve a real ad, through the real SDK, with a real
+   reward callback — they simply never bill anyone and never count as
+   traffic. So this is the actual integration rather than a mock of one:
+   swapping AD_UNITS for live IDs and setting AD_TESTING false is the
+   whole of what is left to do.
+
+   No import, same as the haptics: the plugin arrives on
+   window.Capacitor.Plugins at runtime, so the native build reaches it
+   without this file gaining a build step. On the web there is no plugin
+   and no ad network, so the timeout below stands in — which is also what
+   keeps the browser build playable and testable. */
+        const AD_UNITS = {
+          // Google's published test units, taken from the plugin's own native
+          // source. Replace both with your AdMob unit IDs and set AD_TESTING
+          // to false — nothing else here needs to change.
+          rewarded: {
+            android: "ca-app-pub-3940256099942544/5224354917",
+            ios: "ca-app-pub-3940256099942544/1712485313",
+          },
+        };
+        const AD_TESTING = true;
+        // How long the stand-in "ad" runs on the web, matched to the progress
+        // bar's CSS transition so the two finish together.
+        const AD_FAKE_MS = 2200;
+
+        function adMobPlugin() {
+          return (
+            (window.Capacitor &&
+              window.Capacitor.Plugins &&
+              window.Capacitor.Plugins.AdMob) ||
+            null
+          );
+        }
+        function adPlatform() {
+          const c = window.Capacitor;
+          return (c && c.getPlatform && c.getPlatform()) || "web";
+        }
+        let adMobReady = null;
+        function adMobInit() {
+          const M = adMobPlugin();
+          if (!M) return Promise.resolve(false);
+          /* Initialised once, lazily — on the first ad rather than at launch,
+             so a player who never taps an ad never pays for the SDK spinning
+             up. requestTrackingAuthorization is deliberately not set: the ATT
+             prompt belongs at a moment the player understands, not thrown at
+             them by a background init. */
+          if (!adMobReady)
+            adMobReady = M.initialize({ initializeForTesting: AD_TESTING })
+              .then(() => true)
+              .catch(() => {
+                adMobReady = null; // let the next attempt try again
+                return false;
+              });
+          return adMobReady;
+        }
+
+        /* THE one place the ad network is spoken to. It takes the button it is
+   driving rather than reaching for a particular one, so every placement —
+   the bonus spin, the results-screen double — shares a single set of
+   states to get right. onComplete runs only for a genuinely completed
+   view; every other ending (skipped, no fill, SDK missing, plugin threw)
+   leaves the button as it was and pays nothing. */
+        async function playRewardedAd(btn, label, onComplete) {
           adLoading = true;
           btn.disabled = true;
           btn.classList.add("loading");
           const wording = label.textContent;
           label.textContent = "Loading ad…";
-          setTimeout(() => {
+          const done = (earned) => {
             adLoading = false;
             btn.classList.remove("loading");
             btn.disabled = false;
             label.textContent = wording;
-            onComplete();
-          }, 2200);
+            if (earned) onComplete();
+          };
+          const M = adMobPlugin();
+          /* The stand-in is for the web build only — somewhere with no ad
+             network to ask. On a device the SDK failing to start is an ad
+             failure like any other and pays nothing: falling back to the
+             simulation there would hand out free rewards to anyone whose
+             AdMob config was wrong or whose phone was offline. */
+          if (!M) return setTimeout(() => done(true), AD_FAKE_MS);
+          try {
+            if (!(await adMobInit())) throw new Error("admob did not start");
+            const unit =
+              AD_UNITS.rewarded[adPlatform()] || AD_UNITS.rewarded.android;
+            await M.prepareRewardVideoAd({ adId: unit, isTesting: AD_TESTING });
+            /* Resolves when the reward is earned and rejects when it isn't —
+               a dismissal before the reward point lands here as a throw, which
+               is exactly the "watched nothing, paid nothing" case. */
+            const item = await M.showRewardVideoAd();
+            done(!!item);
+          } catch (e) {
+            trackEvent("ad_failed", { placement: label.id || "unknown" });
+            label.textContent = "Ad unavailable — try again";
+            setTimeout(() => done(false), 1400);
+          }
         }
         function refreshSpinStatus() {
           if (spinning) return;
