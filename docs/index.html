@@ -11775,17 +11775,37 @@
           const o0 = ghostPath[lo * 2 + 1],
             o1 = lo + 1 < n2 ? ghostPath[(lo + 1) * 2 + 1] : o0;
           const off = o0 + (o1 - o0) * f;
-          // wrapped both ways: a path recorded on a course that has since
-          // been reshaped can land outside it, and pts[-8] is a crash
-          const raw = Math.round((lo + f) * GHOST_STRIDE);
-          if (!Number.isFinite(raw)) return;
-          const idx = ((raw % track.n) + track.n) % track.n;
-          const p = track.pts[idx],
-            nv = track.nrm[idx],
-            tg = track.tan[idx];
-          ghost.x = p.x + nv.x * off;
-          ghost.y = p.y + nv.y * off;
-          ghost.h = Math.atan2(tg.y, tg.x);
+          /* Between two track points, not snapped to one. Rounding to the
+             nearest index parked the ghost on a point for several frames and
+             then jumped it the whole spacing — about 15px — which reads as a
+             stutter however smooth the recorded lap was. The fractional part
+             carries the position, the normal and the tangent alike.
+
+             Wrapped both ways: a path recorded on a course that has since
+             been reshaped can land outside it, and pts[-8] is a crash. */
+          const fi = (lo + f) * GHOST_STRIDE;
+          if (!Number.isFinite(fi)) return;
+          const nn = track.n;
+          const base = Math.floor(fi);
+          const i0 = ((base % nn) + nn) % nn,
+            i1 = (i0 + 1) % nn,
+            ff = fi - base;
+          const p0 = track.pts[i0],
+            p1 = track.pts[i1],
+            v0 = track.nrm[i0],
+            v1 = track.nrm[i1],
+            g0 = track.tan[i0],
+            g1 = track.tan[i1];
+          const nx = v0.x + (v1.x - v0.x) * ff,
+            ny = v0.y + (v1.y - v0.y) * ff;
+          ghost.x = p0.x + (p1.x - p0.x) * ff + nx * off;
+          ghost.y = p0.y + (p1.y - p0.y) * ff + ny * off;
+          // heading off the blended tangent rather than a blended angle, so
+          // it can't spin the long way round at the wrap
+          ghost.h = Math.atan2(
+            g0.y + (g1.y - g0.y) * ff,
+            g0.x + (g1.x - g0.x) * ff,
+          );
           // how far off your best you are, measured where you actually are
           ghostDelta = raceT - me.lapStart - ghostTimeAt(slotOf(me.idx));
         }

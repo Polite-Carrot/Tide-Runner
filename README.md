@@ -712,6 +712,16 @@ is just comparing two times at the same point, and it survives a course being
 reshaped: the ghost runs the new line rather than driving through a bank that
 moved.
 
+**The playback interpolates between track points, not onto them.** Rounding the
+fractional index to the nearest point parked the ghost for several frames and
+then jumped it the whole spacing — about 15px — which reads as a stutter however
+smoothly the lap was driven. Measured over 119 consecutive frames on a synthetic
+clean lap: **104 frozen frames and a 5.19px standard deviation before, 0 frozen
+and 0.29px after**, at the same 1.94px mean step. The fractional part now carries
+the position, the normal and the tangent alike, and the heading comes off the
+blended tangent rather than a blended angle so it can't spin the long way round
+at the wrap.
+
 **The ghost is deliberately not in `boats[]`.** One that lived in that array
 would need excluding from collision, separation, slipstreaming, hunter
 assignment and the placing table, one guard at a time. Kept outside it, it needs
