@@ -12826,6 +12826,9 @@
             tutorial || timeTrial ? 0 : coinsForFinish(totalLaps, skill, place);
           progress.coins += coinsEarned;
           if (tutorial) progress.tutorialDone = true;
+          // what the interstitial cap counts: real races, not tutorials or trials
+          if (!tutorial && !timeTrial)
+            progress.racesFinished = (progress.racesFinished || 0) + 1;
           saveProgress();
           rTitle.textContent = tutorial
             ? "That's the lot"
@@ -13639,7 +13642,15 @@
             android: "ca-app-pub-3940256099942544/5224354917",
             ios: "ca-app-pub-3940256099942544/1712485313",
           },
+          interstitial: {
+            android: "ca-app-pub-3940256099942544/1033173712",
+            ios: "ca-app-pub-3940256099942544/4411468910",
+          },
         };
+        /* While this is true the plugin substitutes Google's sample unit for
+   whatever format is being asked for and ignores the ids above entirely
+   (see AdViewIdHelper.getFinalAdId) — so swapping in live ids without
+   also setting this to false changes nothing at all. */
         const AD_TESTING = true;
         // How long the stand-in "ad" runs on the web, matched to the progress
         // bar's CSS transition so the two finish together.
@@ -13676,6 +13687,66 @@
           return adMobReady;
         }
 
+        /* ---------- no ads ----------
+   One question the whole app asks instead of reading a flag, so wiring a
+   real purchase later is this function and nothing else. It is stubbed on
+   progress for now, which is honest about what it is: a local boolean in
+   a client-side game, forgeable by anyone who opens devtools. A real
+   entitlement has to be validated and restorable across devices — that is
+   what Restore Purchases exists for, and Apple requires it — so this
+   becomes a receipt check rather than a saved bit.
+
+   It must never travel in the transfer code. A purchase that could be
+   pasted from a friend's phone is not a purchase. */
+        function adsRemoved() {
+          return !!progress.noAds;
+        }
+
+        /* ---------- interstitials ----------
+   Full-screen, between races, and capped hard. A race is thirty to ninety
+   seconds; an interstitial after each one is the fastest way to lose the
+   player who was going to watch rewarded ads all week, and rewarded is
+   where the money is. So: not for the first few races anybody plays, not
+   more than one in three, not twice inside two minutes, and never on the
+   back of a rewarded ad — landing a forced ad on someone who just chose
+   to watch one is exactly backwards. */
+        const INTERSTITIAL_EVERY = 3;
+        const INTERSTITIAL_GAP = 120000;
+        const INTERSTITIAL_GRACE = 3; // races finished before any are shown
+        let lastRewardedAt = 0;
+
+        function interstitialDue() {
+          if (adsRemoved()) return false;
+          const p = progress;
+          if ((p.racesFinished || 0) <= INTERSTITIAL_GRACE) return false;
+          if ((p.racesFinished || 0) % INTERSTITIAL_EVERY !== 0) return false;
+          const now = Date.now();
+          if (now - (p.lastInterstitial || 0) < INTERSTITIAL_GAP) return false;
+          if (now - lastRewardedAt < INTERSTITIAL_GAP) return false;
+          return true;
+        }
+        async function maybeShowInterstitial() {
+          if (!interstitialDue()) return;
+          const M = adMobPlugin();
+          if (!M) return; // nothing to show on the web, and nothing to fake
+          // recorded before the attempt, so a failing network can't turn into
+          // an ad on every single race
+          progress.lastInterstitial = Date.now();
+          saveProgress();
+          try {
+            if (!(await adMobInit())) return;
+            const unit =
+              AD_UNITS.interstitial[adPlatform()] ||
+              AD_UNITS.interstitial.android;
+            await M.prepareInterstitial({ adId: unit, isTesting: AD_TESTING });
+            await M.showInterstitial();
+            trackEvent("ad_shown", { placement: "interstitial" });
+          } catch (e) {
+            /* No fill, or the SDK refused. Nothing to tell the player about —
+               an ad that didn't happen is not news. */
+          }
+        }
+
         /* THE one place the ad network is spoken to. It takes the button it is
    driving rather than reaching for a particular one, so every placement —
    the bonus spin, the results-screen double — shares a single set of
@@ -13693,8 +13764,15 @@
             btn.classList.remove("loading");
             btn.disabled = false;
             label.textContent = wording;
-            if (earned) onComplete();
+            if (earned) {
+              lastRewardedAt = Date.now();
+              onComplete();
+            }
           };
+          /* Bought the ad removal: the perk still stands, the video doesn't.
+             Removing the rewarded offers outright would leave a payer with
+             less than a free player, which is no way to thank one. */
+          if (adsRemoved()) return done(true);
           const M = adMobPlugin();
           /* The stand-in is for the web build only — somewhere with no ad
              network to ask. On a device the SDK failing to start is an ad
@@ -13735,7 +13813,9 @@
             adSpinBtnEl.classList.toggle("loading", adLoading);
             adSpinBtnLabelEl.textContent = adLoading
               ? "Loading ad…"
-              : "Watch an ad for another spin";
+              : adsRemoved()
+                ? "Take another spin"
+                : "Watch an ad for another spin";
             spinStatusEl.textContent = "Free spin used today";
           } else {
             spinBtnEl.style.display = "";
@@ -13788,7 +13868,9 @@
           }
           doubleBtnEl.classList.add("show");
           doubleBtnEl.disabled = false;
-          doubleBtnLabelEl.textContent = "Double it · watch an ad";
+          doubleBtnLabelEl.textContent = adsRemoved()
+            ? "Double it"
+            : "Double it · watch an ad";
           doubleNoteEl.classList.remove("done");
           doubleNoteEl.textContent = "";
         }
@@ -14149,10 +14231,12 @@
         };
         document.getElementById("again").onclick = () => {
           initAudio();
+          maybeShowInterstitial();
           startRace();
         };
         document.getElementById("nextRace").onclick = () => {
           initAudio();
+          maybeShowInterstitial();
           // out of the tutorial and into the real thing
           if (tutorial) {
             endTutorial();
@@ -14172,6 +14256,7 @@
           startRace();
         };
         function leaveResults() {
+          maybeShowInterstitial();
           doubleOffer = 0;
           refreshDoubleOffer();
           endTutorial();

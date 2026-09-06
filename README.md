@@ -440,6 +440,54 @@ means a running order can be fixed without anybody losing what they earned.
 Bit positions in the transfer code come from `TRACKS` order, so this took
 `TRANSFER_VERSION` to 3.
 
+### Interstitials, and the cap that makes them survivable
+
+Full-screen ads between races, for players who haven't removed them. **The caps
+are the feature.** A race is thirty to ninety seconds, so an interstitial after
+each one is the fastest way to lose the player who would otherwise have watched
+rewarded ads all week — and rewarded is where the money is. So an interstitial
+needs _all_ of:
+
+- more than `INTERSTITIAL_GRACE` (3) races ever finished — nobody gets ad-blasted
+  on their first sitting
+- a race count divisible by `INTERSTITIAL_EVERY` (3)
+- `INTERSTITIAL_GAP` (2 minutes) since the last one
+- and no rewarded ad in that same window — landing a forced ad on somebody who
+  just _chose_ to watch one is exactly backwards
+
+Only real races count toward it; tutorials and trials don't. The timestamp is
+written **before** the attempt rather than after, so a failing network can't turn
+into an ad request on every single race.
+
+They fire when the player has read the result and chosen what's next — Next
+race, Race again, or Main menu — rather than the instant the results appear,
+where they'd collide with the double-your-coins offer.
+
+### Removing ads
+
+**One question — `adsRemoved()` — that the whole app asks instead of reading a
+flag**, so wiring a real purchase later is that function and nothing else.
+
+It is stubbed on `progress.noAds` for now, and that is honest about what it is:
+a local boolean in a client-side game, forgeable by anyone who opens devtools. A
+real entitlement has to be validated and restorable across devices — which is
+what Restore Purchases is for, and Apple requires it for non-consumables — so
+this becomes a receipt check rather than a saved bit.
+`@revenuecat/purchases-capacitor` supports Capacitor 8 and does that server-side.
+
+**It must never travel in the transfer code.** A purchase that can be pasted from
+a friend's phone is not a purchase.
+
+**What buying it does is keep the rewards and drop the watching.** Removing the
+rewarded offers outright would leave a payer with _less_ than a free player,
+which is no way to thank one:
+
+|                             | Free        | Bought               |
+| --------------------------- | ----------- | -------------------- |
+| Interstitials between races | yes, capped | none                 |
+| Bonus spin                  | watch an ad | "Take another spin"  |
+| Double your coins           | watch an ad | "Double it", one tap |
+
 ### AdMob
 
 **Wired up for real, on Google's test ad units.** Those serve a genuine ad
@@ -449,10 +497,15 @@ replacing `AD_UNITS` with live IDs and setting `AD_TESTING` to false is the whol
 of what is left.
 
 The unit IDs were taken from the plugin's own native source rather than from
-memory (`AdOptions.java`, `AdMobPlugin.swift`), and the app IDs in
-`strings.xml` and `Info.plist` are Google's published test app IDs — **replace
-all four before release.** Watch the first device launch for an AdMob init error
-if any of them is wrong.
+memory (`AdOptions.java`, `AdMobPlugin.swift`), and the app IDs in `strings.xml`
+and `Info.plist` are Google's published test app IDs — **replace all six before
+release.** Watch the first device launch for an AdMob init error if any of them
+is wrong.
+
+Worth knowing when you do: while `AD_TESTING` is true the plugin substitutes
+Google's sample unit for whichever format is being requested and **ignores the
+ids in `AD_UNITS` entirely** (`AdViewIdHelper.getFinalAdId`). Swapping in live
+ids without also setting `AD_TESTING` to false changes nothing at all.
 
 **No import, same as the haptics**: `@capacitor-community/admob` arrives on
 `window.Capacitor.Plugins` at runtime, so the native build reaches it without
