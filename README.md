@@ -468,6 +468,22 @@ They fire when the player has read the result and chosen what's next — Next
 race, Race again, or Main menu — rather than the instant the results appear,
 where they'd collide with the double-your-coins offer.
 
+### Two taps to buy
+
+Everything on the skins grid is one tap from being equipped, so a single tap
+that silently took coins off you was too easy to do by accident — particularly
+on a card you only meant to look at. The first tap now arms the card and covers
+its swatch with **Buy skin · N**; the second is the purchase. Only ever one card
+armed: arming another disarms the first, and rebuilding the grid, switching tab
+or closing the browser all drop it.
+
+Two CSS gotchas, both found by looking at the render rather than the code. The
+padlock and the greyscale of `.skin-card.locked` sat over the prompt and washed
+it out — the `.arming` rules tie with them on specificity, so they had to be
+moved _after_ them to win. And `display:flex` on a class beats the user-agent
+`[hidden]{display:none}`, which is separately how the advert-personalisation row
+came to show for everyone.
+
 ### Ad consent, and the privacy sheet
 
 **Google's UMP, because Google requires a certified consent platform** before a
@@ -841,7 +857,7 @@ skin and nothing to come back for.
 
 ### Animated skins
 
-**Eight of them, and five palettes.** `PALETTES` holds five stops each, darkest
+**Sixteen of them, and eight palettes.** `PALETTES` holds five stops each, darkest
 first, and a skin names one — so the effect maths stays colour-blind and a new
 skin can be a new pattern, a new palette, or both, without disturbing the other.
 
@@ -857,20 +873,43 @@ Each effect is its own idea rather than a recolour of the last:
 | Deep Current | two sine fields crossed at an angle; the bright net is where their sum passes zero                                           |
 | Oil Slick    | thin-film interference — no palette, the colour _is_ the film thickness                                                      |
 | Signal Rain  | columns falling at their own seeded speeds, with a free scanline from `py & 1`                                               |
+| Dazzle       | hard-edged WWI dazzle — a warped stripe field posterised to two tones, the warp scrolling so the panels shear                |
+| Ripple Rings | three expanding ring sources, combined by _max_ rather than average so each wavefront stays a wavefront                      |
+| Circuitry    | a grid of traces with lit vias, the light running along a trace as a travelling pulse                                        |
+| Aurora       | vertical curtains whose base is a slow noise ridge, brightening in bands that drift sideways                                 |
+| Fish Scale   | a staggered lattice, nearest-cell distance giving each scale a lip; the sheen phase is seeded per cell                       |
+| Marble       | sine of a coordinate plus heavy fbm — classic marble veining, the turbulence term animated                                   |
+| Plasma       | four sine fields at unrelated frequencies summed, the classic demo-scene plasma                                              |
+| Storm Front  | a coarse low octave for the cloud mass, a fine one for the rain, and an occasional lightning flash                           |
 
-Two of them took a second pass after looking at the output. Frost Bloom's facets
+Two of the first eight took a second pass after looking at the output. Frost Bloom's facets
 were too small and read as static rather than ice, so the field scale came down
 and an octave came off. Oil Slick drove its phase from noise alone, which gives
 blotches — interference wants _bands_, so the phase is now mostly a smooth ramp
 across the hull with the noise only warping it, and a sheen term keeps most of
 the hull near-black so the colour reads as a film on it rather than a heat map.
 
+Four of the second eight needed one too, and all four were the same class of
+mistake — maths that is right in the abstract and wrong at 48x24 pixels. Ripple
+Rings averaged its three ring fields, which turns three wavefronts into one blob;
+taking the max keeps each ring a ring. Fish Scale measured distance from a cell
+_corner_ instead of the nearest lattice point, so the scales came out as
+horizontal stripes; and once that was fixed the squash factor was the wrong way
+round, giving cells two pixels tall — the buffer is twice as wide as it is high,
+so a unit of y is already half the pixels of a unit of x, and the scale has to
+account for it rather than double down on it. Plasma's four frequencies were all
+too low to interfere within one hull, so it washed to a single colour. Storm
+Front had both octaves fine-grained, which is static, not weather — the cloud
+octave had to get much coarser than felt right on paper.
+
 ### Animated skins — the machinery
 
-**The three lime skins in Other are drawn per pixel, not painted.** `ANIMATED_SKINS` holds
-Lime Nebula (fractal gas clouds with twinkling stars), Lime Flux (domain-warped camo
-posterised to four tones so the blob edges stay crisp while the blobs drift) and Lime Pulse
-(hex cells lit by a wave travelling bow to stern). All three cost 300 coins and save through
+**The skins in Other are drawn per pixel, not painted.** `ANIMATED_SKINS` holds all
+sixteen, each one an id, a palette name and an `anim` block of speed and intensity;
+`skinFieldCanvas` branches on the id to a few lines of field maths and writes an
+`ImageData` directly. There is no shader stage to lean on, so every effect is CPU
+arithmetic per pixel per frame — which is why the buffers are small, quantised to
+`FIELD_FPS` and cached per skin and size. They all cost 300 coins and save through
 the same `progress.skins` map as everything else, so nothing about buying, equipping or
 persisting them is special-cased — `skinCategoryFor()` gained one branch and that is the whole
 of their integration. Each carries an `anim: { speed, intensity }` pair; the values in the file

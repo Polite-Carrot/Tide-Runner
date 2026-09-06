@@ -1837,6 +1837,25 @@
         width: 100%;
         height: 100%;
       }
+      /* The buy prompt: covers the swatch of an armed card so the next tap
+         reads as a purchase rather than another look. */
+      .buy-cta {
+        position: absolute;
+        inset: 0;
+        display: none;
+        place-items: center;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #04141c;
+        background: rgba(255, 216, 74, 0.92);
+        border-radius: inherit;
+      }
+      .skin-card.arming .buy-cta {
+        display: grid;
+      }
       .skin-card.locked .skin-swatch {
         filter: grayscale(0.7);
       }
@@ -1849,6 +1868,19 @@
         color: var(--foam);
         pointer-events: none;
         z-index: 2;
+      }
+      /* Ties on specificity with the two .locked rules above, so these have
+         to come after them to win: an armed card is still a locked one, and
+         the padlock and the greyscale would otherwise sit over the prompt and
+         wash it out. */
+      .skin-card.arming .skin-swatch .lockbadge {
+        display: none;
+      }
+      .skin-card.arming .skin-swatch {
+        filter: none;
+      }
+      .skin-card.arming {
+        border-color: var(--amber);
       }
       #skinPop {
         z-index: 8;
@@ -6634,6 +6666,101 @@
               "linear-gradient(180deg, #ffe280 0 6%, #d6961a 6% 22%, #0a0802 40%)," +
               "repeating-linear-gradient(90deg, #0a0802 0 6px, #241a04 6px 12px)",
           },
+          {
+            id: "dazzle",
+            name: "Dazzle",
+            price: 300,
+            pal: "steel",
+            base: "#9caebc",
+            trim: "#080a0d",
+            anim: { speed: 0.6, intensity: 1 },
+            preview:
+              "linear-gradient(66deg, #f0f8ff 0 14%, #080a0d 14% 32%, #9caebc 32% 46%," +
+              "#1e262e 46% 64%, #f0f8ff 64% 74%, #080a0d 74% 88%, #9caebc 88%)",
+          },
+          {
+            id: "ripple-rings",
+            name: "Ripple Rings",
+            price: 300,
+            pal: "abyss",
+            base: "#1a96a0",
+            trim: "#020c10",
+            anim: { speed: 0.55, intensity: 1 },
+            preview:
+              "repeating-radial-gradient(circle at 38% 45%, #96f0eb 0 2px, #063038 2px 9px)",
+          },
+          {
+            id: "circuitry",
+            name: "Circuitry",
+            price: 300,
+            pal: "lime",
+            base: "#7ed321",
+            trim: "#0a1408",
+            anim: { speed: 0.7, intensity: 1 },
+            preview:
+              "repeating-linear-gradient(90deg, #7ed321 0 2px, #0a1408 2px 14px)," +
+              "repeating-linear-gradient(0deg, #4a8f18 0 2px, transparent 2px 14px), #0a1408",
+          },
+          {
+            id: "aurora",
+            name: "Aurora",
+            price: 300,
+            pal: "violet",
+            base: "#a85ce0",
+            trim: "#080412",
+            anim: { speed: 0.5, intensity: 1 },
+            preview:
+              "linear-gradient(88deg, transparent 0 12%, #ecc8ff 18%, #a85ce0 30%," +
+              "transparent 42%, #5c248c 58%, #ecc8ff 70%, transparent 82%), #080412",
+          },
+          {
+            id: "fish-scale",
+            name: "Fish Scale",
+            price: 300,
+            pal: "frost",
+            base: "#84c4eb",
+            trim: "#060e1a",
+            anim: { speed: 0.6, intensity: 1 },
+            preview:
+              "radial-gradient(circle at 50% 0, transparent 0 8px, #84c4eb 8px 10px, transparent 10px) 0 0 / 14px 10px," +
+              "radial-gradient(circle at 50% 0, transparent 0 8px, #2e6092 8px 10px, transparent 10px) 7px 5px / 14px 10px, #102a48",
+          },
+          {
+            id: "marble",
+            name: "Marble",
+            price: 300,
+            pal: "amber",
+            base: "#d69612",
+            trim: "#0a0802",
+            anim: { speed: 0.35, intensity: 1 },
+            preview:
+              "linear-gradient(72deg, #0a0802 0 26%, #d69612 33%, #ffe280 38%, #0a0802 46% 66%," +
+              "#6e4a08 72%, #ffe280 78%, #0a0802 86%)",
+          },
+          {
+            id: "plasma",
+            name: "Plasma",
+            price: 300,
+            pal: "rose",
+            base: "#e84684",
+            trim: "#0e030a",
+            anim: { speed: 0.75, intensity: 1 },
+            preview:
+              "radial-gradient(ellipse 70% 90% at 22% 30%, #ffbedc 0%, #e84684 30%, transparent 60%)," +
+              "radial-gradient(ellipse 80% 70% at 78% 70%, #8c184e 0%, transparent 60%), #400a26",
+          },
+          {
+            id: "storm-front",
+            name: "Storm Front",
+            price: 300,
+            pal: "steel",
+            base: "#4e5c68",
+            trim: "#080a0d",
+            anim: { speed: 0.8, intensity: 1 },
+            preview:
+              "radial-gradient(ellipse 90% 50% at 30% 35%, #9caebc 0%, transparent 55%)," +
+              "radial-gradient(ellipse 70% 60% at 75% 65%, #4e5c68 0%, transparent 60%), #080a0d",
+          },
         ];
         const ANIMATED_IDS = new Set(ANIMATED_SKINS.map((s) => s.id));
 
@@ -6812,8 +6939,9 @@
    grows COURSES or the skin lists has to land here too — an old code
    would otherwise decode cleanly into the wrong courses and skins.
    2: the colour list grew. 3: three worlds were put into slot order.
-   4: sixteen flags and five animated skins were added. */
-        const TRANSFER_VERSION = 4;
+   4: sixteen flags and five animated skins were added.
+   5: eight more animated skins. */
+        const TRANSFER_VERSION = 5;
         const TRANSFER_SALT = "tide-runner/transfer/v1";
         // The most a code can hand over, however large the number inside it.
         const TRANSFER_COIN_CAP = 2500;
@@ -12361,6 +12489,27 @@
             [214, 150, 18],
             [255, 226, 128],
           ],
+          steel: [
+            [8, 10, 13],
+            [30, 38, 46],
+            [78, 92, 104],
+            [156, 174, 188],
+            [240, 248, 255],
+          ],
+          violet: [
+            [8, 4, 18],
+            [40, 14, 68],
+            [92, 36, 140],
+            [168, 92, 224],
+            [236, 200, 255],
+          ],
+          rose: [
+            [14, 3, 10],
+            [64, 10, 38],
+            [140, 24, 78],
+            [232, 70, 132],
+            [255, 190, 220],
+          ],
         };
         function palMix(name, t) {
           const P = PALETTES[name] || PALETTES.lime;
@@ -12620,6 +12769,185 @@
                 // every other row dimmed: a scanline, and it costs nothing
                 if ((py & 1) === 0) v *= 0.78;
                 const col = palMix(pal, v);
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "dazzle") {
+                /* Naval dazzle, which is the one camouflage actually invented
+                   for boats — it never hid a ship, it broke up her outline so
+                   you couldn't read her heading. Hard-edged wedges: a steep
+                   diagonal, warped by noise so the panels aren't parallel,
+                   then thresholded to four flat tones with no blending. */
+                const warp = fbm(x * 1.1 + time * 0.05, y * 1.1, 2);
+                const band = (x * 2.6 - y * 1.7 + warp * 3.4 + time * 0.22) % 1;
+                const bb = band < 0 ? band + 1 : band;
+                const step = Math.floor(bb * 4);
+                const col = PALETTES[pal][[0, 4, 1, 3][step]];
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "ripple-rings") {
+                /* Rain on water: rings spreading from a few moving sources.
+                   Each ring is sin(distance - time) sharpened, and the sources
+                   drift so the interference between them never repeats. */
+                let ring = 0;
+                for (let q = 0; q < 3; q++) {
+                  const ph = q * 2.1;
+                  const sx = Math.sin(time * 0.21 + ph) * 0.8,
+                    sy = Math.cos(time * 0.17 + ph * 1.7) * 0.5;
+                  const dd = Math.hypot(x - sx, y - sy);
+                  /* Strongest wins rather than the average — summing three
+                     ring fields and dividing cancelled the rings into blobs.
+                     Each also fades with distance, the way a real one does. */
+                  const r2 = Math.pow(
+                    Math.max(0, Math.sin(dd * 13 - time * 3 + ph)),
+                    5,
+                  );
+                  ring = Math.max(ring, r2 * Math.max(0, 1 - dd * 0.42));
+                }
+                const col = palMix(pal, (0.14 + ring * 1.05) * k);
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "circuitry") {
+                /* Traces on a board. Snapping to a grid gives the right-angle
+                   runs; a pulse travels each one at its own speed, which is
+                   what stops it reading as wallpaper. */
+                const G = 4.4;
+                const gx = x * G,
+                  gy = y * G;
+                const dx = Math.abs(gx - Math.round(gx)),
+                  dy = Math.abs(gy - Math.round(gy));
+                const onTrace = Math.min(dx, dy) < 0.13;
+                const lane = Math.round(dx < dy ? gx : gy);
+                const along = dx < dy ? gy : gx;
+                const sp = 0.6 + vnHash(lane * 11, 5) * 1.4;
+                let ph = (along / G - time * sp) % 1;
+                if (ph < 0) ph += 1;
+                const pulse = Math.max(0, 1 - Math.abs(ph - 0.5) / 0.16);
+                // pads where traces meet, so the board has junctions
+                const pad = dx < 0.2 && dy < 0.2;
+                let v = 0.07;
+                if (onTrace) v = 0.34 + pulse * 0.66;
+                if (pad) v = Math.max(v, 0.5);
+                const col = palMix(pal, v * k);
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "aurora") {
+                /* Curtains, not clouds: brightness is a narrow vertical band
+                   whose height is a 1-D noise walk across the hull, so it
+                   hangs and sways rather than boiling like 2-D noise does. */
+                const hang = fbm(x * 1.3 + time * 0.16, 4.2, 3);
+                const width = 0.22 + fbm(x * 2.6 - time * 0.1, 8.4, 2) * 0.3;
+                const dy2 = Math.abs(y * 0.5 + 0.15 - hang);
+                const curtain = Math.max(0, 1 - dy2 / width);
+                // vertical striations, the thing that makes it read as aurora
+                const ray = 0.75 + 0.25 * Math.sin(x * 26 + time * 0.7);
+                const col = palMix(
+                  pal,
+                  (0.1 + Math.pow(curtain, 1.7) * ray * 1.05) * k,
+                );
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "fish-scale") {
+                /* Nearest point on a staggered lattice, squashed so a scale
+                   is wider than it is tall, then shaded by the distance to it
+                   with a bright rim at the edge. Measuring from a cell corner
+                   instead made the y term dominate, and the whole thing came
+                   out as horizontal stripes. */
+                /* The buffer is 48x24 for a hull twice as wide as it is
+                   tall, so a unit of y is already half as many pixels as a
+                   unit of x. Multiplying y up on top of that made the cells
+                   two pixels tall — speckle, not scales. It has to come down:
+                   ~6 across and ~5 rows leaves a scale about 8px by 5px. */
+                const S = 3;
+                const u2 = x * S,
+                  v3 = y * S * 0.83;
+                let best = 1e9,
+                  bi = 0,
+                  bj = 0;
+                const jc2 = Math.round(v3);
+                for (let j = jc2 - 1; j <= jc2 + 1; j++) {
+                  const off2 = j & 1 ? 0.5 : 0;
+                  const ic2 = Math.round(u2 - off2);
+                  for (let i = ic2 - 1; i <= ic2 + 1; i++) {
+                    const dx2 = u2 - (i + off2),
+                      dy2b = v3 - j;
+                    const dd2 = dx2 * dx2 + dy2b * dy2b;
+                    if (dd2 < best) {
+                      best = dd2;
+                      bi = i;
+                      bj = j;
+                    }
+                  }
+                }
+                const dd = Math.sqrt(best);
+                const lip = Math.max(0, 1 - Math.abs(dd - 0.46) / 0.13);
+                const sheen =
+                  0.5 + 0.5 * Math.sin(time * 1.1 + bi * 1.7 + bj * 0.9);
+                const col = palMix(
+                  pal,
+                  (0.16 +
+                    Math.max(0, 1 - dd * 1.7) * 0.4 +
+                    lip * 0.55 * sheen) *
+                    k,
+                );
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "marble") {
+                /* The classic marble trick: a plain sine banding, but with a
+                   heavy noise term added to its phase. The bands survive as
+                   veins while the noise drags them into folds. */
+                const warp = fbm(
+                  x * 1.5 + time * 0.06,
+                  y * 1.5 - time * 0.04,
+                  3,
+                );
+                const vein = Math.sin((x + y * 0.4) * 5 + warp * 9);
+                const t2 = Math.pow(Math.abs(vein), 0.45);
+                const col = palMix(pal, (0.08 + (1 - t2) * 1.0) * k);
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "plasma") {
+                /* Demoscene plasma, and still the cheapest way to fill a hull
+                   with something that moves: four sines — two axial, one
+                   diagonal, one radial about a drifting centre — summed and
+                   folded. No noise at all. */
+                const cx3 = Math.sin(time * 0.31) * 0.5,
+                  cy3 = Math.cos(time * 0.27) * 0.4;
+                const v =
+                  Math.sin(x * 6.2 + time * 0.9) +
+                  Math.sin(y * 7.4 - time * 0.7) +
+                  Math.sin((x + y) * 4.6 + time * 0.5) +
+                  Math.sin(Math.hypot(x - cx3, y - cy3) * 11 - time * 1.3);
+                const col = palMix(pal, ((v / 4 + 1) / 2) * k);
+                r = col[0];
+                g = col[1];
+                b2 = col[2];
+              } else if (id === "storm-front") {
+                /* Turbulence, plus lightning. abs() on the noise before it is
+                   summed is what makes cloud look like weather rather than
+                   fog; the flash is a whole-hull brightening on a jittered
+                   timer, brief enough that you catch it rather than watch it. */
+                const n1 = Math.abs(
+                  fbm(x * 1.1 + time * 0.3, y * 1.1 - time * 0.12, 3) * 2 - 1,
+                );
+                const n2 = Math.abs(
+                  fbm(x * 2.6 - time * 0.2, y * 2.6, 2) * 2 - 1,
+                );
+                // both octaves were fine-grained before, which is static
+                const cloud = 0.1 + (1 - n1) * 0.66 + (1 - n2) * 0.2;
+                const beat = Math.floor(time * 0.5);
+                const gap = vnHash(beat * 13, 7);
+                const into = time * 0.5 - beat;
+                // roughly one flash in three beats, and gone in a blink
+                const flash =
+                  gap > 0.66 && into < 0.12 ? Math.pow(1 - into / 0.12, 2) : 0;
+                const col = palMix(pal, (cloud + flash * 0.9) * k);
                 r = col[0];
                 g = col[1];
                 b2 = col[2];
@@ -13684,6 +14012,7 @@
           startPreviewLoop();
         }
         function closeSkinsBrowse() {
+          disarmSkinCard();
           skinsBrowsePopEl.classList.remove("on");
           skinsBrowsePopEl.setAttribute("aria-hidden", "true");
           document.getElementById("boatSummary").focus();
@@ -13708,6 +14037,7 @@
           Object.entries(SKIN_CATEGORY_GRIDS).forEach(([c, el]) => {
             el.classList.toggle("tab-hidden", c !== cat);
           });
+          disarmSkinCard();
           skinTabsEl.querySelectorAll("button").forEach((b) => {
             const sel = b.dataset.cat === cat;
             b.classList.toggle("sel", sel);
@@ -13757,6 +14087,14 @@
           hull(c, { skin: s.id, col, trim });
           c.restore();
         }
+        /* The card currently showing its Buy prompt, if any. Only ever one:
+   arming a second disarms the first, so the grid never has two cards
+   both claiming the next tap. */
+        let armedSkinCard = null;
+        function disarmSkinCard() {
+          if (armedSkinCard) armedSkinCard.classList.remove("arming");
+          armedSkinCard = null;
+        }
         function skinCard(s) {
           const unlocked = skinUnlocked(s);
           const affordable = s.price && progress.coins >= s.price;
@@ -13786,18 +14124,35 @@
                   ? ""
                   : " \u00b7 " + (s.price - progress.coins) + " short");
           card.innerHTML =
-            '<span class="skin-swatch"><canvas width="300" height="72"></canvas><span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span></span></span><b>' +
+            '<span class="skin-swatch"><canvas width="300" height="72"></canvas><span class="lockbadge" aria-hidden="true"><span class="ico">\uD83D\uDD12</span></span>' +
+            (!unlocked && s.price && affordable
+              ? '<span class="buy-cta">Buy skin \u00b7 ' + s.price + "</span>"
+              : "") +
+            "</span><b>" +
             s.name +
             "</b><small>" +
             note +
             "</small>";
           drawSkinPreview(card.querySelector("canvas"), s);
           card.onclick = () => {
+            /* Two taps to spend, not one. The first arms this card and shows
+               what it will cost; the second is the purchase. Everything on
+               this grid is one tap away from equipping, so a single tap that
+               silently took coins off you was too easy to do by accident —
+               particularly on a card you only meant to look at. */
             if (!unlocked && s.price && affordable) {
+              if (armedSkinCard !== card) {
+                disarmSkinCard();
+                armedSkinCard = card;
+                card.classList.add("arming");
+                return;
+              }
+              disarmSkinCard();
               buySkin(s);
               refreshSkins();
               return;
             }
+            disarmSkinCard();
             if (!unlocked) return;
             progress.skin = s.id;
             saveProgress();
@@ -13812,6 +14167,8 @@
           return card;
         }
         function fillSkinGrid(el, skins) {
+          // the armed card is about to be discarded with the rest of the grid
+          disarmSkinCard();
           el.innerHTML = "";
           skins.forEach((s) => el.appendChild(skinCard(s)));
         }
