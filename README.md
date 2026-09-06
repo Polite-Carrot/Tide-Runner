@@ -399,6 +399,56 @@ menu defaults to whichever tab holds the currently equipped skin, via `skinCateg
 **Nine solid colours now**, not five — Harbour Gold, Jet Black, Volt Green, Flare Red and Ion
 Cyan, plus Pearl White, Riptide Purple, Sunset Orange and Coral Pink.
 
+### Time trial
+
+**A mode, not a filter.** Race or Time trial sits above the Laps picker;
+choosing a trial hides the Rivals picker rather than greying it out, because
+there are no rivals to set a difficulty for. Laps stay — a five-lap trial is a
+consistency test, which is a different question to a single flying lap.
+
+**A trial is you, the course and the clock.** No fleet, no gear, no hunter. Each
+of those exists because a lap you can only match by carrying a nitro — or that a
+rival shunted, or a shark ate — is not a lap you can compare against. Its records
+live at `records[name].tt`, apart from race records, and it awards no coins and
+completes no course: the reward is the ghost.
+
+**Hazards are seeded in a trial.** They normally spawn at random points on the
+track, which is fine for a race and useless here — a lap set against one layout
+and raced against another is not a comparison. `hzRand` is swapped for a
+generator seeded off the course name, so every attempt gets the layout the ghost
+was recorded on. Boosts needed no such treatment; their positions were already
+deterministic.
+
+**A ghost is stored as time-per-place, not position-per-frame.** For each sampled
+point on the centreline: when you passed it, and how far off it you were. A
+90-second lap at 60fps is 5,400 samples; this is about 85 (`GHOST_STRIDE` of 4),
+because the track already knows where its own centreline is — 470 bytes for a
+course. It also makes the delta readout trivial, since being "1.2 seconds down"
+is just comparing two times at the same point, and it survives a course being
+reshaped: the ghost runs the new line rather than driving through a bank that
+moved.
+
+**The ghost is deliberately not in `boats[]`.** One that lived in that array
+would need excluding from collision, separation, slipstreaming, hunter
+assignment and the placing table, one guard at a time. Kept outside it, it needs
+none of them — it is drawn and nothing else, under the boats, translucent and
+inside a dashed ring so it reads as a record rather than a rival.
+
+Three bugs worth keeping in mind if this is ever extended:
+
+- **The grid is behind the start line**, which is to say at the very end of the
+  loop, in the last slot there is. Recording from there filled every slot on the
+  first frame and the whole lap read as having taken 0.02 seconds. Nothing is
+  recorded until the line is crossed.
+- **Recording resets at every crossing**, not only at a completed lap. The first
+  crossing starts lap one rather than finishing it, and a reset that only ran on
+  completion left the first lap's samples in place for the second.
+- **The tail has to be closed off.** The boat crosses the line between samples,
+  so every slot past the last one reached was still zero — and a zero in a list
+  of times that has to climb sent the playback's binary search off the end of the
+  track and asked for `pts[-8]`. They all happened at the lap time, so the commit
+  says so.
+
 ### The tutorial
 
 **A separate course, deliberately kept out of `COURSES`.** Everything downstream

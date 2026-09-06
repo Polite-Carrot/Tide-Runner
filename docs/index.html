@@ -1339,6 +1339,34 @@
         transition: none;
       }
 
+      /* The gap to your own best lap, measured where you actually are on the
+         water rather than at the line — the whole reason a ghost is worth
+         having. Sits under the countdown so the two never fight. */
+      .delta {
+        position: fixed;
+        left: 50%;
+        top: calc(78px + env(safe-area-inset-top));
+        transform: translateX(-50%);
+        z-index: 5;
+        display: none;
+        padding: 5px 14px;
+        border-radius: 999px;
+        font-variant-numeric: tabular-nums;
+        font-size: 19px;
+        letter-spacing: 0.02em;
+        background: rgba(4, 20, 28, 0.72);
+        border: 1px solid rgba(var(--tint), 0.22);
+      }
+      body.racing .delta.on {
+        display: block;
+      }
+      .delta.up {
+        color: #9dffc9;
+      }
+      .delta.down {
+        color: #ff9d8a;
+      }
+
       /* ---------- first-run coaching ----------
          The dimming is one enormous spread box-shadow on a transparent,
          positioned element: everything outside the element goes dark and the
@@ -2473,6 +2501,7 @@
         <canvas id="plot" width="264" height="264"></canvas>
       </div>
 
+      <div class="delta" id="delta"></div>
       <div class="callout" id="countdown"></div>
       <div id="warn">Wrong way</div>
       <div id="draft">Slipstream</div>
@@ -2587,6 +2616,13 @@
 
         <div class="row">
           <div>
+            <p class="label">Mode</p>
+            <div class="seg" id="mode">
+              <button data-m="0" class="sel">Race</button
+              ><button data-m="1">Time trial</button>
+            </div>
+          </div>
+          <div>
             <p class="label">Laps</p>
             <div class="seg" id="laps">
               <button data-l="2">2</button
@@ -2594,7 +2630,7 @@
               ><button data-l="5">5</button>
             </div>
           </div>
-          <div>
+          <div id="rivalsPick">
             <p class="label">Rivals</p>
             <div class="seg" id="skill">
               <button data-s="0">Easy</button
@@ -5448,6 +5484,33 @@
           saveRecords();
           return true;
         }
+        /* A time-trial best is a lap time and the lap that set it. The lap is
+   stored as the time you passed each sampled point on the centreline plus
+   how far off it you were — not as a position per frame. A 90-second lap
+   at 60fps is 5,400 samples; this is about 85, because the track already
+   knows where its own centreline is. It also makes the delta readout
+   trivial (compare times at the same point) and survives a course being
+   reshaped later, since the ghost runs the new line rather than driving
+   through a bank that moved. */
+        const GHOST_STRIDE = 4;
+        function bestTtFor(name) {
+          const r = records[name];
+          return r && r.tt && typeof r.tt.lap === "number" ? r.tt.lap : 0;
+        }
+        function ghostPathFor(name) {
+          const r = records[name];
+          return r && r.tt && Array.isArray(r.tt.path) && r.tt.path.length
+            ? r.tt.path
+            : null;
+        }
+        function setTtRecord(name, t, path) {
+          const r = ensureRec(name);
+          const cur = r.tt && r.tt.lap;
+          if (!(t > 0) || (cur && t >= cur)) return false;
+          r.tt = { lap: t, path };
+          saveRecords();
+          return true;
+        }
         function setTotalRecord(name, laps, t) {
           const r = ensureRec(name);
           const cur = r.totals[laps];
@@ -6726,7 +6789,13 @@
    by startRace, the lap-crossing bookkeeping, useGear and finish. */
         let tutorial = false,
           lapsBeforeTutorial = 3;
+        /* Time trial: you, the course and the clock. No fleet, no gear and no
+   hunter, because a lap you can only match by carrying a nitro — or that
+   a rival shunted, or a shark ate — is not a lap you can compare against.
+   Its records are kept apart from race records for the same reason. */
+        let timeTrial = false;
         function startTutorial() {
+          setMode(false);
           tutorial = true;
           // one lap, and the laps picker gets its value back afterwards
           lapsBeforeTutorial = totalLaps;
@@ -6754,7 +6823,10 @@
           trail = [],
           trailAcc = 0;
         let newLapRecord = false,
-          newTotalRecord = false;
+          newTotalRecord = false,
+          newTtRecord = false,
+          ttLastLap = 0,
+          ttPrevBest = 0;
         function playerName() {
           const raw = (SETTINGS && SETTINGS.name) || "";
           const trimmed = raw.trim();
@@ -6906,6 +6978,8 @@
           track = tutorial ? TUTORIAL_TRACK : TRACKS[courseIdx];
           if (tutorial) startCoaching();
           else stopCoaching();
+          // same layout every attempt, and the one the ghost was set on
+          hzRand = timeTrial ? seededRand(hashName(track.name)) : Math.random;
           const n = track.n;
           boats = [];
           // A course can call for a bigger fleet, or for a range — rolled fresh
@@ -6917,9 +6991,11 @@
             : track.fleet || 4;
           // two rivals and no more: enough to show what a race looks like
           // without a pack to get lost in on your first time out
-          const fleet = tutorial
-            ? 3
-            : Math.max(2, Math.min(want, RIVALS.length + 1));
+          const fleet = timeTrial
+            ? 1
+            : tutorial
+              ? 3
+              : Math.max(2, Math.min(want, RIVALS.length + 1));
           trackEvent("level_start", {
             level_name: track.name,
             difficulty: TIERS[skill].name,
@@ -6968,6 +7044,9 @@
           /* Lent, not spent. The gear coaching cannot fire for a new player
              otherwise: gear costs coins and a first-time player has none. */
           if (tutorial) me.gear = { nitro: 1, torpedo: 1 };
+          // nothing in a trial: a lap you can only match by spending a nitro
+          // is not a lap you can compare against
+          else if (timeTrial) me.gear = {};
           else
             for (const item of GEAR_ITEMS)
               me.gear[item.id] = gearOwned(item.id);
@@ -6982,8 +7061,10 @@
           spawnMoored();
           raceT = 0;
           countT = 3.999;
+          ghostBegin();
           newLapRecord = false;
           newTotalRecord = false;
+          newTtRecord = false;
           cam.x = me.x;
           cam.y = me.y;
           state = S.count;
@@ -7802,16 +7883,53 @@
                 const lt = raceT - b.lapStart;
                 b.lastLap = lt;
                 if (!b.bestLap || lt < b.bestLap) b.bestLap = lt;
-                if (b === me && !tutorial && setLapRecord(track.name, lt))
+                if (
+                  b === me &&
+                  !tutorial &&
+                  !timeTrial &&
+                  setLapRecord(track.name, lt)
+                )
                   newLapRecord = true;
+                /* A trial lap is banked here rather than at the finish, so a
+                   five-lap trial keeps its quickest lap and not its last. The
+                   final slot is closed off at the lap time itself: the boat
+                   crosses the line between samples, so the last slot filled
+                   is always a little short of it. */
+                if (b === me && timeTrial && ghostRec) {
+                  ttLastLap = lt;
+                  /* Close off the tail. The boat crosses the line between
+                     samples, so every slot past the last one reached is still
+                     zero — and a zero in a list of times that has to climb is
+                     what sends the playback search off the end of the track.
+                     They all happened at the lap time, so say so. */
+                  const lastOff =
+                    ghostSlot >= 0 ? ghostRec[ghostSlot * 2 + 1] : 0;
+                  for (let k = ghostSlot + 1; k < ghostSlots(); k++) {
+                    ghostRec[k * 2] = lt;
+                    ghostRec[k * 2 + 1] = lastOff;
+                  }
+                  const path = new Array(ghostRec.length);
+                  for (let k = 0; k < ghostRec.length; k += 2) {
+                    path[k] = Math.round(ghostRec[k] * 100);
+                    path[k + 1] = Math.round(ghostRec[k + 1]);
+                  }
+                  const prev = bestTtFor(track.name);
+                  if (setTtRecord(track.name, lt, path)) {
+                    newTtRecord = true;
+                    ttPrevBest = prev;
+                  }
+                }
               }
               b.lapStart = raceT;
+              // a fresh recording for the lap that starts here
+              if (b === me && timeTrial) ghostReset();
               if (b.lap >= totalLaps && !b.done) {
                 b.done = true;
                 b.total = raceT;
                 if (
                   b === me &&
                   !tutorial &&
+                  !timeTrial &&
                   setTotalRecord(track.name, totalLaps, b.total)
                 )
                   newTotalRecord = true;
@@ -8309,7 +8427,7 @@
           // Not in the tutorial: a player who is reading the bubble is not
           // watching the bank, so they drift off it every time — and being
           // eaten thirty seconds into your first race teaches nothing.
-          if (state === S.race && !tutorial) {
+          if (state === S.race && !tutorial && !timeTrial) {
             for (const b of boats) {
               if (b.eaten > 0 || b.done) {
                 if (b.hunter) {
@@ -9320,6 +9438,27 @@
           ashfall: { r: 62, drift: 0, drag: true },
         };
 
+        /* Hazards are placed at random points on the track, which is fine for
+   a race and useless for a time trial: a lap set against one layout and
+   raced against another is not a comparison. In a trial the generator is
+   seeded off the course name, so the layout is the same every attempt
+   and the same one the ghost was recorded on. */
+        let hzRand = Math.random;
+        function seededRand(seed) {
+          let s = seed >>> 0;
+          return () => {
+            s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+            return s / 4294967296;
+          };
+        }
+        function hashName(str) {
+          let h = 2166136261;
+          for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+          }
+          return h >>> 0;
+        }
         function spawnHazards() {
           hazards = [];
           const spec = track.hazards;
@@ -9335,7 +9474,7 @@
               tries = 0;
             while (made < want && tries < want * 40) {
               tries++;
-              const i = Math.floor(Math.random() * track.n);
+              const i = Math.floor(hzRand() * track.n);
               // distance along the track from the start line
               const along = i * track.spacing;
               if (along < startClear || along > track.len - 260) continue;
@@ -9344,8 +9483,8 @@
               // the whole point of them is the crossing.
               const room = cfg.drag ? 0.62 : 0.72;
               const lane = cfg.cross
-                ? (Math.random() < 0.5 ? -1 : 1) * 0.82
-                : (Math.random() * 2 - 1) * room;
+                ? (hzRand() < 0.5 ? -1 : 1) * 0.82
+                : (hzRand() * 2 - 1) * room;
               const p = track.pts[i],
                 nv = track.nrm[i];
               const x = p.x + nv.x * lane * track.half,
@@ -9388,16 +9527,14 @@
                 // never wider than the river it sits in, or there is no way
                 // past and both you and the AI simply grind to a halt
                 r: Math.min(cfg.r, track.half * 0.8),
-                spin: Math.random() * 7,
+                spin: hzRand() * 7,
                 // logs lie across the stream at a lazy angle and drift with it
-                a: Math.random() * Math.PI,
-                wob: Math.random() * 7,
-                dir: Math.random() < 0.5 ? -1 : 1,
+                a: hzRand() * Math.PI,
+                wob: hzRand() * 7,
+                dir: hzRand() < 0.5 ? -1 : 1,
                 // staggered so a course's worth of them don't surface in
                 // unison, which reads as a cutscene rather than a hazard
-                t: cfg.cycle
-                  ? Math.random() * (cfg.cycle[0] + cfg.cycle[1])
-                  : 0,
+                t: cfg.cycle ? hzRand() * (cfg.cycle[0] + cfg.cycle[1]) : 0,
                 up: false,
               });
               made++;
@@ -10737,6 +10874,136 @@
         /* ============================================================
    RANKING
    ============================================================ */
+        /* ============================================================
+   GHOST
+   ============================================================
+   Deliberately not a member of boats[]. A ghost that lived in that array
+   would need excluding from collision, separation, slipstreaming, hunter
+   assignment and the placing table one guard at a time; kept outside it,
+   it needs none of them. It is drawn and nothing else. */
+        let ghost = null, // the boat-shaped thing on screen, or null
+          ghostPath = null, // the lap being replayed
+          ghostLap = 0, // how long that lap took
+          ghostRec = null, // the lap being recorded this time round
+          ghostSlot = -1,
+          ghostDelta = 0;
+
+        function ghostSlots() {
+          return Math.ceil(track.n / GHOST_STRIDE);
+        }
+        function ghostReset() {
+          ghostSlot = -1;
+          ghostRec = timeTrial ? new Array(ghostSlots() * 2).fill(0) : null;
+        }
+        function ghostBegin() {
+          ghostPath = timeTrial ? ghostPathFor(track.name) : null;
+          ghostLap = ghostPath ? bestTtFor(track.name) : 0;
+          ghostDelta = 0;
+          ghost =
+            ghostPath && ghostLap > 0
+              ? {
+                  x: 0,
+                  y: 0,
+                  h: 0,
+                  col: "#8fe9d0",
+                  trim: "#2b6b63",
+                  skin: null,
+                }
+              : null;
+          ghostReset();
+        }
+
+        // Where on the centreline a slot sits, and the reverse.
+        function slotOf(idx) {
+          return Math.min(ghostSlots() - 1, Math.floor(idx / GHOST_STRIDE));
+        }
+
+        /* Called every frame of a trial. Slots are filled forward only: going
+   backwards round the course records nothing, so a lap that crosses the
+   line is always a lap driven the right way. */
+        function ghostRecord() {
+          if (!ghostRec || !me || me.eaten > 0) return;
+          /* The grid is behind the start line — which is to say at the very
+             end of the loop, in the last slot there is. Recording from there
+             would fill every slot on the first frame and the lap would read
+             as having taken no time at all. Nothing counts until the line. */
+          if (me.lap < 0) return;
+          const slot = slotOf(me.idx);
+          if (slot <= ghostSlot) return;
+          const t = raceT - me.lapStart;
+          const p = track.pts[me.idx],
+            nv = track.nrm[me.idx];
+          const off = (me.x - p.x) * nv.x + (me.y - p.y) * nv.y;
+          // fill any slot skipped at speed, so the array has no holes
+          for (let k = ghostSlot + 1; k <= slot; k++) {
+            ghostRec[k * 2] = t;
+            ghostRec[k * 2 + 1] = off;
+          }
+          ghostSlot = slot;
+        }
+
+        // What the ghost's clock read at this point on the track.
+        function ghostTimeAt(slot) {
+          if (!ghostPath) return 0;
+          const k = Math.min(slot, ghostPath.length / 2 - 1);
+          return ghostPath[k * 2] / 100;
+        }
+
+        /* The ghost runs its own best lap on a loop from the gun, so where it
+   is on the water is where you would be if you were driving that lap. */
+        function ghostStep() {
+          if (!ghost || !ghostPath || ghostLap <= 0) return;
+          const n2 = ghostPath.length / 2;
+          const t = raceT % ghostLap;
+          // slots are in time order, so the bracketing pair is a binary search
+          let lo = 0,
+            hi = n2 - 1;
+          while (lo < hi) {
+            const mid = (lo + hi + 1) >> 1;
+            if (ghostPath[mid * 2] / 100 <= t) lo = mid;
+            else hi = mid - 1;
+          }
+          const t0 = ghostPath[lo * 2] / 100,
+            t1 = lo + 1 < n2 ? ghostPath[(lo + 1) * 2] / 100 : ghostLap;
+          const f = t1 > t0 ? Math.min(1, (t - t0) / (t1 - t0)) : 0;
+          const o0 = ghostPath[lo * 2 + 1],
+            o1 = lo + 1 < n2 ? ghostPath[(lo + 1) * 2 + 1] : o0;
+          const off = o0 + (o1 - o0) * f;
+          // wrapped both ways: a path recorded on a course that has since
+          // been reshaped can land outside it, and pts[-8] is a crash
+          const raw = Math.round((lo + f) * GHOST_STRIDE);
+          if (!Number.isFinite(raw)) return;
+          const idx = ((raw % track.n) + track.n) % track.n;
+          const p = track.pts[idx],
+            nv = track.nrm[idx],
+            tg = track.tan[idx];
+          ghost.x = p.x + nv.x * off;
+          ghost.y = p.y + nv.y * off;
+          ghost.h = Math.atan2(tg.y, tg.x);
+          // how far off your best you are, measured where you actually are
+          ghostDelta = raceT - me.lapStart - ghostTimeAt(slotOf(me.idx));
+        }
+
+        function drawGhost() {
+          if (!ghost) return;
+          ctx.save();
+          ctx.globalAlpha = 0.4;
+          ctx.translate(ghost.x, ghost.y);
+          ctx.rotate(ghost.h);
+          hull(ctx, ghost);
+          ctx.restore();
+          // a dashed ring, so it reads as a record rather than a rival
+          ctx.save();
+          ctx.globalAlpha = 0.5;
+          ctx.strokeStyle = "#8fe9d0";
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.arc(ghost.x, ghost.y, 22, 0, 7);
+          ctx.stroke();
+          ctx.restore();
+        }
+
         function ranked() {
           return boats.slice().sort((a, b) => {
             const pa = a.lap * track.n + a.idx,
@@ -10785,6 +11052,10 @@
           }
 
           raceT += dt;
+          if (timeTrial) {
+            ghostRecord();
+            ghostStep();
+          }
           stepFauna(dt);
           stepHazards(dt);
           stepTorpedoes(dt);
@@ -11041,6 +11312,8 @@
             ctx.globalAlpha = 1;
           }
 
+          // the ghost goes under the boats — it is a reference, not traffic
+          drawGhost();
           // boats, hindmost first
           for (let i = frameRanked.length - 1; i >= 0; i--)
             drawBoat(frameRanked[i]);
@@ -11830,7 +12103,8 @@
           barEl = document.getElementById("bar"),
           warnEl = document.getElementById("warn");
         const draftEl = document.getElementById("draft"),
-          recEl = document.getElementById("rec");
+          recEl = document.getElementById("rec"),
+          deltaEl = document.getElementById("delta");
         const boostEl = document.getElementById("boost"),
           sharkEl = document.getElementById("shark");
 
@@ -11846,10 +12120,28 @@
           lapMaxEl.textContent = totalLaps;
           posEl.textContent = place;
           posMaxEl.textContent = boats.length;
+          // "1 of 1" is not a placing — in a trial the tile is just noise
+          posEl.parentElement.parentElement.style.display = timeTrial
+            ? "none"
+            : "";
           clockEl.textContent = fmt(raceT) === "—" ? "0:00.0" : fmt(raceT);
           lastEl.textContent = fmt(me.lastLap);
           bestEl.textContent = fmt(me.bestLap);
-          recEl.textContent = fmt(bestLapFor(track.name));
+          recEl.textContent = fmt(
+            timeTrial ? bestTtFor(track.name) : bestLapFor(track.name),
+          );
+          /* Only once there is a ghost to be measured against, and only once
+             the lap is under way — the first few metres off the line read as
+             an enormous gap on a delta that starts from zero. */
+          const showDelta =
+            timeTrial && ghost && state === S.race && raceT - me.lapStart > 1.5;
+          deltaEl.classList.toggle("on", !!showDelta);
+          if (showDelta) {
+            const d = ghostDelta;
+            deltaEl.textContent = (d >= 0 ? "+" : "−") + Math.abs(d).toFixed(2);
+            deltaEl.classList.toggle("down", d >= 0);
+            deltaEl.classList.toggle("up", d < 0);
+          }
           const spd = Math.hypot(me.vx, me.vy);
           knEl.textContent = Math.round(spd * 0.26);
           barEl.firstElementChild.style.width =
@@ -11899,6 +12191,7 @@
         function finish() {
           state = S.done;
           stopCoaching();
+          deltaEl.classList.remove("on");
           const r = frameRanked,
             place = r.indexOf(me) + 1;
           // the course this one unlocks is the next on its own chain, not the
@@ -11906,7 +12199,7 @@
           /* A tutorial finish is inert: it unlocks nothing, completes no
              course and pays nothing. Only the fact that it happened is
              worth remembering, so the menu stops offering it. */
-          const nextIdx = tutorial ? -1 : nextInTheme(courseIdx);
+          const nextIdx = tutorial || timeTrial ? -1 : nextInTheme(courseIdx);
           const nextCourse = nextIdx >= 0 ? TRACKS[nextIdx] : null;
           const unlocksNext =
             nextCourse &&
@@ -11914,28 +12207,32 @@
             !progress.completed[track.name];
           // challenge skins are one per river course; lava courses don't carry
           // one yet, so there's simply nothing to award on them
-          const challenge = tutorial ? null : CHALLENGE_SKINS[courseIdx];
+          const challenge =
+            tutorial || timeTrial ? null : CHALLENGE_SKINS[courseIdx];
           const unlockedSkin =
             challenge &&
             totalLaps === 3 &&
             me.total <= challenge.target &&
             !progress.skins[challenge.id];
           const hadDiamond = allChallengeSkinsUnlocked();
-          if (!tutorial) progress.completed[track.name] = true;
+          if (!tutorial && !timeTrial) progress.completed[track.name] = true;
           if (unlockedSkin) progress.skins[challenge.id] = true;
           const unlockedDiamond = !hadDiamond && allChallengeSkinsUnlocked();
           // every finish pays out, not just a win — see coinsForFinish
-          const coinsEarned = tutorial
-            ? 0
-            : coinsForFinish(totalLaps, skill, place);
+          const coinsEarned =
+            tutorial || timeTrial ? 0 : coinsForFinish(totalLaps, skill, place);
           progress.coins += coinsEarned;
           if (tutorial) progress.tutorialDone = true;
           saveProgress();
           rTitle.textContent = tutorial
             ? "That's the lot"
-            : place === 1
-              ? "Won it"
-              : ordinal(place);
+            : timeTrial
+              ? newTtRecord
+                ? "New best"
+                : "Trial over"
+              : place === 1
+                ? "Won it"
+                : ordinal(place);
           const tail =
             place === 1
               ? "Clean water all the way home."
@@ -11951,13 +12248,27 @@
             ? "That's steering, throttle and gear. Nothing here counted — " +
               "pick a course and the real thing starts. You can run this " +
               "again any time from Settings."
-            : track.name +
-              " · " +
-              totalLaps +
-              " laps · " +
-              bits.join(" · ") +
-              ". " +
-              tail;
+            : timeTrial
+              ? track.name +
+                " · time trial · " +
+                (me.bestLap
+                  ? "best lap " + fmt(me.bestLap)
+                  : "no lap completed") +
+                (newTtRecord
+                  ? ttPrevBest
+                    ? " · " +
+                      (ttPrevBest - ttLastLap).toFixed(2) +
+                      "s off your best"
+                    : " · first one on the board"
+                  : " · best to beat " + fmt(bestTtFor(track.name))) +
+                ". The ghost will be running this next time."
+              : track.name +
+                " · " +
+                totalLaps +
+                " laps · " +
+                bits.join(" · ") +
+                ". " +
+                tail;
           // The coin count has its own graphic badge rather than sitting in
           // that sentence too — .pop re-triggers the entrance animation on
           // every finish (removed and re-added, since a class already
@@ -11965,7 +12276,7 @@
           // skipped entirely under prefers-reduced-motion.
           coinRewardAmtEl.textContent = "+" + coinsEarned + " coins";
           coinRewardEl.classList.remove("pop");
-          coinRewardEl.classList.toggle("on", !tutorial);
+          coinRewardEl.classList.toggle("on", !tutorial && !timeTrial);
           coinRewardEl.setAttribute(
             "aria-label",
             coinsEarned + " coins earned",
@@ -12171,11 +12482,18 @@
           // a row per stat, and an em dash rather than a missing row for a
           // record you haven't set — the card keeps its height, and a blank
           // says there's something there to go and beat
-          const rows = [
-            ["Boats", fleetLabel(t)],
-            ["Best lap", lap ? fmt(lap) : "—"],
-            ["Best " + totalLaps + "-lap", total ? fmt(total) : "—"],
-          ];
+          const tt = bestTtFor(t.name);
+          const rows = timeTrial
+            ? [
+                ["Boats", "Solo · ghost"],
+                ["Best trial lap", tt ? fmt(tt) : "—"],
+                ["Ghost", tt ? "Ready" : "None yet"],
+              ]
+            : [
+                ["Boats", fleetLabel(t)],
+                ["Best lap", lap ? fmt(lap) : "—"],
+                ["Best " + totalLaps + "-lap", total ? fmt(total) : "—"],
+              ];
           courseSummaryStats.innerHTML = "";
           for (const [k, v] of rows) {
             const dt = document.createElement("dt");
@@ -12252,11 +12570,18 @@
         function refreshRecords() {
           popGridsEl.querySelectorAll(".course").forEach((el) => {
             const name = TRACKS[+el.dataset.i].name;
-            const lap = bestLapFor(name);
-            const total = bestTotalFor(name, totalLaps);
             const parts = [];
-            if (lap) parts.push("Lap " + fmt(lap));
-            if (total) parts.push(totalLaps + "-lap " + fmt(total));
+            if (timeTrial) {
+              // a trial has its own board; showing race times beside it would
+              // invite a comparison that isn't one
+              const tt = bestTtFor(name);
+              if (tt) parts.push("Trial " + fmt(tt));
+            } else {
+              const lap = bestLapFor(name);
+              const total = bestTotalFor(name, totalLaps);
+              if (lap) parts.push("Lap " + fmt(lap));
+              if (total) parts.push(totalLaps + "-lap " + fmt(total));
+            }
             el.querySelector(".tilerec").textContent = parts.join(" · ");
           });
           // the summary card carries the same records for the selected course
@@ -12851,6 +13176,31 @@
             set(+b.dataset[attr]);
           });
         }
+        const rivalsPickEl = document.getElementById("rivalsPick");
+        segment("mode", "m", (v) => {
+          timeTrial = !!v;
+          syncMode();
+        });
+        /* A trial has no rivals to pick a difficulty for, so the picker goes
+   rather than sitting there greyed out. Laps stay: a five-lap trial is a
+   consistency test, which is a different question to a single flying lap. */
+        function syncMode() {
+          rivalsPickEl.style.display = timeTrial ? "none" : "";
+          syncStartBtn();
+          refreshRecords();
+        }
+        /* Sets the mode and the picker together. The tutorial uses it to put
+   the game back into Race first: it forces a fleet and lends gear, and a
+   trial forbids both, so the two modes cannot be on at once. */
+        function setMode(on) {
+          timeTrial = !!on;
+          document
+            .querySelectorAll("#mode button")
+            .forEach((b) =>
+              b.classList.toggle("sel", (b.dataset.m === "1") === timeTrial),
+            );
+          syncMode();
+        }
         segment("laps", "l", (v) => {
           totalLaps = v;
           refreshRecords();
@@ -12932,9 +13282,11 @@
    run — or skipped — it goes back to being Start race for good. */
         const startBtnEl = document.getElementById("start");
         function syncStartBtn() {
-          startBtnEl.textContent = progress.tutorialDone
-            ? "Start race"
-            : "Start tutorial";
+          startBtnEl.textContent = !progress.tutorialDone
+            ? "Start tutorial"
+            : timeTrial
+              ? "Start trial"
+              : "Start race";
         }
         syncStartBtn();
         document.getElementById("howToPlay").onclick = () => {
