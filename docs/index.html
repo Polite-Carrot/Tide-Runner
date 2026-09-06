@@ -1339,6 +1339,177 @@
         transition: none;
       }
 
+      /* ---------- first-run coaching ----------
+         The dimming is one enormous spread box-shadow on a transparent,
+         positioned element: everything outside the element goes dark and the
+         element itself stays clear. A hole in the screen with no mask, no
+         SVG and no second layer to keep in sync. Nothing here takes pointer
+         events except the skip button — the whole point is to teach the
+         controls, so the controls have to stay live underneath. */
+      #coach {
+        position: fixed;
+        inset: 0;
+        z-index: 8;
+        display: none;
+        pointer-events: none;
+      }
+      body.coaching #coach {
+        display: block;
+      }
+      #coachHole {
+        position: absolute;
+        left: 50%;
+        top: 60%;
+        width: 150px;
+        height: 150px;
+        margin: -75px 0 0 -75px;
+        border-radius: 50%;
+        border: 2px solid rgba(var(--tint), 0.9);
+        box-shadow: 0 0 0 9999px rgba(2, 12, 18, 0.62);
+        transition:
+          left 0.3s ease,
+          top 0.3s ease,
+          width 0.3s ease,
+          height 0.3s ease,
+          margin 0.3s ease,
+          border-radius 0.3s ease;
+      }
+      /* the ring breathes so a still screenshot of it still reads as "here" */
+      #coachHole::after {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        border-radius: inherit;
+        border: 2px solid rgba(var(--tint), 0.55);
+        animation: coachPulse 1.8s ease-out infinite;
+      }
+      @keyframes coachPulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.85;
+        }
+        100% {
+          transform: scale(1.35);
+          opacity: 0;
+        }
+      }
+      /* Direction arrows, shown only for the steering steps. They sit on the
+         hole, so they move with it. */
+      #coachArrows {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 0;
+        opacity: 0;
+        transition: opacity 0.25s;
+      }
+      body.coach-arrows #coachArrows {
+        opacity: 1;
+      }
+      .ca {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border: 13px solid transparent;
+      }
+      .ca.up {
+        border-bottom-color: rgba(var(--tint), 0.92);
+        margin: -104px 0 0 -13px;
+        animation: caUp 1.2s ease-in-out infinite;
+      }
+      .ca.left {
+        border-right-color: rgba(var(--tint), 0.92);
+        margin: -13px 0 0 -104px;
+        animation: caLeft 1.2s ease-in-out infinite;
+      }
+      .ca.right {
+        border-left-color: rgba(var(--tint), 0.92);
+        margin: -13px 0 0 78px;
+        animation: caRight 1.2s ease-in-out infinite;
+      }
+      @keyframes caUp {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-9px);
+        }
+      }
+      @keyframes caLeft {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(-9px);
+        }
+      }
+      @keyframes caRight {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(9px);
+        }
+      }
+      #coachBubble {
+        position: absolute;
+        left: 50%;
+        top: 12%;
+        transform: translateX(-50%);
+        width: min(340px, calc(100vw - 40px));
+        padding: 13px 16px;
+        border-radius: 14px;
+        background: rgba(4, 20, 28, 0.94);
+        border: 1px solid rgba(var(--tint), 0.4);
+        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.42);
+        text-align: center;
+        transition: top 0.3s ease;
+      }
+      #coachBubble b {
+        display: block;
+        font-size: 17px;
+        letter-spacing: 0.01em;
+        margin-bottom: 3px;
+        color: rgb(var(--tint));
+      }
+      #coachBubble span {
+        display: block;
+        font-size: 14px;
+        line-height: 1.45;
+        opacity: 0.9;
+      }
+      /* Bottom-anchored when the thing being pointed at is high on the
+         screen, so the bubble is never sitting on top of it. */
+      body.coach-low #coachBubble {
+        top: auto;
+        bottom: 13%;
+      }
+      #coachSkip {
+        position: absolute;
+        top: calc(12px + env(safe-area-inset-top));
+        right: calc(12px + env(safe-area-inset-right));
+        pointer-events: auto;
+        padding: 8px 15px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        color: rgba(234, 247, 244, 0.75);
+        background: rgba(4, 20, 28, 0.8);
+        border: 1px solid rgba(var(--tint), 0.28);
+        cursor: pointer;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #coachHole::after,
+        .ca {
+          animation: none;
+        }
+      }
+
       /* ---------- pause + settings ---------- */
       .pause-btn {
         position: fixed;
@@ -2309,6 +2480,21 @@
       <div id="shark">Shark</div>
     </div>
 
+    <!-- first-run coaching. One spotlight, one bubble, reused by every step;
+         pointer-events stay off throughout so it can never block the input
+         it is teaching. -->
+    <div id="coach" aria-live="polite">
+      <div id="coachHole"></div>
+      <div id="coachArrows">
+        <i class="ca up"></i><i class="ca left"></i><i class="ca right"></i>
+      </div>
+      <div id="coachBubble">
+        <b id="coachTitle"></b>
+        <span id="coachText"></span>
+      </div>
+      <button type="button" id="coachSkip">Skip</button>
+    </div>
+
     <button class="pause-btn" id="pauseBtn" aria-label="Pause"></button>
     <div class="gear-stack" id="gearStack"></div>
 
@@ -2676,6 +2862,7 @@
           </button>
         </div>
         <div class="btnstack">
+          <button class="ghost" id="howToPlay">How to play</button>
           <button class="go-btn" id="settingsDone">Done</button>
         </div>
       </div>
@@ -5177,6 +5364,30 @@
 
         const TRACKS = COURSES.map(buildTrack);
 
+        /* The tutorial runs on a course of its own, deliberately kept out of
+   COURSES. Everything downstream of TRACKS is index-aligned to it —
+   CHALLENGE_META, THEME_SEQ, the unlock chains — so slipping a 101st
+   course in would shift the challenge skins by one and leave a world
+   with 26 entries in its picker. It is built through buildTrack like
+   any other, so it renders, races and sounds identical; it just never
+   appears in a list. Short, wide and barely bent: nothing here should
+   be hard, because the player is reading rather than racing. */
+        const TUTORIAL_TRACK = buildTrack({
+          name: "Calder Reach",
+          desc: "Wide · gentle",
+          width: 196,
+          gen: {
+            cx: 1300,
+            cy: 950,
+            R: 380,
+            ax: 1.24,
+            ay: 1.0,
+            k: 2,
+            amp: 0.1,
+            count: 16,
+          },
+        });
+
         /* ============================================================
    COURSE RECORDS — best lap plus best totals per lap count.
    ============================================================ */
@@ -6510,6 +6721,30 @@
           courseIdx = 0,
           totalLaps = 3,
           skill = 1;
+        /* A tutorial run is an ordinary race with every consequence removed:
+   no records, no coins, no unlocks, no gear spent from the locker. Read
+   by startRace, the lap-crossing bookkeeping, useGear and finish. */
+        let tutorial = false,
+          lapsBeforeTutorial = 3;
+        function startTutorial() {
+          tutorial = true;
+          // one lap, and the laps picker gets its value back afterwards
+          lapsBeforeTutorial = totalLaps;
+          totalLaps = 1;
+          plotFit = null;
+          initAudio();
+          startRace();
+        }
+        function endTutorial() {
+          if (!tutorial) return;
+          tutorial = false;
+          totalLaps = lapsBeforeTutorial;
+          stopCoaching();
+          syncStartBtn();
+          // the picker's own selection was never touched, so restoring the
+          // value is enough; the records panel is keyed on it, though
+          refreshRecords();
+        }
         let boats = [],
           me = null,
           cam = { x: 0, y: 0, s: 1 },
@@ -6668,7 +6903,9 @@
         }
 
         function startRace() {
-          track = TRACKS[courseIdx];
+          track = tutorial ? TUTORIAL_TRACK : TRACKS[courseIdx];
+          if (tutorial) startCoaching();
+          else stopCoaching();
           const n = track.n;
           boats = [];
           // A course can call for a bigger fleet, or for a range — rolled fresh
@@ -6678,7 +6915,11 @@
             ? track.fleet[0] +
               Math.floor(Math.random() * (track.fleet[1] - track.fleet[0] + 1))
             : track.fleet || 4;
-          const fleet = Math.max(2, Math.min(want, RIVALS.length + 1));
+          // two rivals and no more: enough to show what a race looks like
+          // without a pack to get lost in on your first time out
+          const fleet = tutorial
+            ? 3
+            : Math.max(2, Math.min(want, RIVALS.length + 1));
           trackEvent("level_start", {
             level_name: track.name,
             difficulty: TIERS[skill].name,
@@ -6699,7 +6940,7 @@
               t = track.tan[i],
               nv = track.nrm[i];
             const off = col * track.half * spread;
-            const T = TIERS[skill];
+            const T = TIERS[tutorial ? 0 : skill];
             const playerSkin = selectedSkin();
             const b = makeBoat({
               x: p.x + nv.x * off,
@@ -6724,7 +6965,12 @@
           });
           me = boats[boats.length - 1]; // you are the last one off the grid
           me.gear = {};
-          for (const item of GEAR_ITEMS) me.gear[item.id] = gearOwned(item.id);
+          /* Lent, not spent. The gear coaching cannot fire for a new player
+             otherwise: gear costs coins and a first-time player has none. */
+          if (tutorial) me.gear = { nitro: 1, torpedo: 1 };
+          else
+            for (const item of GEAR_ITEMS)
+              me.gear[item.id] = gearOwned(item.id);
           torpedoes.length = 0;
           refreshGearHud();
           wake.length = 0;
@@ -6856,6 +7102,212 @@
           addEventListener("pointerup", release);
           addEventListener("pointercancel", release);
         })();
+
+        /* ============================================================
+   FIRST-RUN COACHING
+   ============================================================
+   A step is done when the player does the thing, not when they tap OK —
+   reading "push forward" teaches nobody, pushing forward does. Each step
+   names what it points at and how it is satisfied; the machine below just
+   walks the list. Written as a registry rather than a fixed script so a
+   later hint (the first hunter, the first world change) is one more entry
+   and no new machinery. */
+        const coachEl = document.getElementById("coach"),
+          coachHoleEl = document.getElementById("coachHole"),
+          coachBubbleEl = document.getElementById("coachBubble"),
+          coachTitleEl = document.getElementById("coachTitle"),
+          coachTextEl = document.getElementById("coachText"),
+          coachArrowsEl = document.getElementById("coachArrows");
+        let coachStep = -1,
+          coachHold = 0,
+          coachSettle = 0,
+          coachTouch = true;
+
+        /* Steps read controls(), not the stick directly, so the same tutorial
+   works on a keyboard — otherwise a desktop player is told to push a stick
+   that isn't there and the step never clears. The copy follows suit. */
+        const COACH_STEPS = [
+          {
+            id: "steer",
+            title: "Touch anywhere",
+            text: "Put a thumb on the water. The helm appears wherever you press it — you don't have to go looking for it.",
+            keyTitle: "Take the helm",
+            keyText: "W A S D or the arrow keys. Press one to get under way.",
+            // low centre, roughly where a right thumb falls
+            spot: () =>
+              coachTouch ? { x: W * 0.5, y: H * 0.72, r: 78 } : null,
+            arrows: false,
+            done: () => joyActive() || anyDriveKey(),
+          },
+          {
+            id: "throttle",
+            title: "Push forward",
+            text: "Away from you is throttle, back is astern. The further you push, the harder she pulls.",
+            keyTitle: "Open her up",
+            keyText: "W or up for throttle, S or down to go astern.",
+            spot: joySpot,
+            arrows: "up",
+            // held, not tapped: a stray flick shouldn't tick this off
+            hold: 0.55,
+            test: () => controls().thr > 0.45,
+          },
+          {
+            id: "turn",
+            title: "Steer with the same thumb",
+            text: "Left and right off that centre point. Ease it — she carries her speed through a turn if you don't saw at it.",
+            keyTitle: "Now steer",
+            keyText:
+              "A and D, or left and right. Ease it — she carries her speed through a turn if you don't saw at it.",
+            spot: joySpot,
+            arrows: "side",
+            hold: 0.4,
+            test: () => Math.abs(controls().steer) > 0.45,
+          },
+          {
+            id: "gear",
+            title: "Your gear",
+            text: "A nitro and a torpedo, on the house. Tap one to fire it — you can hold the helm at the same time.",
+            keyText:
+              "A nitro and a torpedo, on the house. Click one to fire it.",
+            spot: () => elSpot(document.getElementById("gearStack"), 14),
+            arrows: false,
+            done: () => coachGearFired,
+          },
+          {
+            id: "line",
+            title: "Now take her round",
+            text: "One lap. Two rivals, and they aren't trying very hard.",
+            spot: null,
+            arrows: false,
+            // read-and-go: nothing to perform, so it clears on its own
+            hold: 3.2,
+            test: () => true,
+          },
+        ];
+        let coachGearFired = false;
+
+        // Where the helm currently is, so the throttle and steering steps
+        // point at the stick the player just planted rather than at the
+        // suggestion they were given for the first step.
+        function joySpot() {
+          const j = document.getElementById("pJ");
+          const r = j.getBoundingClientRect();
+          return r.width
+            ? {
+                x: r.left + r.width / 2,
+                y: r.top + r.height / 2,
+                r: r.width * 0.56,
+              }
+            : { x: W * 0.5, y: H * 0.72, r: 78 };
+        }
+        function elSpot(el, pad) {
+          const r = el.getBoundingClientRect();
+          return {
+            x: r.left + r.width / 2,
+            y: r.top + r.height / 2,
+            w: r.width + (pad || 0) * 2,
+            h: r.height + (pad || 0) * 2,
+            round: 30,
+          };
+        }
+        function joyActive() {
+          return document.getElementById("pJ").classList.contains("act");
+        }
+        function anyDriveKey() {
+          const c = controls();
+          return c.thr !== 0 || c.steer !== 0;
+        }
+
+        function startCoaching() {
+          coachStep = 0;
+          coachHold = 0;
+          coachSettle = 0;
+          coachGearFired = false;
+          /* Which set of words to use. Decided once per run rather than per
+             step, so it can't switch language halfway through. */
+          coachTouch = !matchMedia || matchMedia("(pointer: coarse)").matches;
+          document.body.classList.add("coaching");
+          showCoachStep();
+        }
+        function stopCoaching() {
+          coachStep = -1;
+          document.body.classList.remove(
+            "coaching",
+            "coach-arrows",
+            "coach-low",
+          );
+        }
+        function showCoachStep() {
+          const st = COACH_STEPS[coachStep];
+          if (!st) return stopCoaching();
+          coachTitleEl.textContent = (!coachTouch && st.keyTitle) || st.title;
+          coachTextEl.textContent = (!coachTouch && st.keyText) || st.text;
+          document.body.classList.toggle("coach-arrows", !!st.arrows);
+          coachArrowsEl.style.display = st.arrows === "up" ? "" : "";
+          // only the pair that matches this step
+          coachArrowsEl.querySelector(".up").style.display =
+            st.arrows === "up" ? "" : "none";
+          coachArrowsEl.querySelector(".left").style.display =
+            st.arrows === "side" ? "" : "none";
+          coachArrowsEl.querySelector(".right").style.display =
+            st.arrows === "side" ? "" : "none";
+          coachHole(st.spot ? st.spot() : null);
+        }
+        function coachHole(sp) {
+          if (!sp) {
+            // nothing to point at: dim nothing, just show the bubble
+            coachHoleEl.style.boxShadow = "none";
+            coachHoleEl.style.borderColor = "transparent";
+            coachArrowsEl.style.opacity = "0";
+            return;
+          }
+          coachHoleEl.style.boxShadow = "";
+          coachHoleEl.style.borderColor = "";
+          // the bubble sits at the far end of the screen from whatever is
+          // being pointed at, so it never covers it
+          document.body.classList.toggle("coach-low", sp.y < H * 0.5);
+          const w = sp.w || sp.r * 2,
+            h = sp.h || sp.r * 2;
+          coachHoleEl.style.left = sp.x + "px";
+          coachHoleEl.style.top = sp.y + "px";
+          coachHoleEl.style.width = w + "px";
+          coachHoleEl.style.height = h + "px";
+          coachHoleEl.style.margin = `${-h / 2}px 0 0 ${-w / 2}px`;
+          coachHoleEl.style.borderRadius = (sp.round || 999) + "px";
+          coachArrowsEl.style.left = sp.x + "px";
+          coachArrowsEl.style.top = sp.y + "px";
+        }
+        function stepCoaching(dt) {
+          if (coachStep < 0) return;
+          const st = COACH_STEPS[coachStep];
+          if (!st) return stopCoaching();
+          // the helm moves under the player, so the spotlight follows it
+          if (st.spot) coachHole(st.spot());
+          const satisfied = st.done ? st.done() : st.test();
+          if (!satisfied) {
+            coachHold = 0;
+            coachSettle = 0;
+            return;
+          }
+          coachHold += dt;
+          if (coachHold < (st.hold || 0)) return;
+          /* A short beat after the step is met before the next one lands:
+             stepping instantly means the bubble changes mid-gesture and the
+             player never sees that they got it right. */
+          coachSettle += dt;
+          if (coachSettle < 0.45) return;
+          coachSettle = 0;
+          coachHold = 0;
+          coachStep++;
+          if (coachStep >= COACH_STEPS.length) stopCoaching();
+          else showCoachStep();
+        }
+        document.getElementById("coachSkip").onclick = () => {
+          stopCoaching();
+          progress.tutorialDone = true;
+          saveProgress();
+          syncStartBtn();
+        };
 
         function controls() {
           const kb =
@@ -7350,14 +7802,18 @@
                 const lt = raceT - b.lapStart;
                 b.lastLap = lt;
                 if (!b.bestLap || lt < b.bestLap) b.bestLap = lt;
-                if (b === me && setLapRecord(track.name, lt))
+                if (b === me && !tutorial && setLapRecord(track.name, lt))
                   newLapRecord = true;
               }
               b.lapStart = raceT;
               if (b.lap >= totalLaps && !b.done) {
                 b.done = true;
                 b.total = raceT;
-                if (b === me && setTotalRecord(track.name, totalLaps, b.total))
+                if (
+                  b === me &&
+                  !tutorial &&
+                  setTotalRecord(track.name, totalLaps, b.total)
+                )
                   newTotalRecord = true;
               }
             }
@@ -7850,7 +8306,10 @@
             out = 420;
 
           // --- assign and release hunters ---
-          if (state === S.race) {
+          // Not in the tutorial: a player who is reading the bubble is not
+          // watching the bank, so they drift off it every time — and being
+          // eaten thirty seconds into your first race teaches nothing.
+          if (state === S.race && !tutorial) {
             for (const b of boats) {
               if (b.eaten > 0 || b.done) {
                 if (b.hunter) {
@@ -9141,8 +9600,11 @@
           if (state !== S.race || !me || me.done) return;
           if (!type || (me.gear[type] || 0) <= 0) return;
           me.gear[type]--;
-          progress.gear[type] = Math.max(0, gearOwned(type) - 1);
-          saveProgress();
+          coachGearFired = true;
+          if (!tutorial) {
+            progress.gear[type] = Math.max(0, gearOwned(type) - 1);
+            saveProgress();
+          }
           if (type === "nitro") {
             me.boost = 3.4;
             sfxBoost();
@@ -11436,11 +11898,15 @@
 
         function finish() {
           state = S.done;
+          stopCoaching();
           const r = frameRanked,
             place = r.indexOf(me) + 1;
           // the course this one unlocks is the next on its own chain, not the
           // next in the whole list — those differ at a world boundary
-          const nextIdx = nextInTheme(courseIdx);
+          /* A tutorial finish is inert: it unlocks nothing, completes no
+             course and pays nothing. Only the fact that it happened is
+             worth remembering, so the menu stops offering it. */
+          const nextIdx = tutorial ? -1 : nextInTheme(courseIdx);
           const nextCourse = nextIdx >= 0 ? TRACKS[nextIdx] : null;
           const unlocksNext =
             nextCourse &&
@@ -11448,21 +11914,28 @@
             !progress.completed[track.name];
           // challenge skins are one per river course; lava courses don't carry
           // one yet, so there's simply nothing to award on them
-          const challenge = CHALLENGE_SKINS[courseIdx];
+          const challenge = tutorial ? null : CHALLENGE_SKINS[courseIdx];
           const unlockedSkin =
             challenge &&
             totalLaps === 3 &&
             me.total <= challenge.target &&
             !progress.skins[challenge.id];
           const hadDiamond = allChallengeSkinsUnlocked();
-          progress.completed[track.name] = true;
+          if (!tutorial) progress.completed[track.name] = true;
           if (unlockedSkin) progress.skins[challenge.id] = true;
           const unlockedDiamond = !hadDiamond && allChallengeSkinsUnlocked();
           // every finish pays out, not just a win — see coinsForFinish
-          const coinsEarned = coinsForFinish(totalLaps, skill, place);
+          const coinsEarned = tutorial
+            ? 0
+            : coinsForFinish(totalLaps, skill, place);
           progress.coins += coinsEarned;
+          if (tutorial) progress.tutorialDone = true;
           saveProgress();
-          rTitle.textContent = place === 1 ? "Won it" : ordinal(place);
+          rTitle.textContent = tutorial
+            ? "That's the lot"
+            : place === 1
+              ? "Won it"
+              : ordinal(place);
           const tail =
             place === 1
               ? "Clean water all the way home."
@@ -11474,14 +11947,17 @@
             bits.push("unlocked " + nextCourse.name);
           if (unlockedSkin) bits.push("unlocked " + challenge.name + " skin");
           if (unlockedDiamond) bits.push("unlocked Diamond Camo");
-          rSub.textContent =
-            track.name +
-            " · " +
-            totalLaps +
-            " laps · " +
-            bits.join(" · ") +
-            ". " +
-            tail;
+          rSub.textContent = tutorial
+            ? "That's steering, throttle and gear. Nothing here counted — " +
+              "pick a course and the real thing starts. You can run this " +
+              "again any time from Settings."
+            : track.name +
+              " · " +
+              totalLaps +
+              " laps · " +
+              bits.join(" · ") +
+              ". " +
+              tail;
           // The coin count has its own graphic badge rather than sitting in
           // that sentence too — .pop re-triggers the entrance animation on
           // every finish (removed and re-added, since a class already
@@ -11489,7 +11965,7 @@
           // skipped entirely under prefers-reduced-motion.
           coinRewardAmtEl.textContent = "+" + coinsEarned + " coins";
           coinRewardEl.classList.remove("pop");
-          coinRewardEl.classList.add("on");
+          coinRewardEl.classList.toggle("on", !tutorial);
           coinRewardEl.setAttribute(
             "aria-label",
             coinsEarned + " coins earned",
@@ -12446,9 +12922,31 @@
         }
 
         document.getElementById("start").onclick = () => {
+          // the first time out, Start means the tutorial — see syncStartBtn
+          if (!progress.tutorialDone) return startTutorial();
           initAudio();
           plotFit = null;
           startRace();
+        };
+        /* Says what the button will actually do. Once the tutorial has been
+   run — or skipped — it goes back to being Start race for good. */
+        const startBtnEl = document.getElementById("start");
+        function syncStartBtn() {
+          startBtnEl.textContent = progress.tutorialDone
+            ? "Start race"
+            : "Start tutorial";
+        }
+        syncStartBtn();
+        document.getElementById("howToPlay").onclick = () => {
+          // reachable from a paused race as well as the menu, so tear both
+          // screens down rather than handing back to whatever opened Settings
+          settingsReturn = null;
+          settingsEl.classList.add("hidden");
+          pauseEl.classList.add("hidden");
+          resultsEl.classList.add("hidden");
+          menuEl.classList.add("hidden");
+          pausedFrom = null;
+          startTutorial();
         };
         document.getElementById("again").onclick = () => {
           initAudio();
@@ -12456,6 +12954,13 @@
         };
         document.getElementById("nextRace").onclick = () => {
           initAudio();
+          // out of the tutorial and into the real thing
+          if (tutorial) {
+            endTutorial();
+            pickCourse(courseIdx, false);
+            startRace();
+            return;
+          }
           // pickCourse does the course-switch bookkeeping (respawns hazards,
           // fauna, boosts, moored boats; syncs the menu tiles for whenever the
           // player does go back) — the same path a manual pick from the rail
@@ -12468,6 +12973,7 @@
           startRace();
         };
         function leaveResults() {
+          endTutorial();
           state = S.menu;
           syncConsentBanner();
           resultsEl.classList.add("hidden");
@@ -12545,6 +13051,7 @@
               laps: totalLaps,
             });
           }
+          endTutorial();
           state = S.menu;
           syncConsentBanner();
           pausedFrom = null;
@@ -12722,6 +13229,7 @@
             stepWake(dt);
           }
           frameRanked = ranked();
+          stepCoaching(dt);
           render(dt);
           if (state !== S.menu) drawHUD();
           stepAudio();

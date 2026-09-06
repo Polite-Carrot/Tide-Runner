@@ -399,6 +399,53 @@ menu defaults to whichever tab holds the currently equipped skin, via `skinCateg
 **Nine solid colours now**, not five — Harbour Gold, Jet Black, Volt Green, Flare Red and Ion
 Cyan, plus Pearl White, Riptide Purple, Sunset Orange and Coral Pink.
 
+### The tutorial
+
+**A separate course, deliberately kept out of `COURSES`.** Everything downstream
+of `TRACKS` is index-aligned to it — `CHALLENGE_META`, `THEME_SEQ`, the unlock
+chains — so a 101st course would shift the challenge skins by one and leave a
+world showing 26 entries. `TUTORIAL_TRACK` is built through `buildTrack()` like
+any other, so it renders, races and sounds identical; it just never appears in a
+list. Calder Reach: 2,707px, wide, barely bent, two rivals on Easy, one lap.
+Nothing here should be hard, because the player is reading rather than racing.
+
+**A tutorial run is an ordinary race with every consequence removed.** One
+`tutorial` flag, read in five places: `startRace()` picks the track and lends a
+nitro and a torpedo rather than spending the locker, the lap-crossing
+bookkeeping skips records, `useGear()` doesn't decrement, `stepFauna()` assigns
+no hunters, and `finish()` awards no coins, completes no course and unlocks
+nothing. Every exit from a race — results, pause, next race — routes through
+`endTutorial()`, which also puts the player's lap choice back.
+
+Two things it took a playtest to catch. **The hunter has to be off**: a player
+reading the bubble is not watching the bank, so they drift off it every time,
+and being eaten thirty seconds into your first race teaches nothing. And **the
+gear must be lent, not spent** — gear costs coins, so a first-time player owns
+none and the gear step could never fire.
+
+**Steps clear when the player does the thing**, not when they tap OK. Reading
+"push forward" teaches nobody; pushing forward does. `COACH_STEPS` is a registry
+— each entry names what it points at, how it is satisfied, and how long the
+input must be held so a stray flick doesn't tick it off — so a later hint (the
+first hunter, the first world change) is one more entry and no new machinery.
+Steps read `controls()` rather than the stick directly, so the same tutorial
+works on a keyboard, and each carries alternate copy for it.
+
+**The spotlight is one enormous spread `box-shadow` on a transparent element**:
+everything outside it goes dark and the element itself stays clear. A hole in
+the screen with no mask, no SVG and no second layer to keep in sync. Nothing in
+the overlay takes pointer events except Skip — the whole point is to teach the
+controls, so the controls have to stay live underneath. The hole follows the
+helm as the player moves it, and the bubble is placed at the opposite end of the
+screen from whatever is being pointed at, worked out from the spotlight's own
+position rather than set per step.
+
+**Two ways in.** On a first run the Start button reads "Start tutorial" and
+means it; afterwards it goes back to "Start race" for good. Settings carries
+"How to play" to run it again, which is where a player looks for it — and not in
+the course list, where it would sit among a hundred courses with no challenge
+skin and nothing to come back for.
+
 ### Animated skins
 
 **The three lime skins in Other are drawn per pixel, not painted.** `ANIMATED_SKINS` holds
