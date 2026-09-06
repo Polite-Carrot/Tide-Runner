@@ -408,6 +408,11 @@ changed is not something a player should have to discover on their own boat.
 Only the colour actually worn is granted; the rest are for sale like anything
 else.
 
+**Fifty-five flags.** Sixteen more on top of the twenty below — Austria,
+Hungary, Romania, Czechia, Croatia, Iceland, Estonia, Israel, the UAE, Ghana,
+Senegal, Peru, Cuba, Bangladesh, Singapore and Kenya — generated the same way,
+and held to the same test: it has to survive being shrunk onto a 36px hull.
+
 **Thirty-nine flags.** The twenty added — Germany, Italy, Spain, Netherlands,
 Ireland, Belgium, Portugal, Switzerland, Sweden, Denmark, Norway, Finland,
 Ukraine, Greece, Argentina, Colombia, Chile, China, Morocco and Jamaica — were
@@ -752,6 +757,32 @@ the course list, where it would sit among a hundred courses with no challenge
 skin and nothing to come back for.
 
 ### Animated skins
+
+**Eight of them, and five palettes.** `PALETTES` holds five stops each, darkest
+first, and a skin names one — so the effect maths stays colour-blind and a new
+skin can be a new pattern, a new palette, or both, without disturbing the other.
+
+Each effect is its own idea rather than a recolour of the last:
+
+| Skin         | The trick                                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Lime Nebula  | three octaves of fractal noise, warped by each other, plus a twinkling star lattice                                          |
+| Lime Flux    | domain-warped noise posterised to four tones, so camo edges stay crisp                                                       |
+| Lime Pulse   | hex cells lit by a travelling wave, the cell found by nearest lattice point                                                  |
+| Ember Crawl  | ridged noise `1-\|2n-1\|` raised to a power — peaks land on a field's _contours_, which is exactly where a crack wants to be |
+| Frost Bloom  | the same ridge, quantised into steps so it reads as cut planes catching light                                                |
+| Deep Current | two sine fields crossed at an angle; the bright net is where their sum passes zero                                           |
+| Oil Slick    | thin-film interference — no palette, the colour _is_ the film thickness                                                      |
+| Signal Rain  | columns falling at their own seeded speeds, with a free scanline from `py & 1`                                               |
+
+Two of them took a second pass after looking at the output. Frost Bloom's facets
+were too small and read as static rather than ice, so the field scale came down
+and an octave came off. Oil Slick drove its phase from noise alone, which gives
+blotches — interference wants _bands_, so the phase is now mostly a smooth ramp
+across the hull with the noise only warping it, and a sheen term keeps most of
+the hull near-black so the colour reads as a film on it rather than a heat map.
+
+### Animated skins — the machinery
 
 **The three lime skins in Other are drawn per pixel, not painted.** `ANIMATED_SKINS` holds
 Lime Nebula (fractal gas clouds with twinkling stars), Lime Flux (domain-warped camo
