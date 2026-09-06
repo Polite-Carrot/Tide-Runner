@@ -399,6 +399,47 @@ menu defaults to whichever tab holds the currently equipped skin, via `skinCateg
 **Nine solid colours now**, not five — Harbour Gold, Jet Black, Volt Green, Flare Red and Ion
 Cyan, plus Pearl White, Riptide Purple, Sunset Orange and Coral Pink.
 
+### Haptics
+
+**No import, and so no build step.** Capacitor puts its plugins on
+`window.Capacitor.Plugins` at runtime, so the native build reaches
+`Haptics.impact()` without this single file gaining a bundler. Web falls back to
+`navigator.vibrate`, which Android honours and **iOS Safari does not implement at
+all** — the Pages build simply has no haptics on an iPhone, and there is nothing
+to be done about that from here. TestFlight is the native build, so it does.
+
+**The vocabulary mirrors the sound effects**, because the moments worth hearing
+are the moments worth feeling — and every one of them already had an
+`if (b === me)` guard and a magnitude to hand:
+
+| Moment                         | Feel                                           |
+| ------------------------------ | ---------------------------------------------- |
+| Countdown 3-2-1, then GO       | light ticks, firmer on GO                      |
+| Boost pad, and firing any gear | light                                          |
+| Boat-to-boat bump, hazard hit  | scaled from the impact already computed        |
+| Caught in a net                | medium                                         |
+| Torpedo hits you               | heavy                                          |
+| Hunter locks on                | warning                                        |
+| Leaving the channel            | light, on the crossing only                    |
+| Eaten                          | error, then two heavy beats matching the chomp |
+| Finish, and again for a record | success, then heavy                            |
+
+Everything is a discrete impact. No sustained buzz for being off-course or under
+power: it costs battery, and iOS's feedback generators are built for events
+rather than for holding a note.
+
+Three things keep it from being able to hurt anything. A **gate** — `hapticGate`,
+90ms by default — because scraping along a bank fires an impact every frame and a
+phone buzzing continuously reads as a fault rather than as feedback. A
+**try/catch plus `.catch()`** on the plugin call, since it answers with a promise
+and a rejection would otherwise escape as an unhandled rejection: a phone that
+won't buzz must never be louder than one that will. And a **Settings toggle**
+next to Music and Game sounds, which answers with a tap of its own when switched
+on, that being the only honest way to show it works.
+
+Adding the plugin took `npm install @capacitor/haptics` and `npx cap sync` — one
+gradle include for Android, one SPM product for iOS, both committed.
+
 ### Transfer code
 
 **Moving a save between devices**, from Settings — and only from the menu, not

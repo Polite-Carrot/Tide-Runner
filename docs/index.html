@@ -2997,6 +2997,17 @@
           </button>
         </div>
         <div class="setrow">
+          <label for="hapticsToggle">Vibration</label>
+          <button
+            class="toggle"
+            id="hapticsToggle"
+            data-on="1"
+            aria-label="Vibration"
+          >
+            <span></span>
+          </button>
+        </div>
+        <div class="setrow">
           <label for="analyticsToggle">Send usage data</label>
           <button
             class="toggle"
@@ -7749,11 +7760,13 @@
         // Persisted audio + player preferences. analytics has no default —
         // undefined means "never asked", distinct from true/false, which is
         // what tells the consent banner whether it still needs to show.
-        const SETTINGS = { music: true, sfx: true, name: "" };
+        const SETTINGS = { music: true, sfx: true, haptics: true, name: "" };
         try {
           const saved = JSON.parse(localStorage.getItem("tr-settings") || "{}");
           if (typeof saved.music === "boolean") SETTINGS.music = saved.music;
           if (typeof saved.sfx === "boolean") SETTINGS.sfx = saved.sfx;
+          if (typeof saved.haptics === "boolean")
+            SETTINGS.haptics = saved.haptics;
           // the head already made the load-time call on this from the same
           // key, before this object existed; reading it again here just keeps
           // SETTINGS.analytics honest for syncToggles() and the click handler
@@ -7921,6 +7934,7 @@
             const v = Math.ceil(countT - 1);
             if (v >= 0 && v < AUD.lastBeep) {
               sfxBeep(v === 0);
+              haptic(v === 0 ? "MEDIUM" : "LIGHT", 0);
               AUD.lastBeep = v;
             }
           } else AUD.lastBeep = 99;
@@ -8070,6 +8084,73 @@
           sfxTone(hi ? 880 : 540, 0.13, 0.22, "square");
         }
 
+        /* ============================================================
+   HAPTICS
+   ============================================================
+   Deliberately no import. Capacitor puts its plugins on
+   window.Capacitor.Plugins at runtime, so the native build gets real
+   haptics without this file gaining a build step. Web falls back to
+   navigator.vibrate, which Android honours and iOS Safari does not
+   implement at all — so the Pages build simply has no haptics on an
+   iPhone, and there is no way around that from here.
+
+   The vocabulary mirrors the sound effects, because the moments worth
+   hearing are the moments worth feeling. Everything is a discrete
+   impact: no sustained buzz for being off-course or under power, which
+   costs battery and which iOS's feedback generators aren't built for. */
+        const HAPTICS =
+          (window.Capacitor &&
+            window.Capacitor.Plugins &&
+            window.Capacitor.Plugins.Haptics) ||
+          null;
+        const canVibrate =
+          !HAPTICS && typeof navigator !== "undefined" && !!navigator.vibrate;
+        // milliseconds, for the web fallback only
+        const HAPTIC_MS = { LIGHT: 12, MEDIUM: 24, HEAVY: 42 };
+        let hapticGate = 0;
+
+        /* style is LIGHT / MEDIUM / HEAVY. gap is the shortest time that may
+   pass before another one is allowed through — scraping along a bank
+   fires an impact every frame, and a phone buzzing continuously reads as
+   a fault rather than as feedback. */
+        function haptic(style, gap) {
+          if (!SETTINGS.haptics) return;
+          const now = performance.now();
+          if (now < hapticGate) return;
+          hapticGate = now + (gap === undefined ? 90 : gap);
+          /* The plugin answers with a promise, so a rejection would escape
+             the try/catch and surface as an unhandled rejection. A phone
+             that won't buzz must never be louder than one that will —
+             this is decoration. */
+          try {
+            if (HAPTICS) {
+              const r = HAPTICS.impact({ style });
+              if (r && r.catch) r.catch(() => {});
+            } else if (canVibrate) navigator.vibrate(HAPTIC_MS[style] || 20);
+          } catch (e) {}
+        }
+        // A warning or a flourish rather than a knock: the OS has its own
+        // patterns for these and they read differently from an impact.
+        function hapticNote(type, gap) {
+          if (!SETTINGS.haptics) return;
+          const now = performance.now();
+          if (now < hapticGate) return;
+          hapticGate = now + (gap === undefined ? 300 : gap);
+          try {
+            if (HAPTICS) {
+              const r = HAPTICS.notification({ type });
+              if (r && r.catch) r.catch(() => {});
+            } else if (canVibrate)
+              navigator.vibrate(
+                type === "SUCCESS" ? [18, 60, 18] : [30, 50, 30],
+              );
+          } catch (e) {}
+        }
+        // Collisions already carry a 0..1 magnitude, so let it pick the weight.
+        function hapticHit(k) {
+          haptic(k > 0.66 ? "HEAVY" : k > 0.3 ? "MEDIUM" : "LIGHT");
+        }
+
         // Kick off audio + lobby music on the very first tap anywhere.
         document.addEventListener(
           "pointerdown",
@@ -8176,8 +8257,20 @@
           const nr = nearestIdx(b);
           b.prevIdx = b.idx;
           b.idx = nr.i;
+          const wasShallow = b.shallow;
           b.shallow = nr.d > track.half;
           b.off = nr.d;
+          /* Leaving the channel is the thing that starts the hunter's clock,
+             and until now nothing said so but a drop in speed. Fires on the
+             crossing only, not the whole time you are out there. */
+          if (
+            b === me &&
+            b.shallow &&
+            !wasShallow &&
+            state === S.race &&
+            !b.done
+          )
+            haptic("LIGHT", 500);
 
           // how long have we been off the river? the sharks are counting
           if (state === S.race && b.shallow && !b.done) b.offTime += dt;
@@ -8196,7 +8289,10 @@
               b.boost = 2.2;
               b.vx += Math.cos(b.h) * 45;
               b.vy += Math.sin(b.h) * 45;
-              if (b === me) sfxBoost();
+              if (b === me) {
+                sfxBoost();
+                haptic("LIGHT");
+              }
               if (!REDUCED)
                 for (let i = 0; i < 7; i++) spray(b.x, b.y, "#ffd84a", 1.5);
             }
@@ -8289,6 +8385,7 @@
               b.bump = 0.35;
               if (b === me && b.bumpSfxT <= 0 && impact > 22) {
                 sfxBump(Math.min(1, impact / 140));
+                hapticHit(Math.min(1, impact / 140));
                 b.bumpSfxT = 0.5;
               }
               if (!REDUCED)
@@ -8792,7 +8889,10 @@
                 }
                 best.hunt = b;
                 b.hunter = best;
-                if (b === me) sfxSharkAlert();
+                if (b === me) {
+                  sfxSharkAlert();
+                  hapticNote("WARNING");
+                }
               }
               if (b.offTime === 0 && b.hunter) {
                 b.hunter.hunt = null;
@@ -9644,7 +9744,14 @@
 
         function chomp(b) {
           if (b.eaten > 0) return;
-          if (b === me) sfxChomp();
+          if (b === me) {
+            sfxChomp();
+            /* three beats to match the sound — the one place a pattern
+               rather than a single knock is worth it */
+            hapticNote("ERROR", 0);
+            setTimeout(() => haptic("HEAVY", 0), 140);
+            setTimeout(() => haptic("HEAVY", 0), 300);
+          }
           b.eaten = 1.7;
           b.chomped = 1.7;
           b.eatT = 0;
@@ -9987,7 +10094,10 @@
               b.stunned = 1;
               b.vx *= 0.04;
               b.vy *= 0.04;
-              if (b === me) sfxBump(0.7);
+              if (b === me) {
+                sfxBump(0.7);
+                haptic("MEDIUM");
+              }
               if (!REDUCED)
                 for (let i = 0; i < 6; i++) spray(b.x, b.y, "#c9a568", 1.4);
             }
@@ -10045,6 +10155,7 @@
               b.vy *= cfg.bite;
               if (b === me) {
                 sfxBump(Math.min(1, impact / 150));
+                hapticHit(Math.min(1, impact / 150));
                 if (!REDUCED)
                   for (let i = 0; i < 5; i++)
                     spray(
@@ -10068,6 +10179,9 @@
           if (!type || (me.gear[type] || 0) <= 0) return;
           me.gear[type]--;
           coachGearFired = true;
+          // every item, not just the nitro: something left the boat, and the
+          // button that sent it is under a thumb that can't see the screen
+          haptic("LIGHT", 0);
           if (!tutorial) {
             progress.gear[type] = Math.max(0, gearOwned(type) - 1);
             saveProgress();
@@ -10144,6 +10258,7 @@
               b.bump = 0.4;
               if (b === me && b.bumpSfxT <= 0) {
                 sfxBump(1);
+                haptic("HEAVY");
                 b.bumpSfxT = 0.5;
               }
               if (!REDUCED)
@@ -12522,6 +12637,7 @@
           state = S.done;
           stopCoaching();
           deltaEl.classList.remove("on");
+          hapticNote("SUCCESS", 0);
           const r = frameRanked,
             place = r.indexOf(me) + 1;
           // the course this one unlocks is the next on its own chain, not the
@@ -12604,6 +12720,9 @@
           // every finish (removed and re-added, since a class already
           // present when re-applied doesn't restart a CSS animation), and is
           // skipped entirely under prefers-reduced-motion.
+          // a record gets a second beat on top of the finish flourish
+          if (newLapRecord || newTotalRecord || newTtRecord)
+            setTimeout(() => haptic("HEAVY", 0), 260);
           coinRewardAmtEl.textContent = "+" + coinsEarned + " coins";
           coinRewardEl.classList.remove("pop");
           coinRewardEl.classList.toggle("on", !tutorial && !timeTrial);
@@ -13746,11 +13865,13 @@
         const pauseBtn = document.getElementById("pauseBtn");
         const musicTog = document.getElementById("musicToggle");
         const sfxTog = document.getElementById("sfxToggle");
+        const hapticsTog = document.getElementById("hapticsToggle");
         const analyticsTog = document.getElementById("analyticsToggle");
 
         function syncToggles() {
           musicTog.dataset.on = SETTINGS.music ? "1" : "0";
           sfxTog.dataset.on = SETTINGS.sfx ? "1" : "0";
+          hapticsTog.dataset.on = SETTINGS.haptics ? "1" : "0";
           analyticsTog.dataset.on = SETTINGS.analytics ? "1" : "0";
         }
         syncToggles();
@@ -13893,6 +14014,13 @@
           SETTINGS.sfx = !SETTINGS.sfx;
           syncToggles();
           saveSettings();
+        };
+        hapticsTog.onclick = () => {
+          SETTINGS.haptics = !SETTINGS.haptics;
+          syncToggles();
+          saveSettings();
+          // a tap you can feel is the only honest way to show it is on
+          if (SETTINGS.haptics) haptic("MEDIUM", 0);
         };
         /* One resolver for every path that can decide the analytics choice —
    the consent banner's two buttons and the Settings toggle — so "what
