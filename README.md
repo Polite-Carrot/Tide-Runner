@@ -396,8 +396,29 @@ behaves identically regardless of which grid it's in. Only one grid is shown at 
 via a `.seg` tab bar (the same segmented-control style as the Laps/Rivals pickers); opening the
 menu defaults to whichever tab holds the currently equipped skin, via `skinCategoryFor()`.
 
-**Nine solid colours now**, not five — Harbour Gold, Jet Black, Volt Green, Flare Red and Ion
-Cyan, plus Pearl White, Riptide Purple, Sunset Orange and Coral Pink.
+**Eighteen solid colours**, and they cost now — a token `COLOUR_PRICE` of 25, a
+sixth of a flag. They are the first thing a new player wants and the first thing
+coins can answer, so they teach the economy rather than wall it off. **Harbour
+Gold stays free**: it is the boat you start in, and something has to be raceable
+at nought coins.
+
+A save already racing in a colour keeps it. `grandfatherColour()` grants the one
+in use on load — being quietly demoted to Harbour Gold because the pricing
+changed is not something a player should have to discover on their own boat.
+Only the colour actually worn is granted; the rest are for sale like anything
+else.
+
+**Thirty-nine flags.** The twenty added — Germany, Italy, Spain, Netherlands,
+Ireland, Belgium, Portugal, Switzerland, Sweden, Denmark, Norway, Finland,
+Ukraine, Greece, Argentina, Colombia, Chile, China, Morocco and Jamaica — were
+generated rather than hand-encoded, which is the only sane way to get the
+URL-escaping right forty times over. The one thing worth knowing is that a flag
+has to survive being shrunk onto a 36px hull: Morocco's pentagram is drawn at a
+2.8 stroke rather than a hairline for exactly that reason, and anything needing
+finer detail than that was left out.
+
+Both changes moved bit positions in the transfer code, hence `TRANSFER_VERSION`
+2 — see below.
 
 ### Haptics
 

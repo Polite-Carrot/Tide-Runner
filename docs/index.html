@@ -5701,6 +5701,12 @@
           return true;
         }
 
+        /* Colours cost too now — a token 25, a fraction of a flag's 150. They
+   are the first thing a new player wants and the first thing coins can
+   answer, so they teach the economy rather than wall it off. Harbour
+   Gold stays free: it is the boat you start in, and something has to be
+   raceable at nought coins. */
+        const COLOUR_PRICE = 25;
         const DEFAULT_SKINS = [
           {
             id: "harbour",
@@ -5712,6 +5718,7 @@
           {
             id: "jet",
             name: "Jet Black",
+            price: COLOUR_PRICE,
             base: "#15191d",
             trim: "#d4dde2",
             preview: "#15191d",
@@ -5719,6 +5726,7 @@
           {
             id: "volt",
             name: "Volt Green",
+            price: COLOUR_PRICE,
             base: "#00f58a",
             trim: "#063c2a",
             preview: "#00f58a",
@@ -5726,6 +5734,7 @@
           {
             id: "flare",
             name: "Flare Red",
+            price: COLOUR_PRICE,
             base: "#ff3030",
             trim: "#5e0808",
             preview: "#ff3030",
@@ -5733,6 +5742,7 @@
           {
             id: "ion",
             name: "Ion Cyan",
+            price: COLOUR_PRICE,
             base: "#00e5ff",
             trim: "#064d67",
             preview: "#00e5ff",
@@ -5740,6 +5750,7 @@
           {
             id: "pearl",
             name: "Pearl White",
+            price: COLOUR_PRICE,
             base: "#f5f8fa",
             trim: "#2b3a42",
             preview: "#f5f8fa",
@@ -5747,6 +5758,7 @@
           {
             id: "riptide",
             name: "Riptide Purple",
+            price: COLOUR_PRICE,
             base: "#9d5cff",
             trim: "#2e1065",
             preview: "#9d5cff",
@@ -5754,6 +5766,7 @@
           {
             id: "sunset",
             name: "Sunset Orange",
+            price: COLOUR_PRICE,
             base: "#ff8a3d",
             trim: "#7a2e00",
             preview: "#ff8a3d",
@@ -5761,11 +5774,97 @@
           {
             id: "coral",
             name: "Coral Pink",
+            price: COLOUR_PRICE,
             base: "#ff6f91",
             trim: "#7a1f3d",
             preview: "#ff6f91",
           },
+          {
+            id: "storm",
+            name: "Storm Grey",
+            price: COLOUR_PRICE,
+            base: "#6c7a85",
+            trim: "#232e35",
+            preview: "#6c7a85",
+          },
+          {
+            id: "racing",
+            name: "Racing Green",
+            price: COLOUR_PRICE,
+            base: "#0b6b3a",
+            trim: "#e8f5ec",
+            preview: "#0b6b3a",
+          },
+          {
+            id: "navy",
+            name: "Deep Navy",
+            price: COLOUR_PRICE,
+            base: "#1b2f6b",
+            trim: "#8fb4ff",
+            preview: "#1b2f6b",
+          },
+          {
+            id: "magenta",
+            name: "Magenta Flash",
+            price: COLOUR_PRICE,
+            base: "#ff2fbf",
+            trim: "#5e0a47",
+            preview: "#ff2fbf",
+          },
+          {
+            id: "foam",
+            name: "Sea Foam",
+            price: COLOUR_PRICE,
+            base: "#7ff0d0",
+            trim: "#146250",
+            preview: "#7ff0d0",
+          },
+          {
+            id: "copper",
+            name: "Copper Rust",
+            price: COLOUR_PRICE,
+            base: "#b7541f",
+            trim: "#f2c9a8",
+            preview: "#b7541f",
+          },
+          {
+            id: "lemon",
+            name: "Lemon Ice",
+            price: COLOUR_PRICE,
+            base: "#eaff6b",
+            trim: "#5c6600",
+            preview: "#eaff6b",
+          },
+          {
+            id: "plum",
+            name: "Dark Plum",
+            price: COLOUR_PRICE,
+            base: "#5b2b6b",
+            trim: "#e0b3f0",
+            preview: "#5b2b6b",
+          },
+          {
+            id: "sand",
+            name: "Sandbank",
+            price: COLOUR_PRICE,
+            base: "#e2c98f",
+            trim: "#6b5426",
+            preview: "#e2c98f",
+          },
         ];
+
+        /* Colours were free until this build. A save already racing in one
+   keeps it: being quietly demoted to Harbour Gold because the pricing
+   changed is not something a player should have to discover on their own
+   boat. Only the colour actually in use is granted — everything else is
+   for sale like anything else. */
+        (function grandfatherColour() {
+          const worn = DEFAULT_SKINS.find((c) => c.id === progress.skin);
+          if (worn && worn.price && !progress.skins[worn.id]) {
+            progress.skins[worn.id] = true;
+            saveProgress();
+          }
+        })();
         const CHALLENGE_META = [
           ["Woodland Camo", "woodland", 215, "#526b3d"],
           ["Fish", "fish", 210, "#55bfc5"],
@@ -6115,6 +6214,186 @@
             preview:
               "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect width='20' height='30' fill='%23008751'/%3E%3Crect x='20' y='0' width='20' height='30' fill='%23ffffff'/%3E%3Crect x='40' y='0' width='20' height='30' fill='%23008751'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
           },
+          {
+            id: "germany",
+            name: "Germany",
+            price: 150,
+            base: "#dd0000",
+            trim: "#ffce00",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0.0' width='60' height='10.0' fill='%23000000'/%3E%3Crect x='0' y='10.0' width='60' height='10.0' fill='%23dd0000'/%3E%3Crect x='0' y='20.0' width='60' height='10.0' fill='%23ffce00'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "italy",
+            name: "Italy",
+            price: 150,
+            base: "#009246",
+            trim: "#ce2b37",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0.0' y='0' width='20.0' height='30' fill='%23009246'/%3E%3Crect x='20.0' y='0' width='20.0' height='30' fill='%23ffffff'/%3E%3Crect x='40.0' y='0' width='20.0' height='30' fill='%23ce2b37'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "spain",
+            name: "Spain",
+            price: 150,
+            base: "#aa151b",
+            trim: "#f1bf00",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23aa151b'/%3E%3Crect x='0' y='7.5' width='60' height='15' fill='%23f1bf00'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "netherlands",
+            name: "Netherlands",
+            price: 150,
+            base: "#ae1c28",
+            trim: "#21468b",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0.0' width='60' height='10.0' fill='%23ae1c28'/%3E%3Crect x='0' y='10.0' width='60' height='10.0' fill='%23ffffff'/%3E%3Crect x='0' y='20.0' width='60' height='10.0' fill='%2321468b'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "ireland",
+            name: "Ireland",
+            price: 150,
+            base: "#169b62",
+            trim: "#ff883e",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0.0' y='0' width='20.0' height='30' fill='%23169b62'/%3E%3Crect x='20.0' y='0' width='20.0' height='30' fill='%23ffffff'/%3E%3Crect x='40.0' y='0' width='20.0' height='30' fill='%23ff883e'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "belgium",
+            name: "Belgium",
+            price: 150,
+            base: "#fae042",
+            trim: "#000000",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0.0' y='0' width='20.0' height='30' fill='%23000000'/%3E%3Crect x='20.0' y='0' width='20.0' height='30' fill='%23fae042'/%3E%3Crect x='40.0' y='0' width='20.0' height='30' fill='%23ed2939'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "portugal",
+            name: "Portugal",
+            price: 150,
+            base: "#da291c",
+            trim: "#046a38",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='24' height='30' fill='%23046a38'/%3E%3Crect x='24' y='0' width='36' height='30' fill='%23da291c'/%3E%3Ccircle cx='24' cy='15' r='7' fill='%23ffe600'/%3E%3Ccircle cx='24' cy='15' r='4.4' fill='%23da291c'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "switzerland",
+            name: "Switzerland",
+            price: 150,
+            base: "#d52b1e",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23d52b1e'/%3E%3Crect x='26.5' y='5' width='7' height='20' fill='%23ffffff'/%3E%3Crect x='20' y='11.5' width='20' height='7' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "sweden",
+            name: "Sweden",
+            price: 150,
+            base: "#006aa7",
+            trim: "#fecc00",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23006aa7'/%3E%3Crect x='16' y='0' width='6' height='30' fill='%23fecc00'/%3E%3Crect x='0' y='12' width='60' height='6' fill='%23fecc00'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "denmark",
+            name: "Denmark",
+            price: 150,
+            base: "#c8102e",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23c8102e'/%3E%3Crect x='16' y='0' width='6' height='30' fill='%23ffffff'/%3E%3Crect x='0' y='12' width='60' height='6' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "norway",
+            name: "Norway",
+            price: 150,
+            base: "#ba0c2f",
+            trim: "#00205b",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23ba0c2f'/%3E%3Crect x='16' y='0' width='6' height='30' fill='%23ffffff'/%3E%3Crect x='0' y='12' width='60' height='6' fill='%23ffffff'/%3E%3Crect x='18' y='0' width='2' height='30' fill='%2300205b'/%3E%3Crect x='0' y='14' width='60' height='2' fill='%2300205b'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "finland",
+            name: "Finland",
+            price: 150,
+            base: "#ffffff",
+            trim: "#002f6c",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23ffffff'/%3E%3Crect x='16' y='0' width='6' height='30' fill='%23002f6c'/%3E%3Crect x='0' y='12' width='60' height='6' fill='%23002f6c'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "ukraine",
+            name: "Ukraine",
+            price: 150,
+            base: "#0057b7",
+            trim: "#ffd700",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0.0' width='60' height='15.0' fill='%230057b7'/%3E%3Crect x='0' y='15.0' width='60' height='15.0' fill='%23ffd700'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "greece",
+            name: "Greece",
+            price: 150,
+            base: "#0d5eaf",
+            trim: "#ffffff",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0.0' width='60' height='3.333' fill='%230d5eaf'/%3E%3Crect x='0' y='3.333' width='60' height='3.333' fill='%23ffffff'/%3E%3Crect x='0' y='6.667' width='60' height='3.333' fill='%230d5eaf'/%3E%3Crect x='0' y='10.0' width='60' height='3.333' fill='%23ffffff'/%3E%3Crect x='0' y='13.333' width='60' height='3.333' fill='%230d5eaf'/%3E%3Crect x='0' y='16.667' width='60' height='3.333' fill='%23ffffff'/%3E%3Crect x='0' y='20.0' width='60' height='3.333' fill='%230d5eaf'/%3E%3Crect x='0' y='23.333' width='60' height='3.333' fill='%23ffffff'/%3E%3Crect x='0' y='26.667' width='60' height='3.333' fill='%230d5eaf'/%3E%3Crect x='0' y='0' width='16.67' height='16.67' fill='%230d5eaf'/%3E%3Crect x='6.7' y='0' width='3.3' height='16.67' fill='%23ffffff'/%3E%3Crect x='0' y='6.7' width='16.67' height='3.3' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "argentina",
+            name: "Argentina",
+            price: 150,
+            base: "#74acdf",
+            trim: "#f6b40e",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0.0' width='60' height='10.0' fill='%2374acdf'/%3E%3Crect x='0' y='10.0' width='60' height='10.0' fill='%23ffffff'/%3E%3Crect x='0' y='20.0' width='60' height='10.0' fill='%2374acdf'/%3E%3Ccircle cx='30' cy='15' r='4.2' fill='%23f6b40e'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "colombia",
+            name: "Colombia",
+            price: 150,
+            base: "#fcd116",
+            trim: "#ce1126",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='15' fill='%23fcd116'/%3E%3Crect x='0' y='15' width='60' height='7.5' fill='%23003893'/%3E%3Crect x='0' y='22.5' width='60' height='7.5' fill='%23ce1126'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "chile",
+            name: "Chile",
+            price: 150,
+            base: "#d52b1e",
+            trim: "#0039a6",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='15' fill='%23ffffff'/%3E%3Crect x='0' y='15' width='60' height='15' fill='%23d52b1e'/%3E%3Crect x='0' y='0' width='20' height='15' fill='%230039a6'/%3E%3Cpolygon points='10.00,2.90 11.03,6.08 14.37,6.08 11.67,8.04 12.70,11.22 10.00,9.26 7.30,11.22 8.33,8.04 5.63,6.08 8.97,6.08' fill='%23ffffff'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "china",
+            name: "China",
+            price: 150,
+            base: "#de2910",
+            trim: "#ffde00",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23de2910'/%3E%3Cpolygon points='11.00,3.60 12.21,7.33 16.14,7.33 12.96,9.64 14.17,13.37 11.00,11.06 7.83,13.37 9.04,9.64 5.86,7.33 9.79,7.33' fill='%23ffde00'/%3E%3Cpolygon points='21.90,2.44 21.63,3.72 22.76,4.37 21.46,4.51 21.19,5.79 20.66,4.60 19.36,4.73 20.33,3.86 19.80,2.66 20.93,3.32' fill='%23ffde00'/%3E%3Cpolygon points='25.47,6.26 25.53,7.57 26.80,7.91 25.58,8.37 25.65,9.68 24.82,8.66 23.60,9.13 24.31,8.04 23.49,7.02 24.75,7.36' fill='%23ffde00'/%3E%3Cpolygon points='24.84,12.21 25.35,13.41 26.66,13.30 25.67,14.15 26.18,15.36 25.06,14.68 24.07,15.54 24.37,14.27 23.25,13.60 24.55,13.48' fill='%23ffde00'/%3E%3Cpolygon points='20.38,16.31 21.19,17.34 22.42,16.89 21.69,17.98 22.49,19.01 21.24,18.65 20.50,19.73 20.46,18.42 19.20,18.06 20.43,17.62' fill='%23ffde00'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "morocco",
+            name: "Morocco",
+            price: 150,
+            base: "#c1272d",
+            trim: "#006233",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23c1272d'/%3E%3Cpolygon points='30.00,7.00 31.80,12.53 37.61,12.53 32.91,15.94 34.70,21.47 30.00,18.06 25.30,21.47 27.09,15.94 22.39,12.53 28.20,12.53' fill='none' stroke='%23006233' stroke-width='2.8'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
+          {
+            id: "jamaica",
+            name: "Jamaica",
+            price: 150,
+            base: "#009b3a",
+            trim: "#ffb81c",
+            preview:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Crect x='0' y='0' width='60' height='30' fill='%23000000'/%3E%3Cpolygon points='0,0 60,0 30,15' fill='%23009b3a'/%3E%3Cpolygon points='0,30 60,30 30,15' fill='%23009b3a'/%3E%3Cpolygon points='0,0 5.5,0 60,27.2 60,30 54.5,30 0,2.8' fill='%23ffb81c'/%3E%3Cpolygon points='60,0 54.5,0 0,27.2 0,30 5.5,30 60,2.8' fill='%23ffb81c'/%3E%3C/svg%3E\") 0 0 / 100% 100% no-repeat",
+          },
         ];
 
         /* ANIMATED SKINS — the "Other" category. Every other skin in the game
@@ -6341,7 +6620,10 @@
    Bit positions are assigned by array order. Appending a course or a skin
    is safe; inserting one in the middle is not, which is what the version
    byte is for. */
-        const TRANSFER_VERSION = 1;
+        /* 2: the colour list grew, and bit positions come from array order,
+   so every skin after it moved. Codes written by version 1 are refused
+   rather than silently decoded into the wrong skins. */
+        const TRANSFER_VERSION = 2;
         const TRANSFER_SALT = "tide-runner/transfer/v1";
         // The most a code can hand over, however large the number inside it.
         const TRANSFER_COIN_CAP = 2500;
