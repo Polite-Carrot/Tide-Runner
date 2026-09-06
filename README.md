@@ -609,6 +609,13 @@ screen and may toggle its `scrolls` class, but that class no longer does anythin
 sheet itself doesn't overflow any more, only `.bh-scroll` does — so `#skinsMenu .sheet.scrolls`
 is overridden back to `overflow: hidden` regardless of which way that toggle lands.
 
+**Gear prices are live.** Net 12, Nitro 15, Torpedo 20, Tracer 30 — well under a
+flag's 150, on purpose: gear is bought to be spent, so the loop wants to be buy
+it, use it, buy another. They came down from 25/45/30/60, which had a single
+torpedo costing most of a race's winnings and turned every purchase into a
+decision. Against `coinsForFinish()`, a three-lap win on Normal pays 22, so a
+net is half a race and a tracer about one and a half.
+
 **Gear is a consumable, not a skin.** A flag is bought once and stays bought;
 `progress.skins[id]` only ever needs to be a boolean. Gear gets bought, used, and bought again,
 so it needed an actual count: `progress.gear[id]`, incremented by `buyGear()` and decremented

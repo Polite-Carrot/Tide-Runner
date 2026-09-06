@@ -6162,16 +6162,15 @@
         /* Gear: consumables rather than unlocks, so progress.gear[id] is a
    count rather than the boolean progress.skins[id] every skin shares.
    Buying increments it; using one in a race decrements it. */
-        // TESTING ONLY — every price below is 1 coin so the buy/carry/use
-        // loop is cheap to exercise. Restore the real prices (net 12,
-        // torpedo 20, nitro 15, tracer 30 — dropped from 25/45/30/60 so a
-        // single item costs less than a flag, supporting the "buy it, use
-        // it, buy another" loop instead of fighting it) before shipping.
+        /* Priced well under a flag (150), on purpose: gear is bought to be
+   spent, so the loop wants to be buy it, use it, buy another. These came
+   down from 25/45/30/60, which had a single torpedo costing most of a
+   race's winnings and turned every purchase into a decision. */
         const GEAR_ITEMS = [
           {
             id: "net",
             name: "Net",
-            price: 1,
+            price: 12,
             desc: "Lay it across the channel — the next boat through loses way for 2s.",
             box: "#0c4257",
             draw(c) {
@@ -6196,7 +6195,7 @@
           {
             id: "torpedo",
             name: "Torpedo",
-            price: 1,
+            price: 20,
             desc: "Straight down your wake — a clean hit knocks their bow off-line.",
             box: "#1c1420",
             draw(c) {
@@ -6234,7 +6233,7 @@
           {
             id: "nitro",
             name: "Nitro Charge",
-            price: 1,
+            price: 15,
             desc: "A few seconds of raw thrust, once, whenever you trigger it.",
             box: "#241405",
             draw(c) {
@@ -6257,7 +6256,7 @@
           {
             id: "tracer",
             name: "Tracer Torpedo",
-            price: 1,
+            price: 30,
             desc: "Locks onto the boat ahead of you and curves to chase them down.",
             box: "#0a1f22",
             draw(c) {
