@@ -856,6 +856,31 @@ boolean, because "they said no" and "we haven't asked" need different copy — t
 privacy sheet says which regime refused, since UMP's answer can be changed by the
 button right there and Apple's only in iOS Settings.
 
+### What Firebase is told about ads
+
+**The consent signal has to be derived, not passed in.** Both ad regimes
+resolve lazily — UMP at the first ad request, ATT at the first ad the player
+chose to watch — so any caller running before that reads the optimistic
+defaults (`npa` false, `attStatus` null) and concludes yes. `setFbConsent` used
+to take the answer as an argument, and both of its callers ran at startup: one
+when the player answers the usage-data banner, one on load. Neither had an
+answer to give yet, and nothing re-sent it afterwards, so a player who denied
+tracking still had `AD_PERSONALIZATION: GRANTED` standing for the whole session.
+
+It now derives the value from `adsPersonalisedGranted()`, which requires the
+answer to be positively established: UMP resolved, and on iOS an explicit
+`authorized` from Apple. Anything else is denied. That is Consent Mode's own
+rule — default to denied, update when the answer arrives — so both regimes
+re-send the signal as they settle, and the startup guess is corrected rather
+than left standing.
+
+Worth being clear about what this was and wasn't. iOS enforces ATT at the OS
+level, so a player who denied tracking was never actually tracked and never got
+personalised ads: `adNpa()` already carried Apple's answer onto every ad
+request. The defect was that our own analytics recorded a consent state
+contradicting what the player chose — a reporting inaccuracy, not a leak, but
+exactly the kind that is indefensible in a compliance review.
+
 ### The tutorial
 
 **A separate course, deliberately kept out of `COURSES`.** Everything downstream

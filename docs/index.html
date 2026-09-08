@@ -15053,10 +15053,25 @@
           }
           return _fb;
         }
-        async function setFbConsent(accepted, adsPersonalized) {
+        /* Whether an advert may be personalised, for the consent signal as
+   well as the request. It has to be positively established, not assumed:
+   both regimes are resolved lazily at the first ad, and a caller running
+   before that would otherwise read the optimistic defaults (npa false,
+   attStatus null) and conclude yes. Consent Mode's own rule is to default
+   to denied and update when the answer arrives — so that is what this
+   does, and setFbConsent is re-sent by each regime as it settles. */
+        let adConsentResolved = false;
+        function adsPersonalisedGranted() {
+          if (!adConsentResolved) return false;
+          // Apple's answer is required on iOS, and only an explicit yes counts
+          if (adPlatform() === "ios" && attStatus !== "authorized")
+            return false;
+          return !adConsent.npa;
+        }
+        async function setFbConsent(accepted) {
           const fb = firebaseAnalytics();
           if (!fb) return;
-          const ads = adsPersonalized === false ? "DENIED" : "GRANTED";
+          const ads = adsPersonalisedGranted() ? "GRANTED" : "DENIED";
           const ana = accepted ? "GRANTED" : "DENIED";
           try {
             await fb.setEnabled({ enabled: !!accepted });
@@ -15117,13 +15132,17 @@
                 ),
                 canChange: info.privacyOptionsRequirementStatus === "REQUIRED",
               };
+              adConsentResolved = true;
               syncPrivacyRow();
+              setFbConsent(SETTINGS.analytics);
               return adConsent;
             })
             .catch(() => {
               /* UMP itself failed. Serve non-personalised rather than nothing:
                  the player still gets their reward and nobody is tracked. */
               adConsent = { canRequestAds: true, npa: true, canChange: false };
+              adConsentResolved = true;
+              setFbConsent(SETTINGS.analytics);
               return adConsent;
             });
           return consentAsked;
@@ -15173,11 +15192,15 @@
               }
               attStatus = status;
               syncPrivacyRow();
+              // the startup signal was sent before this prompt existed, so it
+              // has to be corrected now the player has actually answered
+              setFbConsent(SETTINGS.analytics);
               return true;
             })
             .catch(() => {
               // the plugin threw: assume nothing, read nothing
               attStatus = "denied";
+              setFbConsent(SETTINGS.analytics);
               return true;
             });
           attAsked = run.then((settled) => {
@@ -16071,7 +16094,7 @@
           window["ga-disable-" + GA_ID] = !accepted;
           if (accepted) gaEnable();
           // Native Firebase Analytics respects the same choice.
-          setFbConsent(accepted, adConsent && !adConsent.npa);
+          setFbConsent(accepted);
           syncConsentBanner();
           syncToggles();
           saveSettings();
@@ -16084,8 +16107,7 @@
         syncConsentBanner();
         // Returning player who already consented: bring native Firebase
         // Analytics up alongside the web gtag path enabled in the head.
-        if (SETTINGS.analytics === true)
-          setFbConsent(true, adConsent && !adConsent.npa);
+        if (SETTINGS.analytics === true) setFbConsent(true);
 
         analyticsTog.onclick = () =>
           resolveAnalyticsConsent(!SETTINGS.analytics);
