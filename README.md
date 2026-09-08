@@ -447,11 +447,21 @@ sentence. Worth checking rather than assuming: `unlocksNext` only ever
 _described_ the unlock, it never performed it, so courses still unlock exactly as
 before.
 
-**The Boathouse gear blurb** went the same way — a paragraph explaining that gear
-is a consumable rather than a permanent unlock. The section head already says
-"Buy with coins · used up in the race", and every card already shows Owned and a
-price. That paragraph was the difference between seeing two gear items and seeing
-all four without scrolling.
+**The Boathouse gear section lost all of its prose** — the paragraph explaining
+that gear is a consumable, the "Buy with coins · used up in the race" line under
+the heading, and the description on every item. What is left is what a gear item
+actually needs to say: an icon, its name, how many you hold, what it costs.
+
+The rows became tiles to match, two up on a phone and four across on anything
+wider — with exactly four items those are the only two counts that come out
+even. The whole Boathouse now fits one phone screen: coins, name, spin, boat,
+all four gear items and Done, where gear alone used to fill it.
+
+The descriptions are off the tile but still on the element, as a `title` and an
+`aria-label` on the buy button. They cost no space, still answer a hover on a
+desktop, and are what a screen reader gets instead of a bare name — but on a
+phone they are effectively gone, so the tutorial's gear step is now the only
+place a player is told what a torpedo does.
 
 The tutorial and time-trial subtitles stay. Those two say something that is
 nowhere else on the screen: the tutorial explains that nothing counted and where

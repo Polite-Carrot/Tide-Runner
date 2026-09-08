@@ -2342,19 +2342,36 @@
         filter: drop-shadow(0 0 2px rgba(4, 20, 28, 0.9));
       }
 
+      /* Four tiles rather than four rows: an icon, its name and its price is
+         the whole of what a gear item needs to say. Two up on a phone and
+         four across on anything wider — with exactly four items, those are
+         the only two counts that come out even. */
       .gear-list {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
       }
-      .gear-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+      @media (min-width: 560px) {
+        .gear-list {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      .gear-tile {
+        display: grid;
+        justify-items: center;
+        align-content: start;
+        gap: 7px;
         border: 1px solid var(--hair);
         background: rgba(var(--tint), 0.04);
         border-radius: 2px;
-        padding: 10px;
+        padding: 11px 8px 9px;
+        text-align: center;
+      }
+      .gear-tile .name {
+        font-family: var(--display);
+        font-size: 13px;
+        line-height: 1.15;
+        letter-spacing: 0.02em;
       }
       .gear-icon-box {
         width: 44px;
@@ -2367,31 +2384,6 @@
       .gear-icon {
         width: 26px;
         height: 26px;
-      }
-      .gear-info {
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-      .gear-info b {
-        display: block;
-        font-family: var(--display);
-        font-size: 16px;
-        letter-spacing: 0.02em;
-      }
-      .gear-info .desc {
-        display: block;
-        font-size: 10px;
-        line-height: 1.5;
-        color: rgba(234, 247, 244, 0.5);
-        margin-top: 2px;
-        max-width: 42ch;
-      }
-      .gear-buy {
-        flex: 0 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 6px;
       }
       .gear-owned {
         font-size: 10.5px;
@@ -2415,6 +2407,7 @@
         padding: 7px 11px;
         cursor: pointer;
         white-space: nowrap;
+        width: 100%;
       }
       .buy-btn:disabled {
         background: rgba(255, 216, 74, 0.25);
@@ -2424,14 +2417,6 @@
       @media (max-width: 480px) {
         .boat-summary {
           flex-wrap: wrap;
-        }
-        .gear-row {
-          flex-wrap: wrap;
-        }
-        .gear-buy {
-          flex-direction: row;
-          align-items: center;
-          margin-left: auto;
         }
       }
 
@@ -2982,7 +2967,6 @@
           <div class="bh-section">
             <div class="bh-section-head">
               <p class="label" style="margin: 0">Gear</p>
-              <span class="bh-sub">Buy with coins · used up in the race</span>
             </div>
             <div class="gear-list" id="gearList"></div>
           </div>
@@ -7308,27 +7292,32 @@
         }
         function gearRow(item) {
           const row = document.createElement("div");
-          row.className = "gear-row";
+          row.className = "gear-tile";
           row.dataset.id = item.id;
+          /* The description is off the tile but kept on the element: it costs
+             no space, still answers a hover on a desktop, and is what a screen
+             reader gets instead of a bare name. */
+          row.title = item.name + " — " + item.desc;
           const affordable = progress.coins >= item.price;
           row.innerHTML =
             '<span class="gear-icon-box" style="background:' +
             item.box +
             '"><canvas class="gear-icon" width="40" height="40"></canvas></span>' +
-            '<div class="gear-info"><b>' +
+            '<b class="name">' +
             item.name +
-            '</b><span class="desc">' +
-            item.desc +
-            "</span></div>" +
-            '<div class="gear-buy">' +
+            "</b>" +
             '<span class="gear-owned">Owned <b class="ownedAmt">' +
             gearOwned(item.id) +
             "</b></span>" +
             '<button class="buy-btn" type="button"' +
             (affordable ? "" : " disabled") +
-            ">Buy · " +
+            ' aria-label="Buy ' +
+            item.name +
+            " for " +
             item.price +
-            "</button></div>";
+            ' coins">Buy · ' +
+            item.price +
+            "</button>";
           drawGearIcon(row.querySelector(".gear-icon"), item);
           row.querySelector(".buy-btn").onclick = () => {
             if (buyGear(item)) {
