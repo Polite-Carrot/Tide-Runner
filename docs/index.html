@@ -1127,35 +1127,42 @@
 
       /* ---------- usage-data consent banner ---------- */
       /* Shown once, on a player's first visit, before gtag is ever requested —
-         not an after-the-fact opt-out. Anchored to the bottom rather than a
-         full-screen dialog: it doesn't block the menu underneath, and nothing
-         it gates (trackEvent, gaEnable) depends on it being answered before
-         the player can do anything else — declining costs nothing. */
+         not an after-the-fact opt-out. Full-screen and forced: nothing behind
+         it is reachable until Accept or Decline is tapped, and it is gated
+         behind #boot being fully gone (see bootGone in the script) so it
+         never shows while the startup logo is still on screen. */
       #consentBanner {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 8;
+        inset: 0;
+        height: var(--app-h);
+        z-index: 50;
         display: none;
-        background: rgba(4, 20, 28, 0.94);
-        border-top: 1px solid var(--hair);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        padding: 14px calc(16px + env(safe-area-inset-right))
-          calc(14px + env(safe-area-inset-bottom))
-          calc(16px + env(safe-area-inset-left));
-        gap: 12px;
         align-items: center;
-        flex-wrap: wrap;
+        justify-content: center;
+        padding: calc(20px + env(safe-area-inset-top))
+          calc(20px + env(safe-area-inset-right))
+          calc(20px + env(safe-area-inset-bottom))
+          calc(20px + env(safe-area-inset-left));
+        background: radial-gradient(
+          120% 90% at 50% 0%,
+          rgba(12, 66, 87, 0.55),
+          rgba(4, 20, 28, 0.94)
+        );
       }
       #consentBanner.on {
         display: flex;
       }
-      #consentBanner p {
-        flex: 1 1 320px;
+      #consentBanner .sheet.panel {
+        display: grid;
+        gap: 16px;
+      }
+      #consentBanner h2 {
         margin: 0;
-        font-size: 12.5px;
+        font-family: var(--display);
+      }
+      #consentBanner p {
+        margin: 0;
+        font-size: 14px;
         line-height: 1.6;
         color: rgba(234, 247, 244, 0.82);
       }
@@ -1164,20 +1171,21 @@
       }
       #consentBanner .consent-actions {
         display: flex;
-        gap: 8px;
-        flex: 0 0 auto;
+        gap: 10px;
+        flex-wrap: wrap;
       }
       /* Deliberately not .go-btn / .ghost: those read as "primary" and
          "secondary", and a real choice needs equal weight on both sides —
          same size, same font, one filled and one outlined rather than one
          loud and one easy to miss. */
       .consent-btn {
+        flex: 1 1 auto;
         font-family: var(--display);
         font-weight: 700;
         font-size: 15px;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        padding: 9px 20px;
+        padding: 12px 20px;
         cursor: pointer;
         border: 1px solid var(--chart);
         white-space: nowrap;
@@ -2763,24 +2771,28 @@
     <button class="pause-btn" id="pauseBtn" aria-label="Pause"></button>
     <div class="gear-stack" id="gearStack"></div>
 
-    <!-- usage-data consent banner: shown once, before analytics is ever
-         requested. Send usage data in Settings is the same choice, editable
-         any time afterward. -->
+    <!-- usage-data consent: full-screen and forced, shown once before
+         analytics is ever requested, and only after the boot logo is fully
+         gone (see bootGone). Send usage data in Settings is the same
+         choice, editable any time afterward. -->
     <div
       id="consentBanner"
       role="dialog"
-      aria-live="polite"
+      aria-modal="true"
       aria-label="Usage data"
     >
-      <p>
-        This game can send anonymous usage data (which courses and difficulties
-        get played) to help decide where to spend effort next. Nothing that
-        identifies you. Change your mind any time in Settings.
-        <a href="privacy.html">Privacy</a>.
-      </p>
-      <div class="consent-actions">
-        <button class="consent-btn" id="consentDecline">Decline</button>
-        <button class="consent-btn" id="consentAccept">Accept</button>
+      <div class="sheet panel" style="max-width: 460px">
+        <h2>Before you start</h2>
+        <p>
+          This game can send anonymous usage data (which courses and difficulties
+          get played) to help decide where to spend effort next. Nothing that
+          identifies you. Change your mind any time in Settings.
+          <a href="privacy.html">Privacy</a>.
+        </p>
+        <div class="consent-actions">
+          <button class="consent-btn" id="consentDecline">Decline</button>
+          <button class="consent-btn" id="consentAccept">Accept</button>
+        </div>
       </div>
     </div>
 
@@ -7388,19 +7400,9 @@
         function resize() {
           // Publish the measured window height for the full-screen layers to
           // size to, then measure the canvas as it was actually laid out.
-          // The consent banner sits outside this system entirely (a fixed
-          // element of its own, not a .screen), so when it's showing its
-          // height comes straight off the banner and out of --app-h — the
-          // same trick used for the safe-area insets, and for the same
-          // reason: Start race must stay reachable without a scroll, first
-          // visit included, rather than the banner just landing on top of it.
-          const bannerH =
-            consentBannerEl && consentBannerEl.classList.contains("on")
-              ? consentBannerEl.getBoundingClientRect().height
-              : 0;
           document.documentElement.style.setProperty(
             "--app-h",
-            viewportHeight() - bannerH + "px",
+            viewportHeight() + "px",
           );
           const r = cv.getBoundingClientRect();
           const w = Math.round(r.width);
@@ -8693,9 +8695,16 @@
         }
 
         const boot = document.getElementById("boot");
+        // The consent modal must never appear while this splash is still on
+        // screen — syncConsentBanner() checks this before ever showing.
+        let bootGone = false;
         setTimeout(() => {
           boot.classList.add("done");
-          setTimeout(() => boot.remove(), 600);
+          setTimeout(() => {
+            boot.remove();
+            bootGone = true;
+            syncConsentBanner();
+          }, 600);
         }, 2300);
 
         /* ============================================================
@@ -14996,12 +15005,10 @@
    and no ad network, so the timeout below stands in — which is also what
    keeps the browser build playable and testable. */
         const AD_UNITS = {
-          // Production interstitial ad unit IDs from AdMob Console.
-          // Rewarded is still on Google's public test units — swap in real
-          // IDs before shipping rewarded features.
+          // Production ad unit IDs from AdMob Console.
           rewarded: {
-            android: "ca-app-pub-3940256099942544/5224354917",
-            ios: "ca-app-pub-3940256099942544/1712485313",
+            android: "ca-app-pub-2022992563510125/6157432935",
+            ios: "ca-app-pub-2022992563510125/2993203223",
           },
           interstitial: {
             android: "ca-app-pub-2022992563510125/1985223361",
@@ -15701,21 +15708,15 @@
         }
 
         document.getElementById("start").onclick = () => {
-          // the first time out, Start means the tutorial — see syncStartBtn
-          if (!progress.tutorialDone) return startTutorial();
           initAudio();
           plotFit = null;
           startRace();
         };
-        /* Says what the button will actually do. Once the tutorial has been
-   run — or skipped — it goes back to being Start race for good. */
+        /* Tutorial is opt-in only, from Settings > How to play — never forced
+   on first launch. Start always starts the current mode. */
         const startBtnEl = document.getElementById("start");
         function syncStartBtn() {
-          startBtnEl.textContent = !progress.tutorialDone
-            ? "Start tutorial"
-            : timeTrial
-              ? "Start trial"
-              : "Start race";
+          startBtnEl.textContent = timeTrial ? "Start trial" : "Start race";
         }
         syncStartBtn();
         /* ---------- privacy & data ---------- */
@@ -16080,10 +16081,10 @@
           return typeof SETTINGS.analytics !== "boolean";
         }
         function syncConsentBanner() {
-          const show = bannerPending() && state === S.menu;
+          const show = bootGone && bannerPending() && state === S.menu;
           if (show === consentBannerEl.classList.contains("on")) return;
           consentBannerEl.classList.toggle("on", show);
-          resize(); // --app-h has to leave it room, or stop leaving room
+          resize();
         }
 
         function resolveAnalyticsConsent(accepted) {
@@ -16097,10 +16098,32 @@
           saveSettings();
         }
 
-        document.getElementById("consentAccept").onclick = () =>
+        document.getElementById("consentAccept").onclick = () => {
           resolveAnalyticsConsent(true);
-        document.getElementById("consentDecline").onclick = () =>
+          primeAttOnboarding();
+        };
+        document.getElementById("consentDecline").onclick = () => {
           resolveAnalyticsConsent(false);
+          primeAttOnboarding();
+        };
+        /* Runs once, right after the usage-data modal closes — the one
+   moment every player passes through at launch. Folds Apple's ATT prompt
+   into that same beat rather than surprising a player who just wanted to
+   tap Double Coins mid-race with a system dialog. UMP (adConsentInit) goes
+   first, same order used everywhere else ad consent is resolved. Costs
+   every player a small init they didn't ask for if they never touch an
+   ad — the trade for one clean onboarding instead of an interruption
+   later. Android has no ATT prompt, so this is a no-op there. */
+        async function primeAttOnboarding() {
+          if (adPlatform() !== "ios") return;
+          try {
+            if (!(await adMobInit())) return;
+            await adConsentInit();
+            await attEnsure(true);
+          } catch (e) {
+            /* Onboarding must never block play. */
+          }
+        }
         syncConsentBanner();
         // Returning player who already consented: bring native Firebase
         // Analytics up alongside the web gtag path enabled in the head.
