@@ -360,8 +360,7 @@ more than double, not "a bit more."
 `radial-gradient` circle with an inset rim, the same technique the toggle switches already use
 elsewhere in this file, reused at two sizes. On the results screen it sits in its own badge
 next to the amount earned (`#coinReward`, a `.pop` entrance animation that re-triggers on every
-finish and is skipped under `prefers-reduced-motion`), separate from the plain-English summary
-sentence rather than folded into it. On the Skins screen it sits beside the running balance.
+finish and is skipped under `prefers-reduced-motion`). On the Skins screen it sits beside the running balance.
 
 **Shop skins** are bought with coins rather than earned, for cosmetics that don't fit a
 time-and-course challenge — national flags, named after the actual country rather than a
@@ -429,6 +428,35 @@ finer detail than that was left out.
 
 Both changes moved bit positions in the transfer code, hence `TRANSFER_VERSION`
 2 — see below.
+
+### Two blocks of text that had to go
+
+**The results screen used to carry a summary sentence** under the placing —
+course, laps, your best lap, any medal, any records, any unlock, and a line of
+flavour. It read as a wall of small type, it restated the lap time the table
+directly below it already showed, and it pushed the coin badge, the ad offer and
+all four buttons down the screen. It is gone for a race. The placing is the
+headline, the coin badge sits beside it, the table carries the times, and a skin
+unlock still gets its own popup — every part of it that was load-bearing already
+had somewhere better to live. `#rSub:empty` collapses, so the element takes no
+room rather than leaving a gap where the sentence was.
+
+That took `bits`, `tail`, `medalNow`, `medalUp`, `medalAtStart`, `nextIdx`,
+`nextCourse` and `unlocksNext` out with it — every one existed only to build that
+sentence. Worth checking rather than assuming: `unlocksNext` only ever
+_described_ the unlock, it never performed it, so courses still unlock exactly as
+before.
+
+**The Boathouse gear blurb** went the same way — a paragraph explaining that gear
+is a consumable rather than a permanent unlock. The section head already says
+"Buy with coins · used up in the race", and every card already shows Owned and a
+price. That paragraph was the difference between seeing two gear items and seeing
+all four without scrolling.
+
+The tutorial and time-trial subtitles stay. Those two say something that is
+nowhere else on the screen: the tutorial explains that nothing counted and where
+to find it again, and the trial carries the delta against your best, which is the
+entire point of a trial.
 
 ### Chain order
 

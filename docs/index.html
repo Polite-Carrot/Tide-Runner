@@ -1661,6 +1661,11 @@
         text-align: center;
         transition: top 0.3s ease;
       }
+      /* Nothing to say after a race any more, so the element must take no
+         room rather than leave a gap under the placing. */
+      #rSub:empty {
+        display: none;
+      }
       #coachCount {
         display: block;
         margin-top: 7px;
@@ -2979,11 +2984,6 @@
               <p class="label" style="margin: 0">Gear</p>
               <span class="bh-sub">Buy with coins · used up in the race</span>
             </div>
-            <p class="tag" style="margin: 0 0 10px">
-              One runs out and you buy another — not something you unlock once.
-              Everything you own comes with you into the race; racing without
-              any is free.
-            </p>
             <div class="gear-list" id="gearList"></div>
           </div>
         </div>
@@ -7905,9 +7905,6 @@
           wake = [],
           trail = [],
           trailAcc = 0;
-        // what the course was worth before this race, so the results screen
-        // can tell a first gold from a gold you already had
-        let medalAtStart = null;
         let newLapRecord = false,
           newTotalRecord = false,
           newTtRecord = false,
@@ -8161,12 +8158,6 @@
 
         function startRace() {
           track = tutorial ? TUTORIAL_TRACK : TRACKS[courseIdx];
-          medalAtStart = tutorial
-            ? null
-            : medalFor(
-                track.name,
-                timeTrial ? bestTtFor(track.name) : bestLapFor(track.name),
-              );
           if (tutorial) startCoaching();
           else stopCoaching();
           // same layout every attempt, and the one the ghost was set on
@@ -8255,7 +8246,6 @@
           ghostBegin();
           newLapRecord = false;
           newTotalRecord = false;
-          medalAtStart = null;
           newTtRecord = false;
           cam.x = me.x;
           cam.y = me.y;
@@ -14047,19 +14037,12 @@
           hapticNote("SUCCESS", 0);
           const r = frameRanked,
             place = r.indexOf(me) + 1;
-          // the course this one unlocks is the next on its own chain, not the
-          // next in the whole list — those differ at a world boundary
           /* A tutorial finish is inert: it unlocks nothing, completes no
              course and pays nothing. Only the fact that it happened is
-             worth remembering, so the menu stops offering it. */
-          const nextIdx = tutorial || timeTrial ? -1 : nextInTheme(courseIdx);
-          const nextCourse = nextIdx >= 0 ? TRACKS[nextIdx] : null;
-          const unlocksNext =
-            nextCourse &&
-            !courseUnlocked(nextIdx) &&
-            !progress.completed[track.name];
-          // challenge skins are one per river course; lava courses don't carry
-          // one yet, so there's simply nothing to award on them
+             worth remembering, so the menu stops offering it.
+
+             Challenge skins are one per river course; lava courses don't
+             carry one yet, so there's simply nothing to award on them. */
           const challenge =
             tutorial || timeTrial ? null : CHALLENGE_SKINS[courseIdx];
           const unlockedSkin =
@@ -14089,26 +14072,12 @@
               : place === 1
                 ? "Won it"
                 : ordinal(place);
-          const tail =
-            place === 1
-              ? "Clean water all the way home."
-              : "The leader is still out there somewhere.";
-          const bits = ["your best lap " + fmt(me.bestLap)];
-          /* Medals are derived from the lap, so this is simply what the lap
-             just driven is worth — and worth saying only when it beats what
-             the course already held. */
-          const medalNow = tutorial ? null : medalFor(track.name, me.bestLap);
-          const medalUp =
-            medalNow &&
-            (!medalAtStart || medalNow.mult < medalAtStart.mult) &&
-            !(medalAtStart && medalNow.id === medalAtStart.id);
-          if (medalUp) bits.push(medalNow.name.toLowerCase() + " lap");
-          if (newLapRecord) bits.push("new lap record");
-          if (newTotalRecord) bits.push("new " + totalLaps + "-lap record");
-          if (unlocksNext && courseUnlocked(nextIdx))
-            bits.push("unlocked " + nextCourse.name);
-          if (unlockedSkin) bits.push("unlocked " + challenge.name + " skin");
-          if (unlockedDiamond) bits.push("unlocked Diamond Camo");
+          /* A race says nothing here now: the placing is the headline, the
+             coin badge is beside it and the table below carries the times.
+             The sentence that used to sit here restated the lap the table
+             already showed and pushed everything else down the screen.
+             Tutorial and trial keep theirs — those two have something to say
+             that is nowhere else on the screen. */
           rSub.textContent = tutorial
             ? "That's steering, throttle and gear. Nothing here counted — " +
               "pick a course and the real thing starts. You can run this " +
@@ -14127,13 +14096,7 @@
                     : " · first one on the board"
                   : " · best to beat " + fmt(bestTtFor(track.name))) +
                 ". The ghost will be running this next time."
-              : track.name +
-                " · " +
-                totalLaps +
-                " laps · " +
-                bits.join(" · ") +
-                ". " +
-                tail;
+              : "";
           // The coin count has its own graphic badge rather than sitting in
           // that sentence too — .pop re-triggers the entrance animation on
           // every finish (removed and re-added, since a class already
