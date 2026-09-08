@@ -8144,8 +8144,25 @@
    trackEvent rather than track: track is already the current course
    object, reassigned constantly below. */
         function trackEvent(name, params) {
-          if (SETTINGS.analytics && typeof window.gtag === "function")
+          if (!SETTINGS.analytics) return;
+          if (typeof window.gtag === "function")
             window.gtag("event", name, params || {});
+          // On native, also route to Firebase Analytics. Parameter names are
+          // limited to 40 chars and values to 100; trim quietly rather than
+          // reject.
+          const fb = firebaseAnalytics();
+          if (fb) {
+            const safe = {};
+            if (params)
+              for (const k in params) {
+                if (Object.prototype.hasOwnProperty.call(params, k)) {
+                  const v = params[k];
+                  safe[String(k).slice(0, 40)] =
+                    typeof v === "string" ? v.slice(0, 100) : v;
+                }
+              }
+            fb.logEvent({ name: name, params: safe }).catch(() => {});
+          }
         }
 
         function startRace() {
@@ -14987,23 +15004,22 @@
    and no ad network, so the timeout below stands in — which is also what
    keeps the browser build playable and testable. */
         const AD_UNITS = {
-          // Google's published test units, taken from the plugin's own native
-          // source. Replace both with your AdMob unit IDs and set AD_TESTING
-          // to false — nothing else here needs to change.
+          // Production interstitial ad unit IDs from AdMob Console.
+          // Rewarded is still on Google's public test units — swap in real
+          // IDs before shipping rewarded features.
           rewarded: {
             android: "ca-app-pub-3940256099942544/5224354917",
             ios: "ca-app-pub-3940256099942544/1712485313",
           },
           interstitial: {
-            android: "ca-app-pub-3940256099942544/1033173712",
-            ios: "ca-app-pub-3940256099942544/4411468910",
+            android: "ca-app-pub-2022992563510125/1985223361",
+            ios: "ca-app-pub-2022992563510125/6525786950",
           },
         };
-        /* While this is true the plugin substitutes Google's sample unit for
-   whatever format is being asked for and ignores the ids above entirely
-   (see AdViewIdHelper.getFinalAdId) — so swapping in live ids without
-   also setting this to false changes nothing at all. */
-        const AD_TESTING = true;
+        /* Off in production. Any unit ID still under Google's test-publisher
+   prefix (ca-app-pub-3940256099942544) is auto-flagged as testing per-request
+   below, so rewarded on the sample IDs still returns test creatives. */
+        const AD_TESTING = false;
         // How long the stand-in "ad" runs on the web, matched to the progress
         // bar's CSS transition so the two finish together.
         const AD_FAKE_MS = 2200;
@@ -15019,6 +15035,44 @@
         function adPlatform() {
           const c = window.Capacitor;
           return (c && c.getPlatform && c.getPlatform()) || "web";
+        }
+        /* Firebase Analytics on native. Web still goes through gtag (loaded
+   at the top of this file when SETTINGS.analytics === true). The native
+   SDK is off by default via the plist / manifest flags; setFbConsent()
+   below flips it on when the player consents. registerPlugin() gives us
+   a proxy even before the bridge has resolved. */
+        let _fb = null;
+        function firebaseAnalytics() {
+          if (_fb) return _fb;
+          const C = window.Capacitor;
+          if (!C) return null;
+          if (C.registerPlugin) {
+            _fb = C.registerPlugin("FirebaseAnalytics");
+          } else if (C.Plugins && C.Plugins.FirebaseAnalytics) {
+            _fb = C.Plugins.FirebaseAnalytics;
+          }
+          return _fb;
+        }
+        async function setFbConsent(accepted, adsPersonalized) {
+          const fb = firebaseAnalytics();
+          if (!fb) return;
+          const ads = adsPersonalized === false ? "DENIED" : "GRANTED";
+          const ana = accepted ? "GRANTED" : "DENIED";
+          try {
+            await fb.setEnabled({ enabled: !!accepted });
+            if (fb.setConsent) {
+              await fb.setConsent({
+                consents: [
+                  { type: "ANALYTICS_STORAGE", status: ana },
+                  { type: "AD_STORAGE", status: ads },
+                  { type: "AD_USER_DATA", status: ads },
+                  { type: "AD_PERSONALIZATION", status: ads },
+                ],
+              });
+            }
+          } catch (e) {
+            /* Analytics must never break play. */
+          }
         }
         /* ---------- ad consent (Google UMP) ----------
    Google requires a certified consent platform before personalised ads
@@ -16016,6 +16070,8 @@
           SETTINGS.analytics = accepted;
           window["ga-disable-" + GA_ID] = !accepted;
           if (accepted) gaEnable();
+          // Native Firebase Analytics respects the same choice.
+          setFbConsent(accepted, adConsent && !adConsent.npa);
           syncConsentBanner();
           syncToggles();
           saveSettings();
@@ -16026,6 +16082,10 @@
         document.getElementById("consentDecline").onclick = () =>
           resolveAnalyticsConsent(false);
         syncConsentBanner();
+        // Returning player who already consented: bring native Firebase
+        // Analytics up alongside the web gtag path enabled in the head.
+        if (SETTINGS.analytics === true)
+          setFbConsent(true, adConsent && !adConsent.npa);
 
         analyticsTog.onclick = () =>
           resolveAnalyticsConsent(!SETTINGS.analytics);

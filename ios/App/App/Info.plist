@@ -71,7 +71,7 @@
 	<key>GADIsAdManagerApp</key>
 	<true/>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-2022992563510125~4392182869</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
@@ -81,5 +81,18 @@
 	</array>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Tide Runner uses this to show adverts that are more relevant to you. Your races, times and progress are never shared.</string>
+	<!-- Firebase Analytics starts collecting on native SDK init unless these
+	     flags default it off. trackEvent() in docs/index.html re-enables it
+	     via the Capacitor Firebase Analytics plugin once the user consents. -->
+	<key>FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED</key>
+	<true/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS</key>
+	<false/>
 </dict>
 </plist>
