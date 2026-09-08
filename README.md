@@ -903,12 +903,30 @@ keyboard — an arrow key does not turn with the boat. The keycaps are the
 spotlight target too, so the bubble placement and the dimming need no special
 case.
 
+**Three seconds each, counted down where the player can see it.** The steps
+used to clear on a flick — 0.55s of throttle, 0.4s of steering — which read as
+the tutorial skipping past itself rather than teaching anything. Touch, throttle
+and steering now each want three seconds of the input, with the number in the
+bubble counting 3, 2, 1, Go. It is lit only while the input is actually being
+given, so it reads as a response rather than a clock running down at the player.
+Gear has no timer at all: it waits to be fired.
+
+**The count drains rather than resets.** Holding a stick inside a threshold for
+three continuous seconds is not a steady thing — the boat turns under you and a
+wobble drops you below it for a frame — and wiping the whole count on each of
+those is what would make a three-second step feel broken rather than hard. It
+drains at 1.5x the rate it fills, so a third of a second off costs about half a
+second of progress and it is still unmistakably a hold.
+
 **But a step nobody performs must not hold the tutorial hostage.** A player who
 never quite pushes the stick far enough sideways would sit on "steer with the
 same thumb" for the whole lap and never be shown their gear at all. So each step
 also names a `by` — the point in the lap at which it gives up and moves on. Gear
-lands a third of the way round at the latest, and lets go itself at 78% so the
-run always reaches the finish. The skip is a loop rather than one step per
+lands 70% of the way round at the latest — the deadlines had to move a long way
+out once the steps wanted three seconds each, or a deadline would cut a hold
+short and the step would vanish mid-count. Gear's own deadline runs deep into
+the second lap, purely so a player who never touches it still reaches the
+finish. The skip is a loop rather than one step per
 frame: an overdue run lands on the right step instead of flickering through the
 ones between it. Position counts laps as well as index, so it keeps climbing
 past the line rather than resetting a pending step's deadline under it — and it

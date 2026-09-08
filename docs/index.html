@@ -1661,6 +1661,27 @@
         text-align: center;
         transition: top 0.3s ease;
       }
+      #coachCount {
+        display: block;
+        margin-top: 7px;
+        font-size: 26px;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+        color: rgba(var(--tint), 0.32);
+        transition: color 0.15s;
+      }
+      #coachCount:empty {
+        display: none;
+      }
+      /* lit only while the player is actually doing the thing, so the number
+         reads as a response rather than a clock running down at them */
+      #coachCount.live {
+        color: rgb(var(--tint));
+      }
+      #coachCount.go {
+        color: var(--amber);
+      }
       #coachBubble b {
         display: block;
         font-size: 17px;
@@ -2742,6 +2763,7 @@
       <div id="coachBubble">
         <b id="coachTitle"></b>
         <span id="coachText"></span>
+        <span id="coachCount"></span>
       </div>
       <button type="button" id="coachSkip">Skip</button>
     </div>
@@ -8358,7 +8380,8 @@
           coachTitleEl = document.getElementById("coachTitle"),
           coachTextEl = document.getElementById("coachText"),
           coachArrowsEl = document.getElementById("coachArrows"),
-          coachKeysEl = document.getElementById("coachKeys");
+          coachKeysEl = document.getElementById("coachKeys"),
+          coachCountEl = document.getElementById("coachCount");
         let coachStep = -1,
           coachHold = 0,
           coachSettle = 0,
@@ -8380,7 +8403,8 @@
             arrows: false,
             done: () => joyActive() || anyDriveKey(),
             keys: "all",
-            by: 0.12,
+            hold: 3,
+            by: 0.3,
           },
           {
             id: "throttle",
@@ -8391,10 +8415,10 @@
             spot: joySpot,
             arrows: "up",
             // held, not tapped: a stray flick shouldn't tick this off
-            hold: 0.55,
+            hold: 3,
             test: () => controls().thr > 0.45,
             keys: "thr",
-            by: 0.22,
+            by: 0.5,
           },
           {
             id: "turn",
@@ -8405,10 +8429,10 @@
               "A and D, or left and right. Ease it — she carries her speed through a turn if you don't saw at it.",
             spot: joySpot,
             arrows: "side",
-            hold: 0.4,
+            hold: 3,
             test: () => Math.abs(controls().steer) > 0.45,
             keys: "steer",
-            by: 0.33,
+            by: 0.7,
           },
           {
             id: "gear",
@@ -8419,7 +8443,10 @@
             spot: () => elSpot(document.getElementById("gearStack"), 14),
             arrows: false,
             done: () => coachGearFired,
-            by: 0.78,
+            /* No timer on this one — it waits to be fired. The deadline runs
+               deep into the second lap purely so a player who never touches
+               the gear still reaches the finish. */
+            by: 1.5,
           },
           {
             id: "line",
@@ -8542,6 +8569,23 @@
           }
           coachHole(stepSpot(st));
           coachAimArrows(st);
+          coachCount(st, false);
+        }
+        /* The count is the point of the pacing, so it has to be visible:
+   a step that silently wants three seconds of the same input reads as one
+   that isn't responding. Counts down only while the input is actually being
+   given, and lands on Go for the settle beat before the next step. */
+        function coachCount(st, satisfied) {
+          if (!st || !st.hold) {
+            coachCountEl.textContent = "";
+            coachCountEl.classList.remove("go", "live");
+            return;
+          }
+          const left = st.hold - coachHold;
+          const go = left <= 0.05;
+          coachCountEl.textContent = go ? "Go" : String(Math.ceil(left));
+          coachCountEl.classList.toggle("go", go);
+          coachCountEl.classList.toggle("live", satisfied && !go);
         }
         function coachHole(sp) {
           if (!sp) {
@@ -8595,12 +8639,19 @@
           if (sp) coachHole(sp);
           coachAimArrows(st);
           const satisfied = st.done ? st.done() : st.test();
+          /* Drains rather than resets. Holding a stick inside a threshold for
+             three seconds is not a steady thing — the boat turns under you and
+             a wobble drops you out for a frame — and wiping the count on every
+             one of those is what made the step feel broken rather than hard.
+             It drains faster than it fills, so it is still a hold. */
           if (!satisfied) {
-            coachHold = 0;
+            coachHold = Math.max(0, coachHold - dt * 1.5);
             coachSettle = 0;
+            coachCount(st, satisfied);
             return;
           }
           coachHold += dt;
+          coachCount(st, satisfied);
           if (coachHold < (st.hold || 0)) return;
           /* A short beat after the step is met before the next one lands:
              stepping instantly means the bubble changes mid-gesture and the
