@@ -83,9 +83,13 @@
 	<string>Tide Runner uses this to show adverts that are more relevant to you. Your races, times and progress are never shared.</string>
 	<!-- Firebase Analytics starts collecting on native SDK init unless these
 	     flags default it off. trackEvent() in docs/index.html re-enables it
-	     via the Capacitor Firebase Analytics plugin once the user consents. -->
-	<key>FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED</key>
-	<true/>
+	     via the Capacitor Firebase Analytics plugin once the user consents.
+	     _ENABLED = false is a soft default, overridable at runtime via
+	     setAnalyticsCollectionEnabled() — NOT _DEACTIVATED, which per
+	     Firebase's own docs is a permanent kill switch no runtime call can
+	     ever undo. -->
+	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
+	<false/>
 	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE</key>
 	<false/>
 	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE</key>

@@ -15060,22 +15060,27 @@
             return false;
           return !adConsent.npa;
         }
-        async function setFbConsent(accepted) {
+        /* No argument on purpose: every caller (ad consent resolving, ATT
+   resolving, the banner, Settings) just tells this to resync, and it always
+   reads SETTINGS.analytics itself. Passing a boolean around let a stale
+   "not yet answered" snapshot from one call site clobber a true a moment
+   later from another — which is exactly how collection kept re-disabling
+   itself after the player had already accepted. */
+        async function setFbConsent() {
           const fb = firebaseAnalytics();
           if (!fb) return;
+          const enabled = SETTINGS.analytics === true;
           const ads = adsPersonalisedGranted() ? "GRANTED" : "DENIED";
-          const ana = accepted ? "GRANTED" : "DENIED";
+          const ana = enabled ? "GRANTED" : "DENIED";
           try {
-            await fb.setEnabled({ enabled: !!accepted });
+            await fb.setEnabled({ enabled });
             if (fb.setConsent) {
-              await fb.setConsent({
-                consents: [
-                  { type: "ANALYTICS_STORAGE", status: ana },
-                  { type: "AD_STORAGE", status: ads },
-                  { type: "AD_USER_DATA", status: ads },
-                  { type: "AD_PERSONALIZATION", status: ads },
-                ],
-              });
+              // One call per consent type — the plugin's setConsent takes a
+              // single {type, status} pair, not a batch array.
+              await fb.setConsent({ type: "ANALYTICS_STORAGE", status: ana });
+              await fb.setConsent({ type: "AD_STORAGE", status: ads });
+              await fb.setConsent({ type: "AD_USER_DATA", status: ads });
+              await fb.setConsent({ type: "AD_PERSONALIZATION", status: ads });
             }
           } catch (e) {
             /* Analytics must never break play. */
@@ -15126,7 +15131,7 @@
               };
               adConsentResolved = true;
               syncPrivacyRow();
-              setFbConsent(SETTINGS.analytics);
+              setFbConsent();
               return adConsent;
             })
             .catch(() => {
@@ -15134,7 +15139,7 @@
                  the player still gets their reward and nobody is tracked. */
               adConsent = { canRequestAds: true, npa: true, canChange: false };
               adConsentResolved = true;
-              setFbConsent(SETTINGS.analytics);
+              setFbConsent();
               return adConsent;
             });
           return consentAsked;
@@ -15186,13 +15191,13 @@
               syncPrivacyRow();
               // the startup signal was sent before this prompt existed, so it
               // has to be corrected now the player has actually answered
-              setFbConsent(SETTINGS.analytics);
+              setFbConsent();
               return true;
             })
             .catch(() => {
               // the plugin threw: assume nothing, read nothing
               attStatus = "denied";
-              setFbConsent(SETTINGS.analytics);
+              setFbConsent();
               return true;
             });
           attAsked = run.then((settled) => {
@@ -16086,7 +16091,7 @@
           window["ga-disable-" + GA_ID] = !accepted;
           if (accepted) gaEnable();
           // Native Firebase Analytics respects the same choice.
-          setFbConsent(accepted);
+          setFbConsent();
           syncConsentBanner();
           syncToggles();
           saveSettings();
@@ -16099,7 +16104,7 @@
         syncConsentBanner();
         // Returning player who already consented: bring native Firebase
         // Analytics up alongside the web gtag path enabled in the head.
-        if (SETTINGS.analytics === true) setFbConsent(true);
+        if (SETTINGS.analytics === true) setFbConsent();
 
         analyticsTog.onclick = () =>
           resolveAnalyticsConsent(!SETTINGS.analytics);
