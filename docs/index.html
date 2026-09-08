@@ -1002,14 +1002,6 @@
           transform 0.12s,
           filter 0.15s;
       }
-      /* Guarded: without text-stroke the transparent fill would leave the
-         label invisible, so plain dark-on-tint above stands as the fallback. */
-      @supports (-webkit-text-stroke: 1px currentColor) {
-        .go-btn {
-          color: transparent;
-          -webkit-text-stroke: 1px var(--abyss);
-        }
-      }
       .go-btn:hover {
         filter: brightness(1.12);
       }

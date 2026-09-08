@@ -307,13 +307,18 @@ All four are the same box — same width, same height, same label size — in on
 two columns above 560px, a single stack below, where two columns would be narrower than
 "Change course" needs and every label would wrap to two lines. The primary is picked out by
 being **filled** rather than by being bigger: `.go-btn` takes `var(--chart)` as its background
-and knocks its label back out of the fill with `-webkit-text-stroke`, so the CTA is the exact
-inverse of the `.ghost` buttons beside it. Nothing in that family is amber any more — the CTA
-takes the world's colour with everything else, teal on the rivers and ember on lava. The
-text-stroke is behind an `@supports` guard, since without it a transparent fill would leave the
-label invisible; plain dark-on-tint is the fallback. `.go-btn` is styled app-wide, so Start
+and sets its label solid dark on top, so the CTA is the exact inverse of the `.ghost` buttons
+beside it. Nothing in that family is amber any more — the CTA takes the world's colour with
+everything else, teal on the rivers and ember on lava. `.go-btn` is styled app-wide, so Start
 race, Done, Resume and Spin all read as the same kind of thing — a half-migrated mix of two
 primary treatments would look worse than either.
+
+The label used to be knocked _out_ of the fill with `-webkit-text-stroke` — transparent text
+with a 1px outline. It was a nice idea and the wrong one: at 22px the hairline outline reads as
+lighter than the plain bold text around it, so the loudest button on the screen was also the
+faintest thing on it. Solid dark on the fill is what a primary button should look like, and it
+took the `@supports` guard with it — the guard existed only to keep the transparent fill from
+making the label vanish where text-stroke is unsupported.
 
 ## The Boathouse, coins and gear
 
