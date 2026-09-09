@@ -3,9 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <!-- viewport-fit=cover lets the page paint behind the status bar and the
-         home indicator; the safe-area insets keep the HUD clear of them. No
-         user-scalable=no: pinch-zoom is already prevented by touch-action: none
-         on the body. -->
+         home indicator; the safe-area insets keep the HUD clear of them.
+         maximum-scale=1, user-scalable=no: touch-action: none on the body
+         stops pinch-zoom but not WebKit's double-tap-to-zoom gesture, which
+         ignores touch-action in some WKWebView versions — this is the only
+         thing that reliably kills it too. -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
@@ -546,7 +548,10 @@
       #menu .sheet.scrolls {
         overflow: hidden !important;
       }
-      #menu .sheet {
+      /* Every sheet, not just the menu's — anything shifted up to dodge the
+         keyboard (see keepAboveKeyboard) needs this to slide rather than
+         jump. */
+      .sheet {
         transition: transform 0.22s ease;
       }
       /* A sheet that fits does not scroll at all. overflow: auto still takes
@@ -1441,8 +1446,10 @@
         color: inherit;
         font: inherit;
         /* the code is groups of five, so let it wrap on the dashes and give
-           it room to breathe rather than one unreadable ribbon */
-        font-size: 13px;
+           it room to breathe rather than one unreadable ribbon. 16px, not
+           smaller: below that iOS auto-zooms the whole page on focus, which
+           this fixed-position app can never pinch back out of. */
+        font-size: 16px;
         letter-spacing: 0.08em;
         line-height: 1.6;
         word-break: break-all;
@@ -15606,26 +15613,42 @@
           skill = v;
         });
 
-        const nameInput = document.getElementById("playerName");
-        if (nameInput) {
-          nameInput.value = SETTINGS.name || "";
-          nameInput.addEventListener("input", () => {
-            SETTINGS.name = nameInput.value.slice(0, 18);
-            saveSettings();
-          });
-          // iOS scrolls the layout viewport to bring the focused input into
-          // view. With a fixed-position app that shifts the whole page right
-          // and never comes back — so undo it as soon as it happens.
-          const resetScroll = () => {
-            window.scrollTo(0, 0);
-            document.documentElement.scrollLeft = 0;
-            document.body.scrollLeft = 0;
-          };
-          const menuSheet = nameInput.closest(".sheet");
+        // iOS separately scrolls the layout viewport itself to chase the
+        // caret on focus, which on a fixed-position app shifts the whole
+        // page sideways and never comes back — undo that part.
+        const resetScroll = () => {
+          window.scrollTo(0, 0);
+          document.documentElement.scrollLeft = 0;
+          document.body.scrollLeft = 0;
+        };
+        addEventListener(
+          "scroll",
+          () => {
+            if (window.scrollX || window.scrollY) resetScroll();
+          },
+          { passive: true },
+        );
+        /* @capacitor/keyboard's keyboardWillShow/keyboardHeight looked like
+           the robust answer, but installing the plugin at all — regardless
+           of its resize mode — suppressed WebKit's own keyboard accessory
+           bar (the tick that dismisses it), with no way found to bring it
+           back. Reverted to visualViewport, which does report the keyboard
+           reliably here; the earlier failures were a first-tap-only race
+           (the viewport hadn't finished resizing yet when adjust() first
+           ran — a second tap, with the keyboard already open, always
+           worked), not a fundamental viewport problem. Fixed by adding a
+           later retry rather than trusting the two early ones alone. */
+        function keepAboveKeyboard(input) {
+          const sheet = input && input.closest(".sheet");
+          if (!sheet) return;
           let vpHandler = null;
-          const adjustForKeyboard = () => {
-            if (!menuSheet) return;
-            const inputRect = nameInput.getBoundingClientRect();
+          let timers = [];
+          const adjust = () => {
+            // A timer can outlive its focus (blurred before it fired, or a
+            // fast refocus elsewhere) — without this guard a stale one lands
+            // later and shifts a sheet nobody's typing in any more.
+            if (document.activeElement !== input) return;
+            const inputRect = input.getBoundingClientRect();
             const vp = window.visualViewport;
             const visibleBottom = vp
               ? vp.offsetTop + vp.height
@@ -15633,39 +15656,53 @@
             const needed = inputRect.bottom - (visibleBottom - 24);
             // Only ever shift further up; don't undo an existing shift here.
             if (needed > 0) {
-              const current = parseFloat(menuSheet.dataset.shift || "0");
+              const current = parseFloat(sheet.dataset.shift || "0");
               const total = current + needed;
-              menuSheet.style.transform = `translateY(${-total}px)`;
-              menuSheet.dataset.shift = String(total);
+              sheet.style.transform = `translateY(${-total}px)`;
+              sheet.dataset.shift = String(total);
             }
           };
-          nameInput.addEventListener("focus", () => {
-            // Keyboard opens over ~250ms on iOS; adjust part-way and again once open.
-            setTimeout(adjustForKeyboard, 120);
-            setTimeout(adjustForKeyboard, 320);
+          const clearTimers = () => {
+            timers.forEach(clearTimeout);
+            timers = [];
+          };
+          input.addEventListener("focus", () => {
+            // A previous focus's timers may still be pending (fast re-focus
+            // before they fired) — drop them so they can't stack on top.
+            clearTimers();
+            // Keyboard opens over ~250ms on iOS; adjust part-way, again once
+            // open, and once more late to catch a first-focus viewport
+            // report that hadn't settled yet at 320ms.
+            timers = [
+              setTimeout(adjust, 120),
+              setTimeout(adjust, 320),
+              setTimeout(adjust, 600),
+            ];
             if (window.visualViewport) {
-              vpHandler = adjustForKeyboard;
+              vpHandler = adjust;
               window.visualViewport.addEventListener("resize", vpHandler);
             }
           });
-          nameInput.addEventListener("blur", () => {
-            if (menuSheet) {
-              menuSheet.style.transform = "";
-              menuSheet.dataset.shift = "0";
-            }
+          input.addEventListener("blur", () => {
+            clearTimers();
+            sheet.style.transform = "";
+            sheet.dataset.shift = "0";
             if (vpHandler && window.visualViewport) {
               window.visualViewport.removeEventListener("resize", vpHandler);
               vpHandler = null;
             }
             requestAnimationFrame(resetScroll);
           });
-          addEventListener(
-            "scroll",
-            () => {
-              if (window.scrollX || window.scrollY) resetScroll();
-            },
-            { passive: true },
-          );
+        }
+
+        const nameInput = document.getElementById("playerName");
+        if (nameInput) {
+          nameInput.value = SETTINGS.name || "";
+          nameInput.addEventListener("input", () => {
+            SETTINGS.name = nameInput.value.slice(0, 18);
+            saveSettings();
+          });
+          keepAboveKeyboard(nameInput);
         }
 
         document.getElementById("start").onclick = () => {
@@ -15741,6 +15778,12 @@
         };
         document.getElementById("transferClose").onclick = () =>
           transferPopEl.classList.add("hidden");
+        /* Same mechanism as the Boathouse name field — see keepAboveKeyboard.
+           Both boxes: transferOut is readonly but still focusable, and both
+           the Copy button's clipboard-fallback below and a direct tap can
+           raise the keyboard on it despite readonly. */
+        keepAboveKeyboard(transferOutEl);
+        keepAboveKeyboard(transferInEl);
         document.getElementById("transferCopy").onclick = async () => {
           const code = transferOutEl.value;
           try {
