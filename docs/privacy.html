@@ -91,17 +91,17 @@
     </p>
 
     <p>
-      <strong>The web version can use Google Analytics (GA4)</strong>, but only
-      if you say yes. Nothing is requested until you accept, either on the
-      banner shown on your first visit or the Send usage data toggle in Settings
-      — no GA4 script is loaded, no request is made, and nothing is recorded
-      before that. If you accept, it records gameplay events — which course,
-      what difficulty, lap count, and whether a race was finished or abandoned —
-      and the usual page-level information GA4 collects automatically (roughly:
-      your browser, device type, approximate region from your IP address, and
-      how you arrived at the page). It does not see your chosen in-game name,
-      and nothing you type anywhere in the game is sent to it. Google's own
-      privacy policy covers what they do with it:
+      <strong>The iOS and Android apps can use Firebase Analytics</strong>, but
+      only if you say yes. Nothing is recorded until you accept, either on the
+      prompt shown the first time you open the game or the Send usage data
+      toggle in Settings — analytics collection is switched off by default in
+      the app itself and is only turned on once you accept. If you accept, it
+      records gameplay events — which course, what difficulty, lap count, and
+      whether a race was finished or abandoned — along with the basic device and
+      approximate-region information Firebase collects automatically. It does
+      not see your chosen in-game name, and nothing you type anywhere in the
+      game is sent to it. Google's own privacy policy covers what they do with
+      it:
       <a href="https://policies.google.com/privacy"
         >policies.google.com/privacy</a
       >.
@@ -116,8 +116,11 @@
     </p>
 
     <p>
-      The iOS and Android apps do not currently include Google Analytics or any
-      other analytics — this section will be updated if and when that changes.
+      <strong>The web version at this address has no analytics at all.</strong>
+      It loads no analytics script, makes no analytics request, and records
+      nothing about how it is played — whatever you choose on the prompt. Google
+      Analytics was removed from it entirely; the Send usage data choice only
+      has an effect inside the iOS and Android apps.
     </p>
 
     <p>

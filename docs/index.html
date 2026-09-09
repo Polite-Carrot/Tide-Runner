@@ -19,52 +19,12 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
     <meta name="theme-color" content="#04141c" />
-    <!-- Web only, and opt-in: nothing loads until a player has actually said
-         yes, either on the first-visit banner or the Settings toggle. The
-         native iOS/Android shells set window.Capacitor before any page script
-         runs (Capacitor's own bridge, injected by the runtime, not by this
-         page), so its absence is what "web" means here. tr-settings.analytics
-         is read straight out of localStorage rather than waiting for the
-         SETTINGS object further down the page: === true (an explicit prior
-         accept) is the only thing that loads gtag on this page load — absent,
-         or === false, both mean don't. gaEnable is exposed on window so the
-         banner and the Settings toggle can both call it directly on accept,
-         without a reload. -->
-    <script>
-      var GA_ID = "G-2JK7DZ59VV";
-      var gaNative = !!(
-        window.Capacitor &&
-        window.Capacitor.isNativePlatform &&
-        window.Capacitor.isNativePlatform()
-      );
-      function gaEnable() {
-        // Native never touches web gtag — resolveAnalyticsConsent() calls
-        // this unconditionally from the consent banner/Settings toggle, and
-        // without this guard it was loading gtag.js inside the app itself
-        // and sending hits straight to this web property, bypassing
-        // Firebase Analytics (google-services.json) entirely.
-        if (gaNative) return;
-        if (typeof window.gtag === "function") return; // already loaded
-        window["ga-disable-" + GA_ID] = false;
-        window.dataLayer = window.dataLayer || [];
-        window.gtag = function () {
-          dataLayer.push(arguments);
-        };
-        gtag("js", new Date());
-        gtag("config", GA_ID);
-        var gaScript = document.createElement("script");
-        gaScript.async = true;
-        gaScript.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
-        document.head.appendChild(gaScript);
-      }
-      var gaAccepted = false;
-      try {
-        gaAccepted =
-          JSON.parse(localStorage.getItem("tr-settings") || "{}").analytics ===
-          true;
-      } catch (e) {}
-      if (!gaNative && gaAccepted) gaEnable();
-    </script>
+    <!-- No analytics tag is loaded here any more. GA4 measured the wrapped
+         apps as web traffic — the tag works perfectly well inside a web view,
+         which is exactly the trap — so measurement is now Firebase Analytics
+         through the native plugin, and the web build reports nothing at all.
+         The usage-data consent flow below still governs it: SETTINGS.analytics
+         gates trackEvent(), which is the only thing that reaches Firebase. -->
     <!-- No *-web-app-capable and no apple-mobile-web-app-status-bar-style.
          Since iOS 17 a site added to the home screen opens as a web app anyway
          and takes its presentation from the manifest, so the legacy metas buy
@@ -1159,7 +1119,7 @@
       }
 
       /* ---------- usage-data consent banner ---------- */
-      /* Shown once, on a player's first visit, before gtag is ever requested —
+      /* Shown once, on a player's first visit, before anything is recorded —
          not an after-the-fact opt-out. Full-screen and forced: nothing behind
          it is reachable until Accept or Decline is tapped, and it is gated
          behind #boot being fully gone (see bootGone in the script) so it
@@ -3090,9 +3050,10 @@
         <div class="dsrow">
           <b>Usage data</b>
           <span
-            >Only if you turn it on. Google Analytics then records which courses
-            and difficulties get played — never your name, and never anything
-            you type.</span
+            >Only if you turn it on, and only in the iOS and Android apps.
+            Firebase Analytics then records which courses and difficulties get
+            played — never your name, and never anything you type. The web
+            version records nothing at all.</span
           >
         </div>
         <div class="setrow">
@@ -8157,23 +8118,15 @@
    ANALYTICS
    ============================================================ */
         /* Thin wrapper so the rest of the game never has to check whether
-   analytics actually loaded or is wanted — an ad blocker, being offline
-   when the async script was requested, running in the native shell (where
-   window.gtag is never defined at all, see the head), or the player having
-   Send usage data off in Settings all just make this a no-op. The
-   SETTINGS.analytics check is the one this file times precisely and is the
-   primary mechanism; the ga-disable flag the toggle also sets is a second,
-   best-effort line for what gtag.js does on its own that never comes
-   through here (its automatic page_view, its engagement pings). Named
-   trackEvent rather than track: track is already the current course
-   object, reassigned constantly below. */
+   analytics is available or wanted. Firebase is the only destination now,
+   and it only exists in the native shells — on the web firebaseAnalytics()
+   returns null and every call here is a no-op, which is the intended
+   outcome rather than a failure. Named trackEvent rather than track: track
+   is already the current course object, reassigned constantly below. */
         function trackEvent(name, params) {
           if (!SETTINGS.analytics) return;
-          if (typeof window.gtag === "function")
-            window.gtag("event", name, params || {});
-          // On native, also route to Firebase Analytics. Parameter names are
-          // limited to 40 chars and values to 100; trim quietly rather than
-          // reject.
+          // Parameter names are limited to 40 chars and values to 100; trim
+          // quietly rather than reject.
           const fb = firebaseAnalytics();
           if (fb) {
             const safe = {};
@@ -15043,8 +14996,8 @@
           const c = window.Capacitor;
           return (c && c.getPlatform && c.getPlatform()) || "web";
         }
-        /* Firebase Analytics on native. Web still goes through gtag (loaded
-   at the top of this file when SETTINGS.analytics === true). The native
+        /* Firebase Analytics on native, and the only analytics anywhere —
+   the web build has none. The native
    SDK is off by default via the plist / manifest flags; setFbConsent()
    below flips it on when the player consents. registerPlugin() gives us
    a proxy even before the bridge has resolved. */
@@ -16104,15 +16057,10 @@
         };
         /* One resolver for every path that can decide the analytics choice —
    the consent banner's two buttons and the Settings toggle — so "what
-   happens when the answer changes" is written once. ga-disable is
-   Google's own runtime switch: once set, an already-loaded gtag.js
-   treats every call, including its own automatic page_view and
-   engagement pings and not just trackEvent()'s, as a no-op. trackEvent()
-   is the mechanism this app actually controls and times precisely; the
-   flag is best-effort coverage for what gtag.js does on its own that
-   trackEvent() never reaches. Accepting after a load that started
-   undecided or declined loads gtag there and then — it was never
-   requested at page load in either of those cases. */
+   happens when the answer changes" is written once. With GA4 gone there is
+   no third-party tag to switch on or off: SETTINGS.analytics gates
+   trackEvent(), and setFbConsent() carries the same answer to Firebase on
+   native. Nothing is loaded or unloaded by the choice any more. */
         // Undecided — never asked before, from either the banner or the
         // Settings toggle — is the only time the banner is a candidate to
         // show at all; state === S.menu is the other half. A full-width bar
@@ -16133,9 +16081,7 @@
 
         function resolveAnalyticsConsent(accepted) {
           SETTINGS.analytics = accepted;
-          window["ga-disable-" + GA_ID] = !accepted;
-          if (accepted) gaEnable();
-          // Native Firebase Analytics respects the same choice.
+          // Firebase Analytics on native respects the same choice.
           setFbConsent();
           syncConsentBanner();
           syncToggles();
@@ -16170,7 +16116,7 @@
         }
         syncConsentBanner();
         // Returning player who already consented: bring native Firebase
-        // Analytics up alongside the web gtag path enabled in the head.
+        // Analytics up for a player who accepted on an earlier launch.
         if (SETTINGS.analytics === true) setFbConsent();
 
         analyticsTog.onclick = () =>
