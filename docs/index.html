@@ -486,6 +486,7 @@
         height: 4px;
         background: rgba(255, 216, 74, 0.2);
         position: relative;
+        overflow: hidden;
       }
       #boost i::after {
         content: "";
@@ -494,21 +495,42 @@
         width: var(--w, 0%);
         background: var(--amber);
       }
+      /* Two lines: who is coming, then what to do about it. It was one
+         nowrap line at up to 36px, which ran off the side of a phone on
+         every theme — "Polar bear — get back in the water" is 38
+         characters. Splitting it means neither line has to fit alone, and
+         the instruction can sit at a calmer size under the name. */
       #shark {
         position: absolute;
         left: 50%;
         top: 44%;
         transform: translate(-50%, -50%);
+        width: min(92vw, 520px);
         font-family: var(--display);
         font-weight: 700;
-        font-size: clamp(22px, 5.4vw, 36px);
-        letter-spacing: 0.14em;
         color: var(--port);
         text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85);
         opacity: 0;
         transition: opacity 0.12s;
         text-align: center;
-        white-space: nowrap;
+      }
+      #shark b {
+        display: block;
+        font-size: clamp(22px, 5.4vw, 36px);
+        letter-spacing: 0.14em;
+        line-height: 1.1;
+      }
+      #shark span {
+        display: block;
+        margin-top: 7px;
+        font-size: clamp(12px, 3.1vw, 18px);
+        letter-spacing: 0.1em;
+        color: var(--foam);
+      }
+      /* the eaten state has no second line, and an empty one must not
+         leave a gap under the word */
+      #shark span:empty {
+        display: none;
       }
       #shark.on {
         opacity: 1;
@@ -2742,7 +2764,7 @@
       <div id="warn">Wrong way</div>
       <div id="draft">Slipstream</div>
       <div id="boost"><span>Boost</span><i></i></div>
-      <div id="shark">Shark</div>
+      <div id="shark"><b></b><span></span></div>
     </div>
 
     <!-- first-run coaching. One spotlight, one bubble, reused by every step;
@@ -7509,7 +7531,7 @@
             lakes: false,
             cones: false,
             hunter: "shark",
-            hunterWarn: "Shark — get back in the river",
+            hunterName: "Shark",
             hunterBlurb: "and watch out for the sharks",
             gore: ["#e8402a", "#eaf7f4"],
             shadow: "#04262e",
@@ -7542,7 +7564,7 @@
             // stepFauna() summons when you run aground.
             idle: null,
             hunter: "worm",
-            hunterWarn: "Lava worm — get back in the flow",
+            hunterName: "Lava worm",
             hunterBlurb: "and watch out for the lava worms",
             // molten rather than red-and-white: what it throws up when it takes
             // a boat is lava, and goreHot sends that spatter through the
@@ -7581,7 +7603,7 @@
             lakes: false,
             cones: false,
             hunter: "bear",
-            hunterWarn: "Polar bear — get back in the water",
+            hunterName: "Polar bear",
             hunterBlurb: "and watch out for the polar bears",
             gore: ["#e8402a", "#f4fbff"],
             shadow: "#7f97ab",
@@ -7620,7 +7642,7 @@
             hunterReach: 105,
             jawFar: 330,
             hunterKill: "Vaporised",
-            hunterWarn: "Alien ship — get back in the stream",
+            hunterName: "Alien ship",
             hunterBlurb: "and watch out for the alien ships",
             gore: ["#d9ffe6", "#37e07a"],
             goreHot: true,
@@ -9239,7 +9261,7 @@
             }
             if ((b.x - bo.x) ** 2 + (b.y - bo.y) ** 2 < 26 * 26) {
               bo.cool = 6;
-              b.boost = 2.2;
+              b.boost = b.boostMax = 2.2;
               b.vx += Math.cos(b.h) * 45;
               b.vy += Math.sin(b.h) * 45;
               if (b === me) {
@@ -11140,7 +11162,7 @@
             saveProgress();
           }
           if (type === "nitro") {
-            me.boost = 3.4;
+            me.boost = me.boostMax = 3.4;
             sfxBoost();
             if (!REDUCED)
               for (let i = 0; i < 7; i++) spray(me.x, me.y, "#ffd84a", 1.5);
@@ -13954,6 +13976,8 @@
           deltaEl = document.getElementById("delta");
         const boostEl = document.getElementById("boost"),
           sharkEl = document.getElementById("shark");
+        const sharkTitleEl = sharkEl.querySelector("b"),
+          sharkSubEl = sharkEl.querySelector("span");
 
         function fmt(t) {
           if (!t) return "—";
@@ -14004,16 +14028,26 @@
           );
           draftEl.classList.toggle("on", !!me.drafting);
           boostEl.classList.toggle("on", me.boost > 0);
-          if (me.boost > 0)
+          if (me.boost > 0) {
+            /* Against the boost's own length, not a hard-coded 2.2. A pad
+               gives 2.2s and a nitro 3.4s, so dividing everything by the pad's
+               figure drew the nitro bar at 155% — it ran out of its own box
+               and only shrank back inside once the boost was two thirds
+               spent. Clamped as well, so a future boost that outlasts its
+               recorded max still cannot overflow. */
+            const frac = Math.min(1, me.boost / (me.boostMax || 2.2));
             boostEl
               .querySelector("i")
-              .style.setProperty("--w", (me.boost / 2.2) * 100 + "%");
+              .style.setProperty("--w", frac * 100 + "%");
+          }
           if (me.chomped > 0) {
-            sharkEl.textContent = themeOf(track).hunterKill || "Eaten";
+            sharkTitleEl.textContent = themeOf(track).hunterKill || "Eaten";
+            sharkSubEl.textContent = "";
             sharkEl.className = "bit";
           } else if (me.hunter) {
-            sharkEl.textContent =
-              themeOf(track).hunterWarn || "Shark — get back in the river";
+            sharkTitleEl.textContent =
+              (themeOf(track).hunterName || "Shark") + " Incoming";
+            sharkSubEl.textContent = "Get back into the track";
             sharkEl.className = "on";
           } else sharkEl.className = "";
           drawPlot();
