@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "490156279572",
+    "project_id": "tide-runner-590f6",
+    "storage_bucket": "tide-runner-590f6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:490156279572:android:da7375e307630b76a5e401",
+        "android_client_info": {
+          "package_name": "com.politecarrot.tiderunner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDK2la-ExS2wzyEu43yywftRwYg_fRTrKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -45,5 +45,3 @@ ios/App/App/public/
 # Secrets / signing
 *.keystore
 *.jks
-google-services.json
-GoogleService-Info.plist

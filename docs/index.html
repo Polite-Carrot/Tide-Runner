@@ -10,7 +10,7 @@
          thing that reliably kills it too. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Tiderunner — buoy racing</title>
     <!-- The manifest drives the installed presentation on both platforms:
@@ -32,7 +32,18 @@
          without a reload. -->
     <script>
       var GA_ID = "G-2JK7DZ59VV";
+      var gaNative = !!(
+        window.Capacitor &&
+        window.Capacitor.isNativePlatform &&
+        window.Capacitor.isNativePlatform()
+      );
       function gaEnable() {
+        // Native never touches web gtag — resolveAnalyticsConsent() calls
+        // this unconditionally from the consent banner/Settings toggle, and
+        // without this guard it was loading gtag.js inside the app itself
+        // and sending hits straight to this web property, bypassing
+        // Firebase Analytics (google-services.json) entirely.
+        if (gaNative) return;
         if (typeof window.gtag === "function") return; // already loaded
         window["ga-disable-" + GA_ID] = false;
         window.dataLayer = window.dataLayer || [];
@@ -52,11 +63,6 @@
           JSON.parse(localStorage.getItem("tr-settings") || "{}").analytics ===
           true;
       } catch (e) {}
-      var gaNative = !!(
-        window.Capacitor &&
-        window.Capacitor.isNativePlatform &&
-        window.Capacitor.isNativePlatform()
-      );
       if (!gaNative && gaAccepted) gaEnable();
     </script>
     <!-- No *-web-app-capable and no apple-mobile-web-app-status-bar-style.

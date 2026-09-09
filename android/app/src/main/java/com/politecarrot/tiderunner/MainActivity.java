@@ -29,6 +29,11 @@ public class MainActivity extends BridgeActivity {
         WebView webView = getBridge().getWebView();
         if (webView == null) return;
 
+        // -- Disable pinch/double-tap zoom at the native layer, not just CSS --
+        webView.getSettings().setSupportZoom(false);
+        webView.getSettings().setBuiltInZoomControls(false);
+        webView.getSettings().setDisplayZoomControls(false);
+
         // -- Kill Samsung's long-press text selection --------------------
         webView.setLongClickable(false);
         webView.setHapticFeedbackEnabled(false);
