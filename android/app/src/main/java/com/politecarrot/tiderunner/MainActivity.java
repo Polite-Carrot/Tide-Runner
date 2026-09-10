@@ -34,6 +34,15 @@ public class MainActivity extends BridgeActivity {
         webView.getSettings().setBuiltInZoomControls(false);
         webView.getSettings().setDisplayZoomControls(false);
 
+        // -- Hold text at 100% whatever the system font scale says --------
+        // Android applies Settings > Display > Font size inside the WebView
+        // as a text zoom multiplier, on top of the CSS and regardless of the
+        // unit, and text-size-adjust cannot override it. Left alone, a phone
+        // set to the largest font redraws the HUD and menus bigger while the
+        // canvas carries on drawing its own text at fixed px, and the two
+        // stop lining up.
+        webView.getSettings().setTextZoom(100);
+
         // -- Kill Samsung's long-press text selection --------------------
         webView.setLongClickable(false);
         webView.setHapticFeedbackEnabled(false);

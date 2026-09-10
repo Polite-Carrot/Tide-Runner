@@ -128,6 +128,24 @@
         overflow: hidden;
         overscroll-behavior: none;
         background: var(--abyss);
+        /* Hold the whole UI at one size whatever the phone's text settings
+           say, so a player on the largest font doesn't get a HUD and menus
+           that have grown while the canvas carries on drawing its own text
+           at fixed px, leaving the two no longer lined up.
+
+           Two separate levers are needed. The explicit root size fixes what
+           every element that declares no font-size of its own inherits —
+           left to the default that is whatever the browser or OS has been
+           set to, and it cascades into most of the panels. Safe to pin here
+           because nothing in this file sizes text in rem or em, so it can't
+           cascade anywhere unintended. text-size-adjust then stops the
+           inflation the mobile engines apply on top of that.
+
+           Android's system font scale is a native WebView setting that
+           ignores both, so MainActivity pins textZoom to 100 to match. */
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
       }
       body {
         font-family: var(--mono);
