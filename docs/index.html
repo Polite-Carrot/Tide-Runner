@@ -8250,6 +8250,42 @@
         const keys = {};
         const isTouch =
           matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+
+        /* iOS 10 onwards deliberately ignores user-scalable=no — Apple put
+   zoom back for accessibility — and some WKWebView builds ignore
+   touch-action: none as well, so double-tap "smart zoom" still fires over
+   anything the game has not already swallowed. Blocking the second tap of a
+   rapid pair is the one web-side lever that holds in every build. Controls
+   are exempt on purpose: forty-odd of them hang off onclick, and preventing
+   the default on their touchend eats the synthetic click, which would drop
+   every fast double-press of a gear button. Nobody double-taps a control to
+   zoom anyway — the gaps between them are where it happens. */
+        let lastTapAt = 0;
+        addEventListener(
+          "touchend",
+          (e) => {
+            const now = Date.now();
+            const onControl =
+              e.target &&
+              e.target.closest &&
+              e.target.closest(
+                "button, a, input, select, textarea, label, [role='button']",
+              );
+            if (!onControl && now - lastTapAt < 320) {
+              e.preventDefault();
+              lastTapAt = 0; // so a triple tap can't chain into another block
+              return;
+            }
+            lastTapAt = now;
+          },
+          { passive: false },
+        );
+        /* WebKit's pinch events are not touch events, so touch-action never
+   covered them. The native layer disables the recogniser too; this is the
+   half that survives if the page is ever opened outside the app shell. */
+        for (const t of ["gesturestart", "gesturechange", "gestureend"])
+          addEventListener(t, (e) => e.preventDefault(), { passive: false });
+
         addEventListener("keydown", (e) => {
           if (
             ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(
