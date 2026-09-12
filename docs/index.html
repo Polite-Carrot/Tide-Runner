@@ -1201,16 +1201,31 @@
         border: 1px solid var(--chart);
         white-space: nowrap;
       }
-      #consentAccept {
+      #consentContinue {
         background: var(--chart);
         color: #04141c;
       }
-      #consentDecline {
-        background: transparent;
-        color: var(--chart);
+      /* The rows carry the answer now, so the label wraps to two lines and
+         the switch has to stay its own size beside it rather than being
+         squeezed by a long explanation. */
+      #consentBanner .setrow {
+        gap: 16px;
       }
-      #consentDecline:hover {
-        background: rgba(var(--tint), 0.1);
+      #consentBanner .setrow label {
+        flex: 1 1 auto;
+      }
+      #consentBanner .setrow label small {
+        display: block;
+        margin-top: 5px;
+        font-family: var(--mono);
+        font-weight: 400;
+        font-size: 12px;
+        letter-spacing: 0;
+        line-height: 1.45;
+        opacity: 0.72;
+      }
+      #consentBanner .setrow .toggle {
+        flex: 0 0 auto;
       }
 
       /* ---------- startup identity ---------- */
@@ -2782,14 +2797,13 @@
       id="consentBanner"
       role="dialog"
       aria-modal="true"
-      aria-label="Usage data"
+      aria-label="Privacy choices"
     >
       <div class="sheet panel" style="max-width: 460px">
         <h2>Before you start</h2>
         <p>
-          This game can send anonymous usage data (which courses and
-          difficulties get played) to help decide where to spend effort next.
-          Nothing that identifies you. Change your mind any time in Settings.
+          Two things you can switch on if you want to. Both stay off unless you
+          turn them on, and either can be changed at any time in Settings.
           <a
             href="https://politecarrot.com/privacy.html"
             target="_blank"
@@ -2797,9 +2811,44 @@
             >Privacy Policy</a
           >.
         </p>
+        <div class="setrow">
+          <label for="consentAnalyticsToggle"
+            >Send usage data
+            <small
+              >Which courses and difficulties get played. Nothing that
+              identifies you.</small
+            ></label
+          >
+          <button
+            class="toggle"
+            type="button"
+            id="consentAnalyticsToggle"
+            data-on="0"
+            aria-label="Send usage data"
+          >
+            <span></span>
+          </button>
+        </div>
+        <div class="setrow">
+          <label for="consentAdsToggle"
+            >Personalised ads
+            <small
+              >Adverts matched to your interests rather than shown at
+              random.</small
+            ></label
+          >
+          <button
+            class="toggle"
+            type="button"
+            id="consentAdsToggle"
+            data-on="0"
+            aria-label="Personalised ads"
+          >
+            <span></span>
+          </button>
+        </div>
         <div class="consent-actions">
-          <button class="consent-btn" id="consentDecline">Decline</button>
-          <button class="consent-btn" id="consentAccept">Accept</button>
+          <button class="consent-btn" id="consentContinue">Continue</button>
         </div>
       </div>
     </div>
@@ -8748,7 +8797,16 @@
         // Persisted audio + player preferences. analytics has no default —
         // undefined means "never asked", distinct from true/false, which is
         // what tells the consent banner whether it still needs to show.
-        const SETTINGS = { music: true, sfx: true, haptics: true, name: "" };
+        const SETTINGS = {
+          music: true,
+          sfx: true,
+          haptics: true,
+          name: "",
+          // Off until the player asks for it, same as usage data. Analytics
+          // is deliberately left undefined instead: bannerPending() reads
+          // "never answered" off that, and a default would hide the dialog.
+          adsPersonalized: false,
+        };
         try {
           const saved = JSON.parse(localStorage.getItem("tr-settings") || "{}");
           if (typeof saved.music === "boolean") SETTINGS.music = saved.music;
@@ -8760,8 +8818,9 @@
           // SETTINGS.analytics honest for syncToggles() and the click handler
           if (typeof saved.analytics === "boolean")
             SETTINGS.analytics = saved.analytics;
-          // undefined/true means personalised; only an explicit false is an
-          // opt-out, so a player who never touches this keeps today's default
+          // Off unless the player turned it on, so only an explicit true
+          // lifts it off the default — someone who never answered stays
+          // un-personalised rather than being opted in by omission.
           if (typeof saved.adsPersonalized === "boolean")
             SETTINGS.adsPersonalized = saved.adsPersonalized;
           if (typeof saved.name === "string")
@@ -15081,9 +15140,9 @@
         let adConsentResolved = false;
         function adsPersonalisedGranted() {
           if (!adConsentResolved) return false;
-          // The player's own opt-out in Privacy & data, honoured regardless
-          // of region or Apple's answer — undefined/true both mean "fine".
-          if (SETTINGS.adsPersonalized === false) return false;
+          // The player's own switch, honoured regardless of region or
+          // Apple's answer. It starts off, so this is the common path.
+          if (SETTINGS.adsPersonalized !== true) return false;
           // Apple's answer is required on iOS, and only an explicit yes counts
           if (adPlatform() === "ios" && attStatus !== "authorized")
             return false;
@@ -15240,7 +15299,7 @@
    direction — it can only ever make a request less personalised. */
         function adNpa() {
           return (
-            SETTINGS.adsPersonalized === false ||
+            SETTINGS.adsPersonalized !== true ||
             adConsent.npa ||
             (attStatus !== null && attStatus !== "authorized")
           );
@@ -16207,38 +16266,37 @@
           saveSettings();
         }
 
-        document.getElementById("consentAccept").onclick = () => {
-          resolveAnalyticsConsent(true);
-          primeAttOnboarding();
+        /* The two switches above start off and are read straight off the
+   DOM — there is no third place for the answer to live between opening
+   the dialog and pressing Continue, so there is nothing to keep in sync.
+   Continue is the only way out: it commits whatever they are set to,
+   which for a player who touches neither is off and off. */
+        const consentAnalyticsTog = document.getElementById(
+            "consentAnalyticsToggle",
+          ),
+          consentAdsTog = document.getElementById("consentAdsToggle");
+        for (const t of [consentAnalyticsTog, consentAdsTog])
+          t.onclick = () => {
+            t.dataset.on = t.dataset.on === "1" ? "0" : "1";
+          };
+
+        document.getElementById("consentContinue").onclick = () => {
+          resolveAnalyticsConsent(consentAnalyticsTog.dataset.on === "1");
+          /* Apple's tracking prompt belongs to the personalised-ads answer
+     rather than to the dialog, so it is raised for the player who just
+     asked for them and for nobody else — setAdsPersonalized carries UMP's
+     form and attEnsure on the way through, the same path the Settings
+     toggle takes. Leaving the switch off means iOS is never asked at all:
+     there is nothing to track for, and a system dialog after a "no" reads
+     as not having listened. Android has no ATT prompt either way. */
+          setAdsPersonalized(consentAdsTog.dataset.on === "1");
         };
-        document.getElementById("consentDecline").onclick = () => {
-          resolveAnalyticsConsent(false);
-          primeAttOnboarding();
-        };
-        /* Runs once, right after the usage-data modal closes — the one
-   moment every player passes through at launch. Folds Apple's ATT prompt
-   into that same beat rather than surprising a player who just wanted to
-   tap Double Coins mid-race with a system dialog. UMP (adConsentInit) goes
-   first, same order used everywhere else ad consent is resolved. Costs
-   every player a small init they didn't ask for if they never touch an
-   ad — the trade for one clean onboarding instead of an interruption
-   later. Android has no ATT prompt, so this is a no-op there. */
-        async function primeAttOnboarding() {
-          if (adPlatform() !== "ios") return;
-          try {
-            if (!(await adMobInit())) return;
-            await adConsentInit();
-            await attEnsure(true);
-          } catch (e) {
-            /* Onboarding must never block play. */
-          }
-        }
         syncConsentBanner();
         // Returning player who already consented: bring native Firebase
         // Analytics up for a player who accepted on an earlier launch.
         if (SETTINGS.analytics === true) setFbConsent();
         /* UMP consent resolved on every launch, not just the first (that's
-   primeAttOnboarding, still tied to the first "Before you start" answer).
+   Continue on "Before you start", tied to the personalised-ads answer).
    Without this, a returning player who never happened to watch an ad saw
    Privacy & data's Personalised ads permanently stuck unresolved — the
    whole toggle reads adConsentResolved, which nothing else was setting
