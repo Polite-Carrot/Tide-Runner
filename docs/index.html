@@ -15276,6 +15276,24 @@
                 status = (after && after.status) || status;
               }
               attStatus = status;
+              /* Allowing Apple's prompt IS the affirmative act — the dialog it
+                 appears in carries our own words, "to show adverts that are
+                 more relevant to you", so a tap on Allow is consent to exactly
+                 the thing the switch beside it controls. Recording it stops a
+                 player who just said yes being served un-personalised adverts
+                 anyway because a switch they never saw again was still off.
+                 A refusal is deliberately not written back as an explicit no:
+                 the switch already defaults off and attStatus gates it either
+                 way, and storing a no would mean a player who later changed
+                 their mind in iOS Settings stayed un-personalised for reasons
+                 nothing in this app could explain to them. */
+              if (
+                status === "authorized" &&
+                SETTINGS.adsPersonalized !== true
+              ) {
+                SETTINGS.adsPersonalized = true;
+                saveSettings();
+              }
               syncPrivacyRow();
               // the startup signal was sent before this prompt existed, so it
               // has to be corrected now the player has actually answered
