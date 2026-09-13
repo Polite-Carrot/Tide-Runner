@@ -16282,15 +16282,40 @@
 
         document.getElementById("consentContinue").onclick = () => {
           resolveAnalyticsConsent(consentAnalyticsTog.dataset.on === "1");
-          /* Apple's tracking prompt belongs to the personalised-ads answer
-     rather than to the dialog, so it is raised for the player who just
-     asked for them and for nobody else — setAdsPersonalized carries UMP's
-     form and attEnsure on the way through, the same path the Settings
-     toggle takes. Leaving the switch off means iOS is never asked at all:
-     there is nothing to track for, and a system dialog after a "no" reads
-     as not having listened. Android has no ATT prompt either way. */
-          setAdsPersonalized(consentAdsTog.dataset.on === "1");
+          primeConsent(consentAdsTog.dataset.on === "1");
         };
+        /* Apple's prompt is raised here for every iOS player, whatever the
+   switches say. Hanging it off the personalised-ads switch read better and
+   App Review rejected the build under 2.1 for it: a reviewer who leaves the
+   default alone never sees the prompt, so "unable to locate the App
+   Tracking Transparency permission request" is the only finding available
+   to them. The rewarded-ad path it also sits on is no safety net — that one
+   throws before it reaches attEnsure whenever the SDK will not start or the
+   region refuses ads, which is exactly what a review device looks like.
+
+   Asking everyone costs a player who left the switch off nothing but one
+   system dialog. The switches still decide what is done with the answer:
+   adsPersonalisedGranted() wants Apple's yes AND the player's, so a no on
+   the switch stays a no however Apple is answered. Each step is caught on
+   its own so a failure in one can never swallow the prompt, and attEnsure
+   caches its own promise, so setAdsPersonalized having already asked on the
+   way through is harmless rather than a second dialog. UMP goes first, the
+   order used everywhere else ad consent is resolved. Android has no ATT
+   prompt and leaves at the platform check. */
+        async function primeConsent(adsOn) {
+          try {
+            await setAdsPersonalized(adsOn);
+          } catch (e) {
+            /* Onboarding must never block play. */
+          }
+          if (adPlatform() !== "ios") return;
+          try {
+            await adConsentInit();
+          } catch (e) {}
+          try {
+            await attEnsure(true);
+          } catch (e) {}
+        }
         syncConsentBanner();
         // Returning player who already consented: bring native Firebase
         // Analytics up for a player who accepted on an earlier launch.

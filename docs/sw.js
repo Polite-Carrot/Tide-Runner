@@ -1,5 +1,5 @@
 /* Bump on every deploy to invalidate the previous cache. */
-const CACHE = "tiderunner-v101";
+const CACHE = "tiderunner-v102";
 const ASSETS = [
   "./",
   "./index.html",
