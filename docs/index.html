@@ -2802,8 +2802,8 @@
       <div class="sheet panel" style="max-width: 460px">
         <h2>Before you start</h2>
         <p>
-          Two things you can switch on if you want to. Both stay off unless you
-          turn them on, and either can be changed at any time in Settings.
+          One thing you can switch on if you want to. It stays off unless you
+          turn it on, and can be changed at any time in Settings.
           <a
             href="https://politecarrot.com/privacy.html"
             target="_blank"
@@ -2825,24 +2825,6 @@
             id="consentAnalyticsToggle"
             data-on="0"
             aria-label="Send usage data"
-          >
-            <span></span>
-          </button>
-        </div>
-        <div class="setrow">
-          <label for="consentAdsToggle"
-            >Personalised ads
-            <small
-              >Adverts matched to your interests rather than shown at
-              random.</small
-            ></label
-          >
-          <button
-            class="toggle"
-            type="button"
-            id="consentAdsToggle"
-            data-on="0"
-            aria-label="Personalised ads"
           >
             <span></span>
           </button>
@@ -3089,10 +3071,6 @@
             ✕
           </button>
         </div>
-        <p class="tag xfer-blurb">
-          Everything below is what actually leaves this device. Nothing else
-          does.
-        </p>
         <div class="dsrow">
           <b>Your progress</b>
           <span
@@ -3139,15 +3117,11 @@
           <button
             class="toggle"
             id="adsPersonalizedToggle"
-            data-on="1"
+            data-on="0"
             aria-label="Personalised ads"
           >
             <span></span>
           </button>
-        </div>
-        <div class="setrow" id="privacyOptionsRow" hidden>
-          <label for="adPrivacyBtn">Advert personalisation</label>
-          <button class="ghost" type="button" id="adPrivacyBtn">Change</button>
         </div>
         <p class="xfer-note" id="privacyNote"></p>
         <p class="tag xfer-blurb">
@@ -8802,9 +8776,9 @@
           sfx: true,
           haptics: true,
           name: "",
-          // Off until the player asks for it, same as usage data. Analytics
-          // is deliberately left undefined instead: bannerPending() reads
-          // "never answered" off that, and a default would hide the dialog.
+          // Off until the player asks for it, same as usage data. Turning it
+          // on still goes through the real UMP/ATT channel first where one
+          // applies — this is a local preference, not a substitute for that.
           adsPersonalized: false,
         };
         try {
@@ -8818,9 +8792,6 @@
           // SETTINGS.analytics honest for syncToggles() and the click handler
           if (typeof saved.analytics === "boolean")
             SETTINGS.analytics = saved.analytics;
-          // Off unless the player turned it on, so only an explicit true
-          // lifts it off the default — someone who never answered stays
-          // un-personalised rather than being opted in by omission.
           if (typeof saved.adsPersonalized === "boolean")
             SETTINGS.adsPersonalized = saved.adsPersonalized;
           if (typeof saved.name === "string")
@@ -15140,8 +15111,6 @@
         let adConsentResolved = false;
         function adsPersonalisedGranted() {
           if (!adConsentResolved) return false;
-          // The player's own switch, honoured regardless of region or
-          // Apple's answer. It starts off, so this is the common path.
           if (SETTINGS.adsPersonalized !== true) return false;
           // Apple's answer is required on iOS, and only an explicit yes counts
           if (adPlatform() === "ios" && attStatus !== "authorized")
@@ -15276,24 +15245,6 @@
                 status = (after && after.status) || status;
               }
               attStatus = status;
-              /* Allowing Apple's prompt IS the affirmative act — the dialog it
-                 appears in carries our own words, "to show adverts that are
-                 more relevant to you", so a tap on Allow is consent to exactly
-                 the thing the switch beside it controls. Recording it stops a
-                 player who just said yes being served un-personalised adverts
-                 anyway because a switch they never saw again was still off.
-                 A refusal is deliberately not written back as an explicit no:
-                 the switch already defaults off and attStatus gates it either
-                 way, and storing a no would mean a player who later changed
-                 their mind in iOS Settings stayed un-personalised for reasons
-                 nothing in this app could explain to them. */
-              if (
-                status === "authorized" &&
-                SETTINGS.adsPersonalized !== true
-              ) {
-                SETTINGS.adsPersonalized = true;
-                saveSettings();
-              }
               syncPrivacyRow();
               // the startup signal was sent before this prompt existed, so it
               // has to be corrected now the player has actually answered
@@ -15311,10 +15262,8 @@
           });
           return attAsked;
         }
-        /* What actually rides on the request. Both regimes have to be happy,
-   on iOS anything short of an explicit yes counts as a no, and the
-   player's own toggle in Privacy & data overrides either in the off
-   direction — it can only ever make a request less personalised. */
+        /* What actually rides on the request. Both regimes have to be happy —
+   on iOS anything short of an explicit yes counts as a no. */
         function adNpa() {
           return (
             SETTINGS.adsPersonalized !== true ||
@@ -15864,21 +15813,12 @@
         syncStartBtn();
         /* ---------- privacy & data ---------- */
         const privacyPopEl = document.getElementById("privacyPop"),
-          privacyOptionsRowEl = document.getElementById("privacyOptionsRow"),
-          adsPersonalizedTog = document.getElementById("adsPersonalizedToggle"),
-          privacyNoteEl = document.getElementById("privacyNote");
-        /* Google requires a standing way to reopen the consent choice for
-   anyone it decided needed one — so the row appears only when UMP says
-   privacy options are required, and never invents itself elsewhere. */
+          privacyNoteEl = document.getElementById("privacyNote"),
+          adsPersonalizedTog = document.getElementById("adsPersonalizedToggle");
         /* Naming which regime said no matters: UMP's answer can be changed
-   right here by the button above, Apple's only in iOS Settings. A player
+   right here by the toggle below, Apple's only in iOS Settings. A player
    told "not personalised" with no idea why has nowhere to go. */
         function syncPrivacyRow() {
-          privacyOptionsRowEl.hidden = !adConsent.canChange;
-          // Always the *effective* state, not the stored preference alone —
-          // this is what makes the switch flip itself back off the moment
-          // Apple's tracking prompt resolves to denied, instead of sitting
-          // there claiming "on" for a permission the OS never actually gave.
           adsPersonalizedTog.dataset.on = adsPersonalisedGranted() ? "1" : "0";
           let note = "";
           if (attStatus === "denied" || attStatus === "restricted")
@@ -15886,7 +15826,7 @@
               "Adverts are not personalised — app tracking is off for Tide Runner in iOS Settings.";
           else if (SETTINGS.adsPersonalized === false)
             note = "Adverts are currently not personalised.";
-          else if (adConsent.canChange)
+          else
             note = adConsent.npa
               ? "Adverts are currently not personalised."
               : "Adverts are currently personalised.";
@@ -15898,38 +15838,20 @@
         };
         document.getElementById("privacyClose").onclick = () =>
           privacyPopEl.classList.add("hidden");
-        document.getElementById("adPrivacyBtn").onclick = async () => {
-          const M = adMobPlugin();
-          if (!M || !M.showPrivacyOptionsForm) return;
-          try {
-            await M.showPrivacyOptionsForm();
-            // the form writes the new choice into UMP; re-read rather than
-            // assume which way they went
-            consentAsked = null;
-            await adConsentInit();
-            syncPrivacyRow();
-          } catch (e) {
-            privacyNoteEl.textContent = "Couldn't open that just now.";
-          }
-        };
         /* Turning personalised ads OFF is always just a local flag — no
    platform ever needs asking to serve you *less* personalised ads. Turning
-   it ON is the case that has to go through the right channel per platform:
-   UMP's own consent form where the region requires it (flipping our flag
-   instead would not be a valid legal consent), and Apple's tracking prompt
-   on iOS (attEnsure only shows it if never yet answered — Apple allows the
-   dialog once per install, so a previously-denied player is guided to iOS
-   Settings by the note above rather than being asked again). */
+   it ON tries the real channel first: UMP's own consent form where the
+   region requires it (flipping our flag instead would not be valid legal
+   consent), then Apple's tracking prompt on iOS. Where neither applies —
+   outside a region UMP regulates — the flag is all there is to set. */
         async function setAdsPersonalized(on) {
           await adMobInit();
           if (!on) {
             SETTINGS.adsPersonalized = false;
             saveSettings();
           } else {
-            // Never trust a stale boot-time read here — if the very first,
-            // automatic UMP form was dismissed or failed to render, canChange
-            // stays false and adConsent.npa stays stuck true forever unless
-            // an explicit ask like this one forces a fresh resolution.
+            // Never trust a stale boot-time read here — an explicit ask
+            // deserves a fresh resolution, not a cached one.
             consentAsked = null;
             await adConsentInit();
             if (adConsent.canChange) {
@@ -15949,8 +15871,12 @@
           await setFbConsent();
           syncPrivacyRow();
         }
+        // The stored preference, not the effective granted() state — a
+          setAdsPersonalized(SETTINGS.adsPersonalized !== true);
+        // adsPersonalized stays true underneath, and tapping it must be able
+        // to actually clear that rather than just re-asking for "on" again.
         adsPersonalizedTog.onclick = () =>
-          setAdsPersonalized(!adsPersonalisedGranted());
+          setAdsPersonalized(SETTINGS.adsPersonalized !== true);
 
         /* ---------- transfer save ---------- */
         const transferPopEl = document.getElementById("transferPop"),
@@ -16284,52 +16210,55 @@
           saveSettings();
         }
 
-        /* The two switches above start off and are read straight off the
-   DOM — there is no third place for the answer to live between opening
-   the dialog and pressing Continue, so there is nothing to keep in sync.
-   Continue is the only way out: it commits whatever they are set to,
-   which for a player who touches neither is off and off. */
+        /* The switch above starts off and is read straight off the DOM —
+   there is no third place for the answer to live between opening the
+   dialog and pressing Continue, so there is nothing to keep in sync.
+   Continue is the only way out: it commits whatever it is set to, which
+   for a player who never touches it is off. */
         const consentAnalyticsTog = document.getElementById(
-            "consentAnalyticsToggle",
-          ),
-          consentAdsTog = document.getElementById("consentAdsToggle");
-        for (const t of [consentAnalyticsTog, consentAdsTog])
-          t.onclick = () => {
-            t.dataset.on = t.dataset.on === "1" ? "0" : "1";
-          };
+          "consentAnalyticsToggle",
+        );
+        consentAnalyticsTog.onclick = () => {
+          consentAnalyticsTog.dataset.on =
+            consentAnalyticsTog.dataset.on === "1" ? "0" : "1";
+        };
 
         document.getElementById("consentContinue").onclick = () => {
           resolveAnalyticsConsent(consentAnalyticsTog.dataset.on === "1");
-          primeConsent(consentAdsTog.dataset.on === "1");
+          primeConsent();
         };
-        /* Apple's prompt is raised here for every iOS player, whatever the
-   switches say. Hanging it off the personalised-ads switch read better and
-   App Review rejected the build under 2.1 for it: a reviewer who leaves the
-   default alone never sees the prompt, so "unable to locate the App
-   Tracking Transparency permission request" is the only finding available
-   to them. The rewarded-ad path it also sits on is no safety net — that one
-   throws before it reaches attEnsure whenever the SDK will not start or the
-   region refuses ads, which is exactly what a review device looks like.
+        /* Apple's prompt is raised here for every iOS player, with no switch
+   of ours in the way. App Review rejected an earlier build under 2.1 for
+   hanging it off a personalised-ads switch: a reviewer who left the
+   default alone never saw the prompt, so "unable to locate the App
+   Tracking Transparency permission request" was the only finding
+   available to them. The rewarded-ad path it also sits on is no safety
+   net — that one throws before it reaches attEnsure whenever the SDK will
+   not start or the region refuses ads, which is exactly what a review
+   device looks like.
 
-   Asking everyone costs a player who left the switch off nothing but one
-   system dialog. The switches still decide what is done with the answer:
-   adsPersonalisedGranted() wants Apple's yes AND the player's, so a no on
-   the switch stays a no however Apple is answered. Each step is caught on
-   its own so a failure in one can never swallow the prompt, and attEnsure
-   caches its own promise, so setAdsPersonalized having already asked on the
-   way through is harmless rather than a second dialog. UMP goes first, the
-   order used everywhere else ad consent is resolved. Android has no ATT
-   prompt and leaves at the platform check. */
-        async function primeConsent(adsOn) {
+   There is no ads switch left to gate on any more — personalisation is
+   decided entirely by UMP's own answer and Apple's own answer, which is
+   what adsPersonalisedGranted() reads. Each step is caught on its own so
+   a failure in one can never swallow the prompt, and attEnsure caches its
+   own promise, so a second call elsewhere is harmless rather than a
+   second dialog. UMP goes first, the order used everywhere else ad
+   consent is resolved. Android has no ATT prompt and leaves at the
+   platform check. */
+        async function primeConsent() {
+          // Each caught on its own — a failure in one must not skip the
+          // other, or UMP never even gets asked.
           try {
-            await setAdsPersonalized(adsOn);
+            await adMobInit();
+          } catch (e) {
+            /* Onboarding must never block play. */
+          }
+          try {
+            await adConsentInit();
           } catch (e) {
             /* Onboarding must never block play. */
           }
           if (adPlatform() !== "ios") return;
-          try {
-            await adConsentInit();
-          } catch (e) {}
           try {
             await attEnsure(true);
           } catch (e) {}
@@ -16339,12 +16268,12 @@
         // Analytics up for a player who accepted on an earlier launch.
         if (SETTINGS.analytics === true) setFbConsent();
         /* UMP consent resolved on every launch, not just the first (that's
-   Continue on "Before you start", tied to the personalised-ads answer).
-   Without this, a returning player who never happened to watch an ad saw
-   Privacy & data's Personalised ads permanently stuck unresolved — the
-   whole toggle reads adConsentResolved, which nothing else was setting
-   for them. Silent for most players; only shows Google's own form where
-   a region requires it, same as it already did on first run. */
+   primeConsent(), tied to Continue on "Before you start"). Without this, a
+   returning player who never happened to watch an ad saw adConsentResolved
+   stay false all session — every ad request read the pre-consent default
+   and Privacy & data's note never reflected their actual answer. Silent
+   for most players; only shows Google's own form where a region requires
+   it, same as it already did on first run. */
         adMobInit()
           .then(() => adConsentInit())
           .then(syncPrivacyRow);

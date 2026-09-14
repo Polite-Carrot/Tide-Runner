@@ -68,6 +68,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<!-- Only standard HTTPS/TLS is used (Firebase, AdMob, own assets) — no
+	     proprietary encryption, so this answers the export-compliance
+	     question at build time instead of on every App Store Connect upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>GADIsAdManagerApp</key>
 	<true/>
 	<key>GADApplicationIdentifier</key>
