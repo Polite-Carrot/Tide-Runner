@@ -15266,9 +15266,10 @@
    on iOS anything short of an explicit yes counts as a no. */
         function adNpa() {
           return (
+            !adConsentResolved ||
             SETTINGS.adsPersonalized !== true ||
             adConsent.npa ||
-            (attStatus !== null && attStatus !== "authorized")
+            (adPlatform() === "ios" && attStatus !== "authorized")
           );
         }
 
@@ -15819,17 +15820,23 @@
    right here by the toggle below, Apple's only in iOS Settings. A player
    told "not personalised" with no idea why has nowhere to go. */
         function syncPrivacyRow() {
-          adsPersonalizedTog.dataset.on = adsPersonalisedGranted() ? "1" : "0";
+          adsPersonalizedTog.dataset.on =
+            SETTINGS.adsPersonalized === true ? "1" : "0";
           let note = "";
-          if (attStatus === "denied" || attStatus === "restricted")
+          if (SETTINGS.adsPersonalized !== true)
+            note = "Adverts are currently not personalised.";
+          else if (!adConsentResolved)
+            note =
+              "Adverts are not personalised while your consent is being confirmed.";
+          else if (attStatus === "denied" || attStatus === "restricted")
             note =
               "Adverts are not personalised — app tracking is off for Tide Runner in iOS Settings.";
-          else if (SETTINGS.adsPersonalized === false)
+          else if (adPlatform() === "ios" && attStatus !== "authorized")
+            note =
+              "Adverts are not personalised until app tracking permission is confirmed.";
+          else if (adConsent.npa)
             note = "Adverts are currently not personalised.";
-          else
-            note = adConsent.npa
-              ? "Adverts are currently not personalised."
-              : "Adverts are currently personalised.";
+          else note = "Adverts are currently personalised.";
           privacyNoteEl.textContent = note;
         }
         document.getElementById("privacyBtn").onclick = () => {
@@ -15845,36 +15852,43 @@
    consent), then Apple's tracking prompt on iOS. Where neither applies —
    outside a region UMP regulates — the flag is all there is to set. */
         async function setAdsPersonalized(on) {
-          await adMobInit();
+          SETTINGS.adsPersonalized = on;
+          saveSettings();
+          syncPrivacyRow();
+          await setFbConsent();
+
           if (!on) {
-            SETTINGS.adsPersonalized = false;
-            saveSettings();
-          } else {
-            // Never trust a stale boot-time read here — an explicit ask
-            // deserves a fresh resolution, not a cached one.
-            consentAsked = null;
-            await adConsentInit();
-            if (adConsent.canChange) {
-              const M = adMobPlugin();
-              if (M && M.showPrivacyOptionsForm) {
-                try {
-                  await M.showPrivacyOptionsForm();
-                  consentAsked = null;
-                  await adConsentInit();
-                } catch (e) {}
+            return;
+          }
+
+          // ATT is independent of UMP. Start it before waiting for Google's
+          // network request so a slow or unavailable consent endpoint cannot
+          // prevent iOS from showing its system prompt.
+          const attPromise =
+            adPlatform() === "ios" ? attEnsure(true) : Promise.resolve();
+          await adMobInit();
+          // Never trust a stale boot-time read here — an explicit ask
+          // deserves a fresh resolution, not a cached one.
+          consentAsked = null;
+          await adConsentInit();
+          if (adConsent.canChange) {
+            const M = adMobPlugin();
+            if (M && M.showPrivacyOptionsForm) {
+              try {
+                await M.showPrivacyOptionsForm();
+                consentAsked = null;
+                await adConsentInit();
+              } catch (e) {
+                /* Keep the local choice; unresolved consent remains NPA. */
               }
             }
-            SETTINGS.adsPersonalized = true;
-            saveSettings();
           }
-          if (on && adPlatform() === "ios") await attEnsure(true);
+          await attPromise;
           await setFbConsent();
           syncPrivacyRow();
         }
-        // The stored preference, not the effective granted() state — a
-          setAdsPersonalized(SETTINGS.adsPersonalized !== true);
-        // adsPersonalized stays true underneath, and tapping it must be able
-        // to actually clear that rather than just re-asking for "on" again.
+        // The switch represents the stored choice. Legal/platform gates are
+        // reflected in the note and ad request rather than moving the switch.
         adsPersonalizedTog.onclick = () =>
           setAdsPersonalized(SETTINGS.adsPersonalized !== true);
 
@@ -16237,17 +16251,17 @@
    not start or the region refuses ads, which is exactly what a review
    device looks like.
 
-   There is no ads switch left to gate on any more — personalisation is
-   decided entirely by UMP's own answer and Apple's own answer, which is
-   what adsPersonalisedGranted() reads. Each step is caught on its own so
-   a failure in one can never swallow the prompt, and attEnsure caches its
-   own promise, so a second call elsewhere is harmless rather than a
-   second dialog. UMP goes first, the order used everywhere else ad
-   consent is resolved. Android has no ATT prompt and leaves at the
-   platform check. */
+  The personalised-ads switch records the player's local preference, but
+  does not gate this first-run platform prompt. Effective personalisation
+  still requires that preference plus UMP and ATT. Each native step is
+  caught independently, and attEnsure caches its own promise, so another
+  call elsewhere cannot produce a second dialog. Android has no ATT prompt
+  and leaves at the platform check. */
         async function primeConsent() {
-          // Each caught on its own — a failure in one must not skip the
-          // other, or UMP never even gets asked.
+          // Start ATT immediately. It is independent of UMP, whose network
+          // request can be slow or unavailable on an otherwise healthy app.
+          const attPromise =
+            adPlatform() === "ios" ? attEnsure(true) : Promise.resolve();
           try {
             await adMobInit();
           } catch (e) {
@@ -16258,9 +16272,8 @@
           } catch (e) {
             /* Onboarding must never block play. */
           }
-          if (adPlatform() !== "ios") return;
           try {
-            await attEnsure(true);
+            await attPromise;
           } catch (e) {}
         }
         syncConsentBanner();
