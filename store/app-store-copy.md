@@ -102,6 +102,7 @@ https://polite-carrot.github.io/Tide-Runner/privacy.html
 ## Age rating
 
 Fill the questionnaire with:
+
 - Cartoon or Fantasy Violence: **Infrequent/Mild** (the shark)
 - Everything else: **None**
 
@@ -156,11 +157,13 @@ First release. Seventeen river courses, four difficulty tiers, one-handed joysti
 Upload in order:
 
 **6.7" iPhone Display** (2796 × 1290, landscape)
+
 1. `iphone-67-menu.png`
 2. `iphone-67-race.png`
 3. `iphone-67-pause.png`
 
 **12.9" iPad Pro** (2732 × 2048, landscape)
+
 1. `ipad-129-menu.png`
 2. `ipad-129-race.png`
 3. `ipad-129-pause.png`

@@ -27,7 +27,8 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
 
         WebView webView = getBridge().getWebView();
-        if (webView == null) return;
+        if (webView == null)
+            return;
 
         // -- Disable pinch/double-tap zoom at the native layer, not just CSS --
         webView.getSettings().setSupportZoom(false);
@@ -71,7 +72,8 @@ public class MainActivity extends BridgeActivity {
      */
     @Override
     public ActionMode onWindowStartingActionMode(ActionMode.Callback callback, int type) {
-        if (type == ActionMode.TYPE_FLOATING) return null;
+        if (type == ActionMode.TYPE_FLOATING)
+            return null;
         return super.onWindowStartingActionMode(callback, type);
     }
 
