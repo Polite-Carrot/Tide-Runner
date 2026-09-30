@@ -45,3 +45,6 @@ ios/App/App/public/
 # Secrets / signing
 *.keystore
 *.jks
+
+# Generated shared dependency
+docs/vendor/unity-ads.js

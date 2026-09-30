@@ -24,10 +24,6 @@
 
         </activity>
 
-        <!-- AdMob. Points at @string/admob_app_id (real production ID). -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="@string/admob_app_id" />
 
         <!-- Firebase Analytics starts collecting on native SDK init unless
              these flags default it off. trackEvent() in docs/index.html
@@ -66,6 +62,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Required by targetSdk 33+ for AdMob to read the Advertising ID. -->
+    <!-- Required by targetSdk 33+ for Unity Ads to read the Advertising ID. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 </manifest>

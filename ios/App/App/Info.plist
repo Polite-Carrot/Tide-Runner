@@ -68,20 +68,16 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<!-- Only standard HTTPS/TLS is used (Firebase, AdMob, own assets) — no
+	<!-- Only standard HTTPS/TLS is used (Firebase, Unity Ads, own assets) — no
 	     proprietary encryption, so this answers the export-compliance
 	     question at build time instead of on every App Store Connect upload. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>GADIsAdManagerApp</key>
-	<true/>
-	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-2022992563510125~4392182869</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
 			<key>SKAdNetworkIdentifier</key>
-			<string>cstr6suwn9.skadnetwork</string>
+			<string>4dzt52r2t5.skadnetwork</string>
 		</dict>
 	</array>
 	<key>NSUserTrackingUsageDescription</key>

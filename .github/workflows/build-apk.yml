@@ -41,7 +41,7 @@ jobs:
         run: npm ci
 
       - name: Sync Capacitor Android
-        run: npx cap sync android
+        run: npm run web:sync && npx cap sync android
 
       - name: Strip local-only truststore settings
         # These systemProp lines point at a Mac-only path used to work around a corp

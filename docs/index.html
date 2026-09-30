@@ -3086,7 +3086,7 @@
         <div class="dsrow">
           <b>Adverts</b>
           <span
-            >Google AdMob serves them. It receives your device's advert
+            >Unity Ads serves them. It receives your device's advert
             identifier, approximate location from your IP address, and basic
             device information. On iOS the advert identifier is only read if you
             allow tracking when asked.</span
@@ -3351,6 +3351,8 @@
       </div>
     </div>
 
+    <script src="vendor/unity-ads.js"></script>
+    <script src="unity-ads-config.js"></script>
     <script>
       (() => {
         "use strict";
@@ -8777,7 +8779,7 @@
           haptics: true,
           name: "",
           // Off until the player asks for it, same as usage data. Turning it
-          // on still goes through the real UMP/ATT channel first where one
+          // on still goes through the shared consent/ATT channel where one
           // applies — this is a local preference, not a substitute for that.
           adsPersonalized: false,
         };
@@ -15013,7 +15015,7 @@
         // closing the Boathouse before spinning it just means watching
         // another ad, which is a fine, simple edge case for now.
         let bonusSpinArmed = false;
-        // True for the ~2s a rewarded ad is "loading". Closing the popup and
+        // True while a rewarded ad is loading or showing. Closing the popup and
         // reopening it used to re-enable the watch-ad button while the first
         // request was still in flight (refreshSpinStatus() had no way to
         // know one was pending), letting a second one fire alongside it —
@@ -15034,55 +15036,30 @@
           spinResultEl = document.getElementById("spinResult"),
           adSpinBtnEl = document.getElementById("adSpinBtn"),
           adSpinBtnLabelEl = document.getElementById("adSpinBtnLabel");
-        /* Stand-in for a real rewarded-ad SDK call, so the flow and its
-   visuals can be built and tried before an ad network is wired in. Swap
-   the body for the SDK's "show rewarded ad" call — call onComplete()
-   only once the viewer has actually earned the reward (watched through),
-   and leave the button in its normal state without arming a bonus spin
-   if they skipped or it failed to load. */
-        /* ---------- rewarded ads ----------
-   Google AdMob through @capacitor-community/admob, on Google's own test
-   ad units. Those serve a real ad, through the real SDK, with a real
-   reward callback — they simply never bill anyone and never count as
-   traffic. So this is the actual integration rather than a mock of one:
-   swapping AD_UNITS for live IDs and setting AD_TESTING false is the
-   whole of what is left to do.
-
-   No import, same as the haptics: the plugin arrives on
-   window.Capacitor.Plugins at runtime, so the native build reaches it
-   without this file gaining a build step. On the web there is no plugin
-   and no ad network, so the timeout below stands in — which is also what
-   keeps the browser build playable and testable. */
-        const AD_UNITS = {
-          // Production ad unit IDs from AdMob Console.
-          rewarded: {
-            android: "ca-app-pub-2022992563510125/6157432935",
-            ios: "ca-app-pub-2022992563510125/2993203223",
-          },
-          interstitial: {
-            android: "ca-app-pub-2022992563510125/1985223361",
-            ios: "ca-app-pub-2022992563510125/6525786950",
-          },
-        };
-        /* Off in production. Any unit ID still under Google's test-publisher
-   prefix (ca-app-pub-3940256099942544) is auto-flagged as testing per-request
-   below, so rewarded on the sample IDs still returns test creatives. */
-        const AD_TESTING = false;
-        // How long the stand-in "ad" runs on the web, matched to the progress
-        // bar's CSS transition so the two finish together.
-        const AD_FAKE_MS = 2200;
-
-        function adMobPlugin() {
-          return (
-            (window.Capacitor &&
-              window.Capacitor.Plugins &&
-              window.Capacitor.Plugins.AdMob) ||
-            null
-          );
-        }
+        /* Shared Unity SDK; game policy and rewards stay in this file. */
         function adPlatform() {
           const c = window.Capacitor;
-          return (c && c.getPlatform && c.getPlatform()) || "web";
+          return c && c.isNativePlatform && c.isNativePlatform() ? c.getPlatform() : "web";
+        }
+        const unityConfig = window.TideUnityAdsConfig || {};
+        const unityPlatformConfig = unityConfig[adPlatform()];
+        const unityAds = window.PoliteCarrotAds &&
+          (adPlatform() === "web" || (unityPlatformConfig && unityPlatformConfig.gameId))
+          ? window.PoliteCarrotAds.createUnityAds(unityConfig) : null;
+        async function syncAdConsent() {
+          if (!unityAds) return false;
+          try {
+            if (unityAds.state().personalized !== (SETTINGS.adsPersonalized === true)) {
+              await unityAds.setPersonalized(SETTINGS.adsPersonalized === true);
+            }
+            const ready = await unityAds.init();
+            return ready;
+          } catch (e) { return false; }
+        }
+        async function requestAdTracking() {
+          if (!unityAds || adPlatform() !== "ios") return null;
+          try { return await unityAds.requestTracking(); }
+          catch (e) { return null; }
         }
         /* Firebase Analytics on native, and the only analytics anywhere —
    the web build has none. The native
@@ -15101,21 +15078,8 @@
           }
           return _fb;
         }
-        /* Whether an advert may be personalised, for the consent signal as
-   well as the request. It has to be positively established, not assumed:
-   both regimes are resolved lazily at the first ad, and a caller running
-   before that would otherwise read the optimistic defaults (npa false,
-   attStatus null) and conclude yes. Consent Mode's own rule is to default
-   to denied and update when the answer arrives — so that is what this
-   does, and setFbConsent is re-sent by each regime as it settles. */
-        let adConsentResolved = false;
         function adsPersonalisedGranted() {
-          if (!adConsentResolved) return false;
-          if (SETTINGS.adsPersonalized !== true) return false;
-          // Apple's answer is required on iOS, and only an explicit yes counts
-          if (adPlatform() === "ios" && attStatus !== "authorized")
-            return false;
-          return !adConsent.npa;
+          return SETTINGS.adsPersonalized === true && !!(unityAds && unityAds.state().effectivePersonalized);
         }
         /* No argument on purpose: every caller (ad consent resolving, ATT
    resolving, the banner, Settings) just tells this to resync, and it always
@@ -15143,164 +15107,11 @@
             /* Analytics must never break play. */
           }
         }
-        /* ---------- ad consent (Google UMP) ----------
-   Google requires a certified consent platform before personalised ads
-   are served to anyone in the EEA or the UK, and UMP is theirs. It works
-   out on its own whether the player is somewhere consent is required —
-   there is no geography check to write here, and guessing at one would
-   be worse than asking.
-
-   Two things come back that matter. canRequestAds says whether any ad may
-   be requested at all; refusing consent does not mean no ads, it means no
-   *personalised* ads, which is what npa carries on every request below.
-   privacyOptionsRequirementStatus says whether this player must be given
-   a standing way to change their mind — that is the Settings entry. */
-        let adConsent = { canRequestAds: true, npa: false, canChange: false };
-        let consentAsked = null;
-        function adConsentInit() {
-          const M = adMobPlugin();
-          if (!M || !M.requestConsentInfo) return Promise.resolve(adConsent);
-          if (consentAsked) return consentAsked;
-          consentAsked = M.requestConsentInfo()
-            .then(async (info) => {
-              if (info.status === "REQUIRED" && info.isConsentFormAvailable) {
-                try {
-                  info = (await M.showConsentForm()) || info;
-                } catch (e) {
-                  /* Dismissed, or the form failed to render. Not consented is
-                     the safe reading of that, and it is what UMP reports back
-                     anyway — nothing to do but carry on with what we know. */
-                }
-              }
-              adConsent = {
-                canRequestAds: info.canRequestAds !== false,
-                /* Personalised is fine when consent was given and equally
-                   when it was never needed — NOT_REQUIRED is UMP saying this
-                   player is outside the regime, not that they said no.
-                   Treating it as a refusal would serve non-personalised ads
-                   to most of the world for nothing. REQUIRED means still
-                   outstanding, and UNKNOWN means we don't know: both go
-                   non-personalised. */
-                npa: !(
-                  info.status === "OBTAINED" || info.status === "NOT_REQUIRED"
-                ),
-                canChange: info.privacyOptionsRequirementStatus === "REQUIRED",
-              };
-              adConsentResolved = true;
-              syncPrivacyRow();
-              setFbConsent();
-              return adConsent;
-            })
-            .catch(() => {
-              /* UMP itself failed. Serve non-personalised rather than nothing:
-                 the player still gets their reward and nobody is tracked. */
-              adConsent = { canRequestAds: true, npa: true, canChange: false };
-              adConsentResolved = true;
-              setFbConsent();
-              return adConsent;
-            });
-          return consentAsked;
-        }
-
-        /* ---------- App Tracking Transparency (iOS) ----------
-   Apple's rule, and independent of Google's: on iOS the advert identifier
-   may not be read at all until the player has answered the system prompt.
-   So there are two gates on a personalised ad, and either one saying no is
-   a no — a player can consent under UMP and still refuse tracking here, in
-   which case Apple wins and the request goes out non-personalised.
-
-   Apple allows the prompt once per install, so the moment matters. It is
-   fired on the first ad the player *chose* to watch — someone who has just
-   tapped "double your coins" understands what is being asked in a way that
-   someone who just opened the game does not. An interstitial, which nobody
-   asked for, only reads the answer and never prompts for it. */
-        // null on anything that is not iOS; otherwise Apple's own wording:
-        // authorized, denied, restricted or notDetermined
-        let attStatus = null;
-        let attAsked = null;
-        function attEnsure(mayPrompt) {
-          const M = adMobPlugin();
-          if (
-            !M ||
-            adPlatform() !== "ios" ||
-            !M.trackingAuthorizationStatus ||
-            !M.requestTrackingAuthorization
-          )
-            return Promise.resolve();
-          if (attAsked) return attAsked;
-          const run = M.trackingAuthorizationStatus()
-            .then(async (r) => {
-              let status = (r && r.status) || "notDetermined";
-              if (status === "notDetermined") {
-                /* Unanswered. Nothing may be read yet, so this ad goes out
-                   non-personalised — but the question stays open rather than
-                   being burned here, because a rewarded ad is a better place
-                   to spend the one prompt we get. */
-                if (!mayPrompt) {
-                  attStatus = "notDetermined";
-                  return false;
-                }
-                await M.requestTrackingAuthorization();
-                const after = await M.trackingAuthorizationStatus();
-                status = (after && after.status) || status;
-              }
-              attStatus = status;
-              syncPrivacyRow();
-              // the startup signal was sent before this prompt existed, so it
-              // has to be corrected now the player has actually answered
-              setFbConsent();
-              return true;
-            })
-            .catch(() => {
-              // the plugin threw: assume nothing, read nothing
-              attStatus = "denied";
-              setFbConsent();
-              return true;
-            });
-          attAsked = run.then((settled) => {
-            if (!settled) attAsked = null; // ask properly at the next reward
-          });
-          return attAsked;
-        }
-        /* What actually rides on the request. Both regimes have to be happy —
-   on iOS anything short of an explicit yes counts as a no. */
-        function adNpa() {
-          return (
-            !adConsentResolved ||
-            SETTINGS.adsPersonalized !== true ||
-            adConsent.npa ||
-            (adPlatform() === "ios" && attStatus !== "authorized")
-          );
-        }
-
-        // everything above lives inside this file's IIFE, so this is the
-        // only way to read the live consent state from the Safari console
         window.__consentDebug = () => ({
-          adConsentResolved,
-          adConsent,
-          attStatus,
+          configured: !!unityAds, attStatus: unityAds ? unityAds.state().attStatus : null,
           adsPersonalized: SETTINGS.adsPersonalized,
           granted: adsPersonalisedGranted(),
         });
-
-        let adMobReady = null;
-        function adMobInit() {
-          const M = adMobPlugin();
-          if (!M) return Promise.resolve(false);
-          /* Initialised once, lazily — on the first ad rather than at launch,
-             so a player who never taps an ad never pays for the SDK spinning
-             up. requestTrackingAuthorization is deliberately not set: the ATT
-             prompt belongs at a moment the player understands, not thrown at
-             them by a background init. */
-          if (!adMobReady)
-            adMobReady = M.initialize({ initializeForTesting: AD_TESTING })
-              .then(() => true)
-              .catch(() => {
-                adMobReady = null; // let the next attempt try again
-                return false;
-              });
-          return adMobReady;
-        }
 
         /* ---------- no ads ----------
    One question the whole app asks instead of reading a flag, so wiring a
@@ -15317,23 +15128,19 @@
           return !!progress.noAds;
         }
 
-        /* ---------- interstitials ----------
-   Full-screen, between races, and capped hard. A race is thirty to ninety
-   seconds; an interstitial after each one is the fastest way to lose the
-   player who was going to watch rewarded ads all week, and rewarded is
-   where the money is. So: not for the first few races anybody plays, not
-   more than one in three, not twice inside two minutes, and never on the
-   back of a rewarded ad — landing a forced ad on someone who just chose
-   to watch one is exactly backwards. */
-        const INTERSTITIAL_EVERY = 3;
+        /* Production interstitials: require two completed races, then check
+           every second completed race, with a two-minute gap between attempts
+           and after rewarded ads. Only results-screen actions trigger ads. */
+        const INTERSTITIAL_EVERY = 2;
         const INTERSTITIAL_GAP = 120000;
-        const INTERSTITIAL_GRACE = 3; // races finished before any are shown
+        const INTERSTITIAL_GRACE = 2;
         let lastRewardedAt = 0;
+        let interstitialInFlight = false;
 
         function interstitialDue() {
           if (adsRemoved()) return false;
           const p = progress;
-          if ((p.racesFinished || 0) <= INTERSTITIAL_GRACE) return false;
+          if ((p.racesFinished || 0) < INTERSTITIAL_GRACE) return false;
           if ((p.racesFinished || 0) % INTERSTITIAL_EVERY !== 0) return false;
           const now = Date.now();
           if (now - (p.lastInterstitial || 0) < INTERSTITIAL_GAP) return false;
@@ -15341,31 +15148,30 @@
           return true;
         }
         async function maybeShowInterstitial() {
-          if (!interstitialDue()) return;
-          const M = adMobPlugin();
-          if (!M) return; // nothing to show on the web, and nothing to fake
-          // recorded before the attempt, so a failing network can't turn into
-          // an ad on every single race
+          if (interstitialInFlight || adLoading || !interstitialDue()) return;
+          if (adPlatform() === "web" || !unityAds) return;
+          interstitialInFlight = true;
+          adLoading = true;
+          // Preserve the saved attempt cooldown, including failed requests.
           progress.lastInterstitial = Date.now();
           saveProgress();
           try {
-            if (!(await adMobInit())) return;
-            const c = await adConsentInit();
-            if (!c.canRequestAds) return;
-            await attEnsure(false);
-            const unit =
-              AD_UNITS.interstitial[adPlatform()] ||
-              AD_UNITS.interstitial.android;
-            await M.prepareInterstitial({
-              adId: unit,
-              isTesting: AD_TESTING,
-              npa: adNpa(),
-            });
-            await M.showInterstitial();
-            trackEvent("ad_shown", { placement: "interstitial" });
+            if (!(await syncAdConsent())) return;
+            await setFbConsent();
+            const loaded = await unityAds.prepareInterstitial();
+            if (!loaded.loaded) {
+              console.warn("Tide Ads: interstitial unavailable", loaded.reason);
+              return;
+            }
+            if (document.hidden || bannerPending()) return;
+            const result = await unityAds.showInterstitial();
+            if (!result.shown) console.warn("Tide Ads: interstitial not shown", result.reason);
+            if (result.shown) trackEvent("ad_shown", { placement: "interstitial" });
           } catch (e) {
-            /* No fill, or the SDK refused. Nothing to tell the player about —
-               an ad that didn't happen is not news. */
+            console.warn("Tide Ads: interstitial failed", e && e.message);
+          } finally {
+            interstitialInFlight = false;
+            adLoading = false;
           }
         }
 
@@ -15376,6 +15182,7 @@
    view; every other ending (skipped, no fill, SDK missing, plugin threw)
    leaves the button as it was and pays nothing. */
         async function playRewardedAd(btn, label, onComplete) {
+          if (adLoading || interstitialInFlight) return;
           adLoading = true;
           btn.disabled = true;
           btn.classList.add("loading");
@@ -15395,31 +15202,15 @@
              Removing the rewarded offers outright would leave a payer with
              less than a free player, which is no way to thank one. */
           if (adsRemoved()) return done(true);
-          const M = adMobPlugin();
-          /* The stand-in is for the web build only — somewhere with no ad
-             network to ask. On a device the SDK failing to start is an ad
-             failure like any other and pays nothing: falling back to the
-             simulation there would hand out free rewards to anyone whose
-             AdMob config was wrong or whose phone was offline. */
-          if (!M) return setTimeout(() => done(true), AD_FAKE_MS);
           try {
-            if (!(await adMobInit())) throw new Error("admob did not start");
-            const c = await adConsentInit();
-            if (!c.canRequestAds) throw new Error("ads not permitted here");
-            // the player chose this one, so it is where Apple's prompt goes
-            await attEnsure(true);
-            const unit =
-              AD_UNITS.rewarded[adPlatform()] || AD_UNITS.rewarded.android;
-            await M.prepareRewardVideoAd({
-              adId: unit,
-              isTesting: AD_TESTING,
-              npa: adNpa(),
-            });
-            /* Resolves when the reward is earned and rejects when it isn't —
-               a dismissal before the reward point lands here as a throw, which
-               is exactly the "watched nothing, paid nothing" case. */
-            const item = await M.showRewardVideoAd();
-            done(!!item);
+            if (!unityAds) throw new Error("Unity ads not configured");
+            await requestAdTracking();
+            if (!(await syncAdConsent())) throw new Error("Unity did not start");
+            await setFbConsent();
+            const loaded = await unityAds.prepareRewarded();
+            if (!loaded.loaded) throw new Error(loaded.reason || "Ad unavailable");
+            const result = await unityAds.showRewarded();
+            done(result.rewarded === true);
           } catch (e) {
             trackEvent("ad_failed", { placement: label.id || "unknown" });
             label.textContent = "Ad unavailable — try again";
@@ -15816,16 +15607,15 @@
         const privacyPopEl = document.getElementById("privacyPop"),
           privacyNoteEl = document.getElementById("privacyNote"),
           adsPersonalizedTog = document.getElementById("adsPersonalizedToggle");
-        /* Naming which regime said no matters: UMP's answer can be changed
-   right here by the toggle below, Apple's only in iOS Settings. A player
-   told "not personalised" with no idea why has nowhere to go. */
+        /* Keep the saved choice distinct from effective SDK/ATT consent. */
         function syncPrivacyRow() {
+          const attStatus = unityAds ? unityAds.state().attStatus : null;
           adsPersonalizedTog.dataset.on =
             SETTINGS.adsPersonalized === true ? "1" : "0";
           let note = "";
           if (SETTINGS.adsPersonalized !== true)
             note = "Adverts are currently not personalised.";
-          else if (!adConsentResolved)
+          else if (!unityAds)
             note =
               "Adverts are not personalised while your consent is being confirmed.";
           else if (attStatus === "denied" || attStatus === "restricted")
@@ -15834,7 +15624,7 @@
           else if (adPlatform() === "ios" && attStatus !== "authorized")
             note =
               "Adverts are not personalised until app tracking permission is confirmed.";
-          else if (adConsent.npa)
+          else if (!adsPersonalisedGranted())
             note = "Adverts are currently not personalised.";
           else note = "Adverts are currently personalised.";
           privacyNoteEl.textContent = note;
@@ -15845,45 +15635,13 @@
         };
         document.getElementById("privacyClose").onclick = () =>
           privacyPopEl.classList.add("hidden");
-        /* Turning personalised ads OFF is always just a local flag — no
-   platform ever needs asking to serve you *less* personalised ads. Turning
-   it ON tries the real channel first: UMP's own consent form where the
-   region requires it (flipping our flag instead would not be valid legal
-   consent), then Apple's tracking prompt on iOS. Where neither applies —
-   outside a region UMP regulates — the flag is all there is to set. */
         async function setAdsPersonalized(on) {
-          SETTINGS.adsPersonalized = on;
+          SETTINGS.adsPersonalized = on === true;
           saveSettings();
           syncPrivacyRow();
           await setFbConsent();
-
-          if (!on) {
-            return;
-          }
-
-          // ATT is independent of UMP. Start it before waiting for Google's
-          // network request so a slow or unavailable consent endpoint cannot
-          // prevent iOS from showing its system prompt.
-          const attPromise =
-            adPlatform() === "ios" ? attEnsure(true) : Promise.resolve();
-          await adMobInit();
-          // Never trust a stale boot-time read here — an explicit ask
-          // deserves a fresh resolution, not a cached one.
-          consentAsked = null;
-          await adConsentInit();
-          if (adConsent.canChange) {
-            const M = adMobPlugin();
-            if (M && M.showPrivacyOptionsForm) {
-              try {
-                await M.showPrivacyOptionsForm();
-                consentAsked = null;
-                await adConsentInit();
-              } catch (e) {
-                /* Keep the local choice; unresolved consent remains NPA. */
-              }
-            }
-          }
-          await attPromise;
+          if (on) await requestAdTracking();
+          await syncAdConsent();
           await setFbConsent();
           syncPrivacyRow();
         }
@@ -16241,55 +15999,22 @@
           resolveAnalyticsConsent(consentAnalyticsTog.dataset.on === "1");
           primeConsent();
         };
-        /* Apple's prompt is raised here for every iOS player, with no switch
-   of ours in the way. App Review rejected an earlier build under 2.1 for
-   hanging it off a personalised-ads switch: a reviewer who left the
-   default alone never saw the prompt, so "unable to locate the App
-   Tracking Transparency permission request" was the only finding
-   available to them. The rewarded-ad path it also sits on is no safety
-   net — that one throws before it reaches attEnsure whenever the SDK will
-   not start or the region refuses ads, which is exactly what a review
-   device looks like.
-
-  The personalised-ads switch records the player's local preference, but
-  does not gate this first-run platform prompt. Effective personalisation
-  still requires that preference plus UMP and ATT. Each native step is
-  caught independently, and attEnsure caches its own promise, so another
-  call elsewhere cannot produce a second dialog. Android has no ATT prompt
-  and leaves at the platform check. */
         async function primeConsent() {
-          // Start ATT immediately. It is independent of UMP, whose network
-          // request can be slow or unavailable on an otherwise healthy app.
-          const attPromise =
-            adPlatform() === "ios" ? attEnsure(true) : Promise.resolve();
-          try {
-            await adMobInit();
-          } catch (e) {
-            /* Onboarding must never block play. */
-          }
-          try {
-            await adConsentInit();
-          } catch (e) {
-            /* Onboarding must never block play. */
-          }
-          try {
-            await attPromise;
-          } catch (e) {}
+          // Request ATT independently of SDK initialization from Continue.
+          await requestAdTracking();
+          await syncAdConsent();
+          await setFbConsent();
+          syncPrivacyRow();
         }
         syncConsentBanner();
-        // Returning player who already consented: bring native Firebase
-        // Analytics up for a player who accepted on an earlier launch.
         if (SETTINGS.analytics === true) setFbConsent();
-        /* UMP consent resolved on every launch, not just the first (that's
-   primeConsent(), tied to Continue on "Before you start"). Without this, a
-   returning player who never happened to watch an ad saw adConsentResolved
-   stay false all session — every ad request read the pre-consent default
-   and Privacy & data's note never reflected their actual answer. Silent
-   for most players; only shows Google's own form where a region requires
-   it, same as it already did on first run. */
-        adMobInit()
-          .then(() => adConsentInit())
-          .then(syncPrivacyRow);
+        // Returning players keep their saved choice; do not prompt at boot.
+        if (typeof SETTINGS.analytics === "boolean") {
+          syncAdConsent().then(() => {
+            setFbConsent();
+            syncPrivacyRow();
+          });
+        }
 
         analyticsTog2.onclick = () =>
           resolveAnalyticsConsent(!SETTINGS.analytics);

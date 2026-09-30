@@ -529,52 +529,11 @@ came to show for everyone.
 
 ### Ad consent, and the privacy sheet
 
-**Google's UMP, because Google requires a certified consent platform** before a
-personalised advert reaches anyone in the EEA or the UK. UMP works out on its own
-whether this player is somewhere consent is required — there is no geography
-check written here, and a guess would be worse than asking.
+The saved personalised-ads switch is passed to the shared Unity package. On iOS,
+effective personalisation also requires ATT approval. Privacy & data retains the
+usage-data and personalised-ads controls. Firebase receives the effective ad
+consent after each update; its collection switch follows the usage-data choice.
 
-Two things come back that matter. `canRequestAds` says whether any advert may be
-requested at all; refusing consent does not mean no adverts, it means no
-**personalised** ones, which is what `npa` carries on every request.
-`privacyOptionsRequirementStatus` says whether this player must be given a
-standing way to change their mind — which is what the Settings row is, appearing
-only when UMP says it is required rather than inventing itself everywhere.
-
-**`NOT_REQUIRED` is not a refusal**, and the first cut got this wrong: it read
-anything other than `OBTAINED` as "no", which served non-personalised adverts to
-most of the world for nothing. `NOT_REQUIRED` is UMP saying the player is outside
-the regime. Personalised is fine there and where consent was given; `REQUIRED`
-(still outstanding) and `UNKNOWN` go non-personalised.
-
-Every other ending is covered too: a dismissed form, a form that will not render,
-and UMP itself failing all fall to non-personalised rather than to nothing —
-the player still gets their reward and nobody is tracked.
-
-**Privacy & data** in Settings says, in four short rows, what actually leaves the
-device: progress and captain name (nothing), adverts (AdMob, and what it gets),
-and usage data (only if switched on). It carries the consent control when there
-is one, and links the full policy.
-
-**The usage-data toggle appears in both places**, in Settings and again here, and
-that duplication is the point: the sheet was explaining usage data and then
-sending you elsewhere to change it. Mirroring rather than moving, because
-burying an opt-out a level deeper is the wrong direction. `resolveAnalyticsConsent()`
-already called `syncToggles()`, so keeping the two copies in step cost one line.
-
-The two controls are not symmetrical and can't be. The analytics choice is a
-toggle this app owns; the advert one is **Google's form** — UMP renders it,
-stores the answer, and only reports a Change control as required for players it
-decided need one. All this side can do is open it.
-
-**`display:flex` on a class beats `[hidden]`**, which is how the
-advert-personalisation row came to show for everyone at first, offering a form
-that only exists where consent was required. `.setrow[hidden]` puts it back.
-
-**The policy itself had gone false** and was fixed at the same time — it still
-said the game had "no advertising, and no third-party SDKs", written before
-AdMob existed. Shipping a privacy policy that describes a different app is not a
-detail; it is the document a store reviewer reads.
 
 ### Removing ads
 
@@ -601,50 +560,23 @@ which is no way to thank one:
 | Bonus spin                  | watch an ad | "Take another spin"  |
 | Double your coins           | watch an ad | "Double it", one tap |
 
-### AdMob
+### Unity Ads
 
-**Wired up for real, on Google's test ad units.** Those serve a genuine ad
-through the real SDK with a real reward callback — they just never bill anyone
-and never count as traffic. So this is the integration, not a mock of one:
-replacing `AD_UNITS` with live IDs and setting `AD_TESTING` to false is the whole
-of what is left.
+Ads use `@politecarrot/capacitor-unity-ads`, pinned to a GitHub commit.
+Run `npm ci` then `npm run sync` before native builds. `npm run web:sync`
+refreshes the ignored `docs/vendor/unity-ads.js` script for browser hosting.
 
-The unit IDs were taken from the plugin's own native source rather than from
-memory (`AdOptions.java`, `AdMobPlugin.swift`), and the app IDs in `strings.xml`
-and `Info.plist` are Google's published test app IDs — **replace all six before
-release.** Watch the first device launch for an AdMob init error if any of them
-is wrong.
+Set Tide Runner's iOS/Android game IDs and interstitial/rewarded placements in
+`docs/unity-ads-config.js`. Empty IDs intentionally disable native ads. Production
+mode is selected explicitly; enable test mode for device integration tests.
 
-Worth knowing when you do: while `AD_TESTING` is true the plugin substitutes
-Google's sample unit for whichever format is being requested and **ignores the
-ids in `AD_UNITS` entirely** (`AdViewIdHelper.getFinalAdId`). Swapping in live
-ids without also setting `AD_TESTING` to false changes nothing at all.
+The shared package owns SDK initialization, consent signals, ATT, loading and
+playback. The game retains race grace/frequency rules, rewarded cooldowns, saved
+preferences, Firebase consent, coin amounts, spins and ad-removal behaviour.
+Native rewards are granted only when Unity returns `rewarded: true`. The browser does not simulate ad rewards; missing SDK/config never grants one.
 
-**No import, same as the haptics**: `@capacitor-community/admob` arrives on
-`window.Capacitor.Plugins` at runtime, so the native build reaches it without
-this file gaining a bundler. The SDK is initialised lazily on the first ad rather
-than at launch, so a player who never taps one never pays for it spinning up.
-`requestTrackingAuthorization` is deliberately not set — the ATT prompt belongs
-at a moment the player understands, not thrown at them by a background init.
+This migration needs real-device validation of both formats before release.
 
-**Every way an ad can end has to pay correctly**, which is the whole job:
-
-| Ending                 | Result                                                         |
-| ---------------------- | -------------------------------------------------------------- |
-| No plugin at all (web) | stand-in ad, reward granted — keeps the browser build testable |
-| Reward earned          | reward granted                                                 |
-| Viewer dismissed early | nothing, button usable again                                   |
-| No fill                | nothing, "Ad unavailable — try again"                          |
-| SDK wouldn't start     | nothing                                                        |
-
-That last row is the one worth guarding. The simulated ad is for the **web build
-only** — somewhere with no ad network to ask. Falling back to it on a device
-whose SDK failed to start would hand free rewards to anyone with a wrong AdMob
-config or no signal, which is a revenue leak rather than a kindness. On a device,
-an SDK that won't start is an ad failure like any other.
-
-Both placements go through one `playRewardedAd()`, so there is one set of states
-to get right rather than two.
 
 ### Double your coins
 
@@ -883,46 +815,18 @@ what it costs — a target nobody can see is not a target.
 
 ### App Tracking Transparency
 
-**Two independent gates on a personalised ad, and either one saying no is a
-no.** UMP settles GDPR; ATT is Apple's, and on iOS the advert identifier may not
-be read at all until the player has answered the system prompt. A player can
-consent under UMP and still refuse tracking, in which case Apple wins and the
-request goes out non-personalised.
+Continue on the first-run privacy screen requests ATT independently of Unity
+initialization. Enabling personalised ads or choosing a rewarded ad can also
+request it. Interstitials do not prompt. The shared package checks the current
+iOS answer before ad requests; the game keeps the saved preference separate.
 
-Apple allows the prompt once per install, so the moment matters. It fires on the
-first ad the player _chose_ to watch — someone who just tapped "double your
-coins" understands what is being asked in a way that someone who just opened the
-game does not. An interstitial, which nobody asked for, only reads the answer and
-never prompts for it; an unanswered status leaves the question open rather than
-burning the one prompt there. `attStatus` holds Apple's own wording rather than a
-boolean, because "they said no" and "we haven't asked" need different copy — the
-privacy sheet says which regime refused, since UMP's answer can be changed by the
-button right there and Apple's only in iOS Settings.
 
 ### What Firebase is told about ads
 
-**The consent signal has to be derived, not passed in.** Both ad regimes
-resolve lazily — UMP at the first ad request, ATT at the first ad the player
-chose to watch — so any caller running before that reads the optimistic
-defaults (`npa` false, `attStatus` null) and concludes yes. `setFbConsent` used
-to take the answer as an argument, and both of its callers ran at startup: one
-when the player answers the usage-data banner, one on load. Neither had an
-answer to give yet, and nothing re-sent it afterwards, so a player who denied
-tracking still had `AD_PERSONALIZATION: GRANTED` standing for the whole session.
+`setFbConsent()` reads the current usage preference and the shared package’s
+effective ad-consent state. Missing configuration or unconfirmed consent reports
+ad consent as denied. Analytics stays independently controlled by the player.
 
-It now derives the value from `adsPersonalisedGranted()`, which requires the
-answer to be positively established: UMP resolved, and on iOS an explicit
-`authorized` from Apple. Anything else is denied. That is Consent Mode's own
-rule — default to denied, update when the answer arrives — so both regimes
-re-send the signal as they settle, and the startup guess is corrected rather
-than left standing.
-
-Worth being clear about what this was and wasn't. iOS enforces ATT at the OS
-level, so a player who denied tracking was never actually tracked and never got
-personalised ads: `adNpa()` already carried Apple's answer onto every ad
-request. The defect was that our own analytics recorded a consent state
-contradicting what the player chose — a reporting inaccuracy, not a leak, but
-exactly the kind that is indefensible in a compliance review.
 
 ### The tutorial
 
@@ -1269,12 +1173,11 @@ players open the app before bed rather than right after waking up.
 
 Once the free spin is used, a second "watch an ad for another spin" button appears in its
 place (`adSpinAvailable()`, its own `progress.lastAdSpin` date stamp so it resets on the same
-9am boundary — one bonus spin per day, same as the free one). `playRewardedAd()` is currently a
-stand-in — a couple of seconds of simulated "loading" — that arms one bonus spin
-(`bonusSpinArmed`, held in memory only, not persisted: closing the Boathouse before spinning the
-armed bonus just means watching another ad next time) and needs swapping for a real
-rewarded-ad SDK call before shipping, calling `onComplete()` only once the viewer has actually
-earned the reward.
+9am boundary — one bonus spin per day, same as the free one). `playRewardedAd()`
+uses the shared Unity package and calls `onComplete()` only when its result reports
+`rewarded: true`. This arms `bonusSpinArmed` in memory; closing the Boathouse before
+spinning the armed bonus means watching another ad next time.
+
 
 **The wheel lands on the wedge it actually pays out.** The rotation delta is measured from
 where the wheel is currently parked (`wheelRotation` mod 360), not from zero. It accumulates
@@ -1494,3 +1397,5 @@ a ratio while actually leaving more land than most of the narrow ones.
 For a generated course, more corners means raising the meander count `k`, not the amplitude:
 deep meanders at high frequency fold the bank back through itself long before the corners
 get interesting.
+
+Ad seller declarations in `docs/app-ads.txt` must come from Tide Runner’s Unity dashboard.
