@@ -15130,10 +15130,9 @@
           return !!progress.noAds;
         }
 
-        // TESTING pacing — restore to 2 / 120000 / 2 before release.
-        const INTERSTITIAL_EVERY = 1;
-        const INTERSTITIAL_GAP = 5000;
-        const INTERSTITIAL_GRACE = 1;
+        const INTERSTITIAL_EVERY = 2;
+        const INTERSTITIAL_GAP = 120000;
+        const INTERSTITIAL_GRACE = 2;
         let lastRewardedAt = 0;
         let interstitialInFlight = false;
 
