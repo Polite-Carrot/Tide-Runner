@@ -8186,6 +8186,7 @@
         }
 
         function startRace() {
+          preloadInterstitial();
           track = tutorial ? TUTORIAL_TRACK : TRACKS[courseIdx];
           if (tutorial) startCoaching();
           else stopCoaching();
@@ -14151,6 +14152,7 @@
           if (!tutorial && !timeTrial)
             progress.racesFinished = (progress.racesFinished || 0) + 1;
           saveProgress();
+          preloadInterstitial();
           rTitle.textContent = tutorial
             ? "That's the lot"
             : timeTrial
@@ -15128,12 +15130,10 @@
           return !!progress.noAds;
         }
 
-        /* Production interstitials: require two completed races, then check
-           every second completed race, with a two-minute gap between attempts
-           and after rewarded ads. Only results-screen actions trigger ads. */
-        const INTERSTITIAL_EVERY = 2;
-        const INTERSTITIAL_GAP = 120000;
-        const INTERSTITIAL_GRACE = 2;
+        // TESTING pacing — restore to 2 / 120000 / 2 before release.
+        const INTERSTITIAL_EVERY = 1;
+        const INTERSTITIAL_GAP = 5000;
+        const INTERSTITIAL_GRACE = 1;
         let lastRewardedAt = 0;
         let interstitialInFlight = false;
 
@@ -15147,32 +15147,49 @@
           if (now - lastRewardedAt < INTERSTITIAL_GAP) return false;
           return true;
         }
-        async function maybeShowInterstitial() {
-          if (interstitialInFlight || adLoading || !interstitialDue()) return;
-          if (adPlatform() === "web" || !unityAds) return;
+        // Loaded during the race, so the results screen can't be tapped through before it is ready.
+        let interstitialPreload = null;
+        function preloadInterstitial() {
+          if (interstitialPreload || adPlatform() === "web" || !unityAds) return;
+          if (adsRemoved() || unityAds.state().prepared.interstitial) return;
+          interstitialPreload = (async () => {
+            try {
+              if (!(await syncAdConsent())) return;
+              await setFbConsent();
+              const loaded = await unityAds.prepareInterstitial();
+              if (!loaded.loaded)
+                console.warn("Tide Ads: interstitial unavailable", loaded.reason);
+            } catch (e) {
+              console.warn("Tide Ads: interstitial preload failed", e && e.message);
+            } finally {
+              interstitialPreload = null;
+            }
+          })();
+        }
+        // An ad not loaded by the time the player taps is skipped, never shown later over play.
+        async function showInterstitialThen(next) {
+          if (interstitialInFlight) return;
+          const ready =
+            !!unityAds &&
+            !adLoading &&
+            interstitialDue() &&
+            unityAds.state().prepared.interstitial &&
+            !document.hidden &&
+            !bannerPending();
+          if (!ready) return next();
           interstitialInFlight = true;
-          adLoading = true;
-          // Preserve the saved attempt cooldown, including failed requests.
           progress.lastInterstitial = Date.now();
           saveProgress();
           try {
-            if (!(await syncAdConsent())) return;
-            await setFbConsent();
-            const loaded = await unityAds.prepareInterstitial();
-            if (!loaded.loaded) {
-              console.warn("Tide Ads: interstitial unavailable", loaded.reason);
-              return;
-            }
-            if (document.hidden || bannerPending()) return;
             const result = await unityAds.showInterstitial();
-            if (!result.shown) console.warn("Tide Ads: interstitial not shown", result.reason);
             if (result.shown) trackEvent("ad_shown", { placement: "interstitial" });
+            else console.warn("Tide Ads: interstitial not shown", result.reason);
           } catch (e) {
             console.warn("Tide Ads: interstitial failed", e && e.message);
           } finally {
             interstitialInFlight = false;
-            adLoading = false;
           }
+          next();
         }
 
         /* THE one place the ad network is spoken to. It takes the button it is
@@ -15734,12 +15751,13 @@
         };
         document.getElementById("again").onclick = () => {
           initAudio();
-          maybeShowInterstitial();
-          startRace();
+          showInterstitialThen(startRace);
         };
         document.getElementById("nextRace").onclick = () => {
           initAudio();
-          maybeShowInterstitial();
+          showInterstitialThen(nextRace);
+        };
+        function nextRace() {
           // out of the tutorial and into the real thing
           if (tutorial) {
             endTutorial();
@@ -15757,9 +15775,8 @@
           const at = seq.indexOf(courseIdx);
           pickCourse(seq[(at + 1) % seq.length], false);
           startRace();
-        };
+        }
         function leaveResults() {
-          maybeShowInterstitial();
           doubleOffer = 0;
           refreshDoubleOffer();
           endTutorial();
@@ -15774,11 +15791,13 @@
         }
         // Change course goes straight to the picker rather than dropping you on
         // the menu to find it yourself; Main menu is the plain way back.
-        document.getElementById("back").onclick = () => {
-          leaveResults();
-          openCoursePop();
-        };
-        document.getElementById("toMenu").onclick = leaveResults;
+        document.getElementById("back").onclick = () =>
+          showInterstitialThen(() => {
+            leaveResults();
+            openCoursePop();
+          });
+        document.getElementById("toMenu").onclick = () =>
+          showInterstitialThen(leaveResults);
 
         /* ============================================================
    PAUSE + SETTINGS
